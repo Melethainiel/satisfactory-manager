@@ -9,10 +9,11 @@ var postgres = builder.AddAzurePostgresFlexibleServer("postgresServer")
     })
     .AddDatabase("postgres-db");
 
-builder.AddNpmApp("svelte", "../SatisfactoryManager.SvelteKit")
-    .WithHttpEndpoint(env: "PORT")
+builder.AddNpmApp("svelte", "../SatisfactoryManager.SvelteKit", "dev")
+    .WithHttpEndpoint(port: 5173, env: "PORT")
     .WithReference(postgres)
     .WithExternalHttpEndpoints()
+    
     .PublishAsDockerFile();
 
 

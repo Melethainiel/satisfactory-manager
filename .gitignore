@@ -74,3 +74,11 @@ vite.config.ts.timestamp-*
 # Capacitor
 dist
 android
+
+# SvelteKit
+.svelte-kit
+.svelte-kit/output
+# SvelteKit build artifacts
+build
+# SvelteKit output directory
+dist

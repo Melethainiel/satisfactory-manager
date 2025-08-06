@@ -2,6 +2,7 @@
 	import AuthComponent from '$lib/components/AuthComponent.svelte';
 	import { authState } from '$lib';
 	import { onMount } from 'svelte';
+	import { apiClient } from '$lib/auth/apiClient'; // Adjust the import based on your API client setup
 
 	let apiResponse = '';
 	let isLoadingApi = false;
@@ -16,20 +17,20 @@
 		isLoadingApi = true;
 		apiResponse = '';
 
-		// try {
-		// 	// Example API call - replace with your actual API endpoint
-		// 	const response = await apiClient.get('/api/test');
+		try {
+			// Example API call - replace with your actual API endpoint
+			const response = await apiClient.get('/api/test');
 			
-		// 	if (response.error) {
-		// 		apiResponse = `API Error: ${response.error}`;
-		// 	} else {
-		// 		apiResponse = `API Success: ${JSON.stringify(response.data, null, 2)}`;
-		// 	}
-		// } catch (error) {
-		// 	apiResponse = `Network Error: ${error}`;
-		// } finally {
+			if (response.error) {
+				apiResponse = `API Error: ${response.error}`;
+			} else {
+				apiResponse = `API Success: ${JSON.stringify(response.data, null, 2)}`;
+			}
+		} catch (error) {
+			apiResponse = `Network Error: ${error}`;
+		} finally {
 			isLoadingApi = false;
-		// }
+		}
 	}
 </script>
 

@@ -1,4 +1,4 @@
-import type { AzureB2CConfig } from './azureB2C';
+import type { AzureB2CConfig } from './authState.svelte';
 import { browser } from '$app/environment';
 
 // Helper function to get environment variables safely
@@ -13,7 +13,6 @@ const getEnvVar = (key: string, fallback: string): string => {
 };
 
 // Azure AD B2C Configuration
-// Replace these values with your actual Azure AD B2C configuration
 export const azureB2CConfig: AzureB2CConfig = {
 	clientId: getEnvVar('AZURE_B2C_CLIENT_ID', '71d43619-ad3d-49d4-bae9-97e38ec57dc4'),
 	authority: getEnvVar('AZURE_B2C_AUTHORITY', 'https://satisfactorymanager.b2clogin.com/SatisfactoryManager.onmicrosoft.com/B2C_1_SignInSignUp'),

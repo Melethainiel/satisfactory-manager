@@ -1,15 +1,16 @@
 <script lang="ts">
 	import AuthComponent from '$lib/components/AuthComponent.svelte';
-	import { authState } from '$lib';
-	import { onMount } from 'svelte';
-	import { apiClient } from '$lib/auth/apiClient'; // Adjust the import based on your API client setup
+	import { getAuthState } from '$lib/auth/authState.svelte';
+
+	// Get the auth state from context
+	const authState = getAuthState();
 
 	let apiResponse = '';
 	let isLoadingApi = false;
 
 	// Example function to test authenticated API call
 	async function testApiCall() {
-		if (!$authState.isAuthenticated) {
+		if (!authState.isAuthenticated) {
 			apiResponse = 'Please sign in first';
 			return;
 		}
@@ -18,13 +19,26 @@
 		apiResponse = '';
 
 		try {
+			// Get access token for API call
+			const token = await authState.getAccessToken();
+			if (!token) {
+				apiResponse = 'Failed to get access token';
+				return;
+			}
+
 			// Example API call - replace with your actual API endpoint
-			const response = await apiClient.get('/api/test');
+			const response = await fetch('/api/test', {
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json'
+				}
+			});
 			
-			if (response.error) {
-				apiResponse = `API Error: ${response.error}`;
+			if (response.ok) {
+				const data = await response.json();
+				apiResponse = `API Success: ${JSON.stringify(data, null, 2)}`;
 			} else {
-				apiResponse = `API Success: ${JSON.stringify(response.data, null, 2)}`;
+				apiResponse = `API Error: ${response.status} ${response.statusText}`;
 			}
 		} catch (error) {
 			apiResponse = `Network Error: ${error}`;
@@ -48,7 +62,7 @@
 	</div>
 
 	<!-- API Testing Section -->
-	{#if $authState.isAuthenticated}
+	{#if authState.isAuthenticated}
 		<div class="mb-8">
 			<h2 class="text-2xl font-semibold mb-4">API Testing</h2>
 			<div class="card bg-base-100 shadow-xl">
@@ -61,7 +75,7 @@
 							class="btn btn-secondary" 
 							class:loading={isLoadingApi}
 							disabled={isLoadingApi}
-							on:click={testApiCall}
+							onclick={testApiCall}
 						>
 							{isLoadingApi ? 'Testing...' : 'Test API Call'}
 						</button>
@@ -79,13 +93,18 @@
 	{/if}
 
 	<!-- Debug Information -->
-	{#if $authState.isAuthenticated}
+	{#if authState.isAuthenticated}
 		<div class="mb-8">
 			<h2 class="text-2xl font-semibold mb-4">Debug Information</h2>
 			<div class="card bg-base-100 shadow-xl">
 				<div class="card-body">
 					<h3 class="card-title">Current Auth State</h3>
-					<pre class="bg-base-200 p-4 rounded overflow-x-auto text-sm">{JSON.stringify($authState, null, 2)}</pre>
+					<pre class="bg-base-200 p-4 rounded overflow-x-auto text-sm">{JSON.stringify({
+						isAuthenticated: authState.isAuthenticated,
+						isLoading: authState.isLoading,
+						user: authState.user,
+						error: authState.error
+					}, null, 2)}</pre>
 				</div>
 			</div>
 		</div>

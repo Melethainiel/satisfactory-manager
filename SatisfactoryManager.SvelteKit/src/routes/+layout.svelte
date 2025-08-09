@@ -5,6 +5,13 @@
 	import { azureB2CConfig } from '$lib/auth/config';
 	import { setGameState } from '$lib/game/gameState.svelte';
 	import Header from '$lib/components/Header.svelte';
+	import SideNav from '$lib/components/SideNav.svelte';
+
+	let navOpen = $state(false);
+	function toggleNav() {
+		navOpen = !navOpen;
+	}
+
 
 	let { children } = $props();
 
@@ -31,9 +38,15 @@
 	});
 </script>
 
-<div class="min-h-screen bg-base-200">
-	<Header />
-	<main class="container mx-auto px-4 py-6">
-		{@render children()}
-	</main>
+<div class="min-h-screen bg-base-200 flex">
+		<SideNav open={navOpen} onClose={() => (navOpen=false)} />
+
+	<div class="flex-1 flex flex-col min-w-0">
+		<Header toggleNav={toggleNav} />
+		<main class="flex-1 container mx-auto px-4 py-6">
+			{@render children()}
+		</main>
+	</div>
 </div>
+
+<!-- No component styles needed -->

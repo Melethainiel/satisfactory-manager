@@ -1,13 +1,15 @@
 <script lang="ts">
 	import { getAuthState } from '$lib/auth/authState.svelte';
 	import { getGameState } from '$lib/game/gameState.svelte';
+	// New Svelte 5 pattern: accept a callback prop instead of dispatching an event
+	let { toggleNav } = $props<{ toggleNav?: () => void }>();
 
 	// Get auth & game state from context
 	const authState = getAuthState();
 	const gameState = getGameState();
 
 	// Create game dialog state
-	let newGameName = '';
+	let newGameName = $state('');
 	let createDialog: HTMLDialogElement | null = null;
 
 	async function handleCreate(e?: Event) {
@@ -45,6 +47,16 @@
 >
 	<!-- Left side: Logo and Title -->
 	<div class="navbar-start items-center gap-4">
+		<!-- Mobile nav toggle -->
+		<button
+			class="btn btn-ghost btn-square lg:hidden"
+			aria-label="Toggle navigation"
+			onclick={() => toggleNav?.()}
+		>
+			<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+			</svg>
+		</button>
 		<a href="/" class="flex text-xl font-bold">
 			<!-- Logo -->
 			<img

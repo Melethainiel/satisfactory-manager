@@ -30,10 +30,15 @@
 	<!-- Left side: Logo and Title -->
 	<div class="navbar-start">
 		<a href="/" class="flex text-xl font-bold">
-			<!-- Logo placeholder - you can replace with actual logo -->
-			<div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center mr-2">
-				<span class="text-primary-content font-bold text-sm">S</span>
-			</div>
+			<!-- Logo -->
+			<img
+				src="/logo-256.png"
+				alt="Satisfactory Manager logo"
+				class="w-8 h-8 mr-2 rounded-lg object-contain"
+				width="32"
+				height="32"
+				loading="lazy"
+			/>
 			Satisfactory Manager
 		</a>
 	</div>

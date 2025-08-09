@@ -1,0 +1,55 @@
+services:
+  postgres:
+    # Using 'latest' for convenience in local dev; pin a version (e.g., 17-alpine) for reproducibility.
+    image: postgres:latest
+    container_name: satisfactory-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: satisfactory
+      # Optional: tune for local dev (can be removed in prod)
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      # Hardcode values to avoid docker compose variable substitution warnings
+      test: ["CMD-SHELL", "pg_isready -d satisfactory -U app"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    # If you want to limit resources locally (optional)
+    # deploy:
+    #   resources:
+    #     limits:
+    #       memory: 512M
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: satisfactory-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False' # allow multiple user sessions if needed
+    ports:
+      - "8081:80"
+    depends_on:
+      - postgres
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+      - ./config/pgadmin/servers.json:/pgadmin4/servers.json:ro
+
+volumes:
+  postgres-data:
+  pgadmin-data:
+
+# Usage:
+#   docker compose up -d postgres pgadmin
+# Connection string (app):
+#   postgres://app:app@localhost:5432/satisfactory
+# pgAdmin URL:
+#   http://localhost:8081  (login with admin@example.com / admin)

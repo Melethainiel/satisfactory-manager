@@ -20,6 +20,6 @@ export const azureB2CConfig: AzureB2CConfig = {
 	redirectUri: getEnvVar('AZURE_B2C_REDIRECT_URI', (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173')),
 	postLogoutRedirectUri: getEnvVar('AZURE_B2C_POST_LOGOUT_REDIRECT_URI', (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173')),
 	// Scopes to request during authentication
-	scopes: ['openid', 'profile']
+	scopes: ['openid', 'profile', 'email']
 };
 

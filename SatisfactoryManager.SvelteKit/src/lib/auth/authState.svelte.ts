@@ -189,7 +189,7 @@ class AuthStateClass implements AuthState {
 		const userInfo: UserInfo = {
 			id: authResult.account?.localAccountId,
 			displayName: authResult.account?.name,
-			email: authResult.account?.username,
+			email: authResult.account?.idTokenClaims?.emails !== undefined ? authResult.account?.idTokenClaims?.emails[0] : undefined,
 		};
 
 		this.isAuthenticated = true;

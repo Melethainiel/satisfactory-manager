@@ -3,6 +3,7 @@
 	import { onMount } from 'svelte';
 	import { setAuthState } from '$lib/auth/authState.svelte';
 	import { azureB2CConfig } from '$lib/auth/config';
+	import Header from '$lib/components/Header.svelte';
 
 	let { children } = $props();
 
@@ -19,4 +20,9 @@
 	});
 </script>
 
-{@render children()}
+<div class="min-h-screen bg-base-200">
+	<Header />
+	<main class="container mx-auto px-4 py-6">
+		{@render children()}
+	</main>
+</div>

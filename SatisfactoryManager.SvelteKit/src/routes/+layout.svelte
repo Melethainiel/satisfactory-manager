@@ -42,7 +42,7 @@
 
 	<div class="flex flex-1 flex-col">
 		<Header {toggleNav} />
-		<main class="mx-64 flex-1 px-4 py-6">
+		<main class="lg:ml-64 flex-1 px-4 py-6">
 			<div class="container mx-auto">
 				{@render children()}
 			</div>

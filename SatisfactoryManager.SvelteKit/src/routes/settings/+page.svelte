@@ -2,6 +2,9 @@
 	import { getGameState } from '$lib/states/gameState.svelte';
 	import { getAuthState } from '$lib/states/authState.svelte';
 	import { Icon, Identification, AdjustmentsHorizontal } from 'svelte-hero-icons';
+	import CreateGameDialog from '$lib/dialogs/CreateGameDialog.svelte';
+	import type { CreateGameDialogHandle } from '$lib/dialogs/CreateGameDialogHandle';
+
 	const gameState = getGameState();
 	const authState = getAuthState();
 
@@ -62,24 +65,30 @@
 			isDirty = false;
 		}
 	}
+
+	let createDialogRef: CreateGameDialogHandle | null = $state(null);
 </script>
 
 <h1 class="mb-6 text-2xl font-bold">Settings</h1>
 
-<div class="grid grid-cols-1 gap-6">
-	<div class="card bg-base-100 shadow">
-		<div class="card-body">
-			<h2 class="card-title">
-				<Icon src={Identification} class="size-6 stroke-1" />
-				Game Info
-			</h2>
-			{#if !authState.isAuthenticated}
-				<p class="text-sm opacity-70">Sign in to view game settings.</p>
-			{:else if gameState.isLoading && gameState.games.length === 0}
-				<span class="loading loading-spinner loading-sm"></span>
-			{:else if !gameState.selectedGameId}
-				<p class="text-sm opacity-70">No game selected. Create or select a game first.</p>
-			{:else}
+{#if !authState.isAuthenticated}
+	<p class="text-sm opacity-70">Sign in to view game settings.</p>
+{:else if gameState.isLoading && gameState.games.length === 0}
+	<span class="loading loading-spinner loading-sm"></span>
+{:else if !gameState.selectedGameId}
+	<div class="mt-12 flex flex-col items-center gap-4">
+		<p class="text-lg opacity-70">No game selected. Create or select a game first</p>
+		<button class="btn btn-primary" onclick={() => createDialogRef?.open()}>Create New Game</button>
+		<CreateGameDialog bind:this={createDialogRef} />
+	</div>
+{:else}
+	<div class="grid grid-cols-1 gap-6">
+		<div class="card bg-base-100 shadow">
+			<div class="card-body">
+				<h2 class="card-title">
+					<Icon src={Identification} class="size-6 stroke-1" />
+					Game Info
+				</h2>
 				{#if gameState.error}
 					<div class="alert alert-error mb-2 py-2 text-sm">
 						<span>{gameState.error}</span>
@@ -115,42 +124,37 @@
 						Save
 					</button>
 				</div>
-			{/if}
+			</div>
+		</div>
+		<div class="card bg-base-100 shadow">
+			<div class="card-body">
+				<h2 class="card-title">
+					<Icon src={AdjustmentsHorizontal} class="size-6 stroke-1" />
+					Authorized Users
+				</h2>
+				{#if usersLoading}
+					<span class="loading loading-spinner loading-sm"></span>
+				{:else if usersError}
+					<div class="alert alert-error py-2 text-sm">
+						<span>{usersError}</span>
+						<button class="btn btn-xs" onclick={() => (usersError = null)}>Dismiss</button>
+					</div>
+				{:else if gameState.gameUsers.length === 0}
+					<p class="text-sm opacity-70">No users found.</p>
+				{:else}
+					<ul class="divide-base-200 divide-y">
+						{#each gameState.gameUsers as u}
+							<li class="flex items-center justify-between gap-4 py-2">
+								<div>
+									<p class="font-medium leading-tight">{u.displayName}</p>
+									<p class="text-xs opacity-70">{u.email}</p>
+								</div>
+								<span class="badge badge-outline text-xs">{u.role}</span>
+							</li>
+						{/each}
+					</ul>
+				{/if}
+			</div>
 		</div>
 	</div>
-
-	<div class="card bg-base-100 shadow">
-		<div class="card-body">
-			<h2 class="card-title">
-				<Icon src={AdjustmentsHorizontal} class="size-6 stroke-1" />
-				Authorized Users
-			</h2>
-			{#if !authState.isAuthenticated}
-				<p class="text-sm opacity-70">Sign in to view users.</p>
-			{:else if !gameState.selectedGameId}
-				<p class="text-sm opacity-70">Select a game first.</p>
-			{:else if usersLoading}
-				<span class="loading loading-spinner loading-sm"></span>
-			{:else if usersError}
-				<div class="alert alert-error py-2 text-sm">
-					<span>{usersError}</span>
-					<button class="btn btn-xs" onclick={() => (usersError = null)}>Dismiss</button>
-				</div>
-			{:else if gameState.gameUsers.length === 0}
-				<p class="text-sm opacity-70">No users found.</p>
-			{:else}
-				<ul class="divide-base-200 divide-y">
-					{#each gameState.gameUsers as u}
-						<li class="flex items-center justify-between gap-4 py-2">
-							<div>
-								<p class="font-medium leading-tight">{u.displayName}</p>
-								<p class="text-xs opacity-70">{u.email}</p>
-							</div>
-							<span class="badge badge-outline text-xs">{u.role}</span>
-						</li>
-					{/each}
-				</ul>
-			{/if}
-		</div>
-	</div>
-</div>
+{/if}

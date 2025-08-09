@@ -12,7 +12,6 @@
 		navOpen = !navOpen;
 	}
 
-
 	let { children } = $props();
 
 	// Initialize contexts
@@ -38,13 +37,15 @@
 	});
 </script>
 
-<div class="min-h-screen bg-base-200 flex">
-		<SideNav open={navOpen} onClose={() => (navOpen=false)} />
+<div class="bg-base-200 flex min-h-screen">
+	<SideNav open={navOpen} onClose={() => (navOpen = false)} />
 
-	<div class="flex-1 flex flex-col min-w-0">
-		<Header toggleNav={toggleNav} />
-		<main class="flex-1 container mx-auto px-4 py-6">
-			{@render children()}
+	<div class="flex flex-1 flex-col">
+		<Header {toggleNav} />
+		<main class="mx-64 flex-1 px-4 py-6">
+			<div class="container mx-auto">
+				{@render children()}
+			</div>
 		</main>
 	</div>
 </div>

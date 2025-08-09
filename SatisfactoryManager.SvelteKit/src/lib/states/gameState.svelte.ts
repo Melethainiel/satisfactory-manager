@@ -5,6 +5,13 @@ export interface GameSummary {
   name: string;
 }
 
+export interface GameUser {
+  id: string;
+  displayName: string;
+  email: string;
+  role: string;
+}
+
 export interface GameState {
   games: GameSummary[];
   selectedGameId: string | null;
@@ -13,6 +20,9 @@ export interface GameState {
   loadGames: (userEmail: string) => Promise<void>;
   selectGame: (id: string) => void;
   createGame: (userEmail: string, name: string) => Promise<void>;
+  updateGame: (id: string, name: string) => Promise<void>;
+  loadGameUsers: (gameId: string) => Promise<void>; // added
+  gameUsers: GameUser[]; // added
   clearError: () => void;
 }
 
@@ -21,6 +31,7 @@ class GameStateClass implements GameState {
   selectedGameId = $state<string | null>(null);
   isLoading = $state<boolean>(false);
   error = $state<string | null>(null);
+  gameUsers = $state<GameUser[]>([]);
 
   async loadGames(userEmail: string) {
     if (!userEmail) {
@@ -66,6 +77,39 @@ class GameStateClass implements GameState {
       this.error = e?.message ?? 'Failed to create game';
     } finally {
       this.isLoading = false;
+    }
+  }
+
+  async updateGame(id: string, name: string) {
+    if (!id) { this.error = 'Game id required'; return; }
+    if (!name) { this.error = 'Game name required'; return; }
+    this.isLoading = true;
+    this.error = null;
+    try {
+      const res = await fetch(`/api/games/${id}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name })
+      });
+      if (!res.ok) throw new Error(`Failed to update game (${res.status})`);
+      const updated = (await res.json()) as GameSummary;
+      this.games = this.games.map(g => g.id === id ? updated : g).sort((a,b)=>a.name.localeCompare(b.name));
+    } catch (e: any) {
+      this.error = e?.message ?? 'Failed to update game';
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  async loadGameUsers(gameId: string) {
+    if (!gameId) return;
+    try {
+      const res = await fetch(`/api/games/${gameId}/users`);
+      if (!res.ok) throw new Error(`Failed to load users (${res.status})`);
+      const data = (await res.json()) as GameUser[];
+      this.gameUsers = data.sort((a,b)=>a.displayName.localeCompare(b.displayName));
+    } catch (e: any) {
+      this.error = e?.message ?? 'Failed to load game users';
     }
   }
 

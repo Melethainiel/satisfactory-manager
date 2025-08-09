@@ -1,5 +1,5 @@
 import { db } from '../db';
-import { games, userGames, users, type Game, type NewGame, type UserGame } from '../db/schema';
+import { games, userGames, users, type Game, type NewGame, type UserGame, type GameUserRole } from '../db/schema';
 import { eq, and } from 'drizzle-orm';
 
 export interface IGameService {
@@ -8,9 +8,10 @@ export interface IGameService {
   create(data: Omit<NewGame, 'id'>): Promise<Game>;
   update(id: string, data: Partial<Omit<NewGame, 'id'>>): Promise<Game | undefined>;
   delete(id: string): Promise<boolean>;
-  addUser(gameId: string, userId: string): Promise<UserGame>;
+  addUser(gameId: string, userId: string, role?: GameUserRole): Promise<UserGame>;
   removeUser(gameId: string, userId: string): Promise<boolean>;
   getUsers(gameId: string): Promise<UserGame[]>; // Could later join on users
+  getUsersDetailed(gameId: string): Promise<{ id: string; displayName: string; email: string; role: GameUserRole }[]>; // Joined user details
   getForUserEmail(email: string): Promise<Game[]>; // All games a user (by email) can access
 }
 
@@ -34,10 +35,10 @@ class GameService implements IGameService {
     const res = await db.delete(games).where(eq(games.id, id)).returning({ id: games.id });
     return res.length > 0;
   }
-  async addUser(gameId: string, userId: string): Promise<UserGame> {
+  async addUser(gameId: string, userId: string, role: GameUserRole = 'Reader'): Promise<UserGame> {
     const [row] = await db
       .insert(userGames)
-      .values({ gameId, userId })
+      .values({ gameId, userId, role })
       .onConflictDoNothing()
       .returning();
     return row;
@@ -51,6 +52,19 @@ class GameService implements IGameService {
   }
   async getUsers(gameId: string): Promise<UserGame[]> {
     return await db.select().from(userGames).where(eq(userGames.gameId, gameId));
+  }
+  async getUsersDetailed(gameId: string): Promise<{ id: string; displayName: string; email: string; role: GameUserRole }[]> {
+    const rows = await db
+      .select({
+        id: users.id,
+        displayName: users.displayName,
+        email: users.email,
+        role: userGames.role
+      })
+      .from(userGames)
+      .innerJoin(users, eq(users.id, userGames.userId))
+      .where(eq(userGames.gameId, gameId));
+    return rows;
   }
   async getForUserEmail(email: string): Promise<Game[]> {
     // Join users -> userGames -> games filtering by user email

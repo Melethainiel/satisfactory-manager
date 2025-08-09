@@ -1,6 +1,6 @@
 <script lang="ts">
 	import AuthComponent from '$lib/components/AuthComponent.svelte';
-	import { getAuthState } from '$lib/auth/authState.svelte';
+	import { getAuthState } from '$lib/states/authState.svelte';
 
 	// Get the auth state from context
 	const authState = getAuthState();

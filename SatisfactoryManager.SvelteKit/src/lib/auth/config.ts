@@ -1,4 +1,4 @@
-import type { AzureB2CConfig } from './authState.svelte';
+import type { AzureB2CConfig } from '../states/authState.svelte';
 import { browser } from '$app/environment';
 
 // Helper function to get environment variables safely

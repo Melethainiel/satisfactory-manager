@@ -1,9 +1,9 @@
 <script lang="ts">
 	import '../app.css';
 	import { onMount } from 'svelte';
-	import { setAuthState } from '$lib/auth/authState.svelte';
+	import { setAuthState } from '$lib/states/authState.svelte';
 	import { azureB2CConfig } from '$lib/auth/config';
-	import { setGameState } from '$lib/game/gameState.svelte';
+	import { setGameState } from '$lib/states/gameState.svelte';
 	import Header from '$lib/components/Header.svelte';
 	import SideNav from '$lib/components/SideNav.svelte';
 

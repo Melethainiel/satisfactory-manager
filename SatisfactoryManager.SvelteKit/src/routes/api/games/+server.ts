@@ -17,6 +17,6 @@ export const POST: RequestHandler = async ({ request }) => {
   const user = await userService.getByEmail(body.email);
   if (!user) return new Response(JSON.stringify({ error: 'user not found' }), { status: 404 });
   const game = await gameService.create({ name: body.name });
-  await gameService.addUser(game.id, user.id);
+  await gameService.addUser(game.id, user.id, 'Owner');
   return new Response(JSON.stringify(game), { status: 201, headers: { 'content-type': 'application/json', Location: `/api/games/${game.id}` } });
 };

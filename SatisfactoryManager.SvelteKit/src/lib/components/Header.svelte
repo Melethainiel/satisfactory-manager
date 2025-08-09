@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { getAuthState } from '$lib/auth/authState.svelte';
-	import { getGameState } from '$lib/game/gameState.svelte';
+	import { getAuthState } from '$lib/states/authState.svelte';
+	import { getGameState } from '$lib/states/gameState.svelte';
 	// New Svelte 5 pattern: accept a callback prop instead of dispatching an event
 	let { toggleNav } = $props<{ toggleNav?: () => void }>();
 

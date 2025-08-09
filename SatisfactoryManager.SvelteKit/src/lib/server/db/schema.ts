@@ -1,4 +1,4 @@
-import { pgTable, varchar, uuid, primaryKey } from 'drizzle-orm/pg-core';
+import { pgTable, varchar, uuid, primaryKey, pgEnum } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 export const users = pgTable('users', {
@@ -19,13 +19,14 @@ export const games = pgTable('games', {
 export type Game = typeof games.$inferSelect;
 export type NewGame = typeof games.$inferInsert;
 
-// Junction table users <-> games (many-to-many)
-// NOTE: The pgTable overload with the 3rd "extra config" callback shows a deprecated signature
-// in the type hints, but this callback is STILL the current way to declare composite primary keys
-// (and other multi-column constraints) in Drizzle as of 0.40.0. This code already uses the
-// recommended pattern. The deprecation warning refers to the older form returning PgTableExtraConfig
-// directly; Drizzle keeps the signature for backwards compatibility. Safe to keep until the library
-// introduces a new API for composite PKs.
+// Authorization / role levels for a user within a game context
+export const gameUserRoleEnum = pgEnum('game_user_role', [
+	'Reader',
+	'Contributor',
+	'Administrator',
+	'Owner'
+]);
+
 export const userGames = pgTable(
 	'user_games',
 	{
@@ -34,7 +35,8 @@ export const userGames = pgTable(
 			.references(() => users.id, { onDelete: 'cascade' }),
 		gameId: uuid('game_id')
 			.notNull()
-			.references(() => games.id, { onDelete: 'cascade' })
+			.references(() => games.id, { onDelete: 'cascade' }),
+		role: gameUserRoleEnum('role').notNull().default('Reader')
 	},
 	(t) => [primaryKey({ columns: [t.userId, t.gameId] })]
 );
@@ -61,3 +63,4 @@ export const userGamesRelations = relations(userGames, ({ one }) => ({
 
 export type UserGame = typeof userGames.$inferSelect;
 export type NewUserGame = typeof userGames.$inferInsert;
+export type GameUserRole = (typeof gameUserRoleEnum.enumValues)[number];

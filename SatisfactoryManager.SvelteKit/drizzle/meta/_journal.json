@@ -15,6 +15,13 @@
       "when": 1754763353136,
       "tag": "0001_addGames",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1754772503986,
+      "tag": "0002_greedy_exodus",
+      "breakpoints": true
     }
   ]
 }

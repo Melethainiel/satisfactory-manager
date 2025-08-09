@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 export interface IUserService {
 	getAll(): Promise<User[]>;
 	getById(id: number): Promise<User | undefined>;
+	getByEmail(email: string): Promise<User | undefined>;
 	create(data: Omit<NewUser, 'id'>): Promise<User>;
 	update(id: number, data: Partial<Omit<NewUser, 'id'>>): Promise<User | undefined>;
 	delete(id: number): Promise<boolean>;
@@ -16,6 +17,10 @@ class UserService implements IUserService {
 	}
 	async getById(id: number): Promise<User | undefined> {
 		const [row] = await db.select().from(users).where(eq(users.id, id));
+		return row;
+	}
+	async getByEmail(email: string): Promise<User | undefined> {
+		const [row] = await db.select().from(users).where(eq(users.email, email));
 		return row;
 	}
 	async create(data: Omit<NewUser, 'id'>): Promise<User> {

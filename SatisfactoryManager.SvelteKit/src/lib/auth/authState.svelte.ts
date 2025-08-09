@@ -197,6 +197,15 @@ class AuthStateClass implements AuthState {
 		this.user = userInfo;
 		this.accessToken = authResult.accessToken;
 		this.error = null;
+
+		// Fire and forget ensure user exists in backend
+		if (userInfo.email) {
+			fetch('/api/auth/ensure-user', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ email: userInfo.email, displayName: userInfo.displayName })
+			}).catch((e) => console.warn('Failed to ensure user in DB', e));
+		}
 	};
 
 	// Sign in with redirect

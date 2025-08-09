@@ -1,6 +1,12 @@
-import { pgTable, serial, integer } from 'drizzle-orm/pg-core';
+import { pgTable, serial, varchar } from 'drizzle-orm/pg-core';
 
-export const user = pgTable('user', {
+// Users table with DisplayName and Email (unique)
+// Using column-level unique() to avoid deprecated pgTable extraConfig signature.
+export const users = pgTable('users', {
 	id: serial('id').primaryKey(),
-	age: integer('age')
+	displayName: varchar('display_name', { length: 200 }).notNull(),
+	email: varchar('email', { length: 320 }).notNull().unique()
 });
+
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;

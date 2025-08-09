@@ -4,18 +4,18 @@ import { eq } from 'drizzle-orm';
 
 export interface IUserService {
 	getAll(): Promise<User[]>;
-	getById(id: number): Promise<User | undefined>;
+	getById(id: string): Promise<User | undefined>; // UUID
 	getByEmail(email: string): Promise<User | undefined>;
 	create(data: Omit<NewUser, 'id'>): Promise<User>;
-	update(id: number, data: Partial<Omit<NewUser, 'id'>>): Promise<User | undefined>;
-	delete(id: number): Promise<boolean>;
+	update(id: string, data: Partial<Omit<NewUser, 'id'>>): Promise<User | undefined>; // UUID
+	delete(id: string): Promise<boolean>; // UUID
 }
 
 class UserService implements IUserService {
 	async getAll(): Promise<User[]> {
 		return await db.select().from(users).orderBy(users.id);
 	}
-	async getById(id: number): Promise<User | undefined> {
+	async getById(id: string): Promise<User | undefined> {
 		const [row] = await db.select().from(users).where(eq(users.id, id));
 		return row;
 	}
@@ -27,7 +27,7 @@ class UserService implements IUserService {
 		const [row] = await db.insert(users).values(data).returning();
 		return row;
 	}
-	async update(id: number, data: Partial<Omit<NewUser, 'id'>>): Promise<User | undefined> {
+	async update(id: string, data: Partial<Omit<NewUser, 'id'>>): Promise<User | undefined> {
 		const [row] = await db
 			.update(users)
 			.set(data)
@@ -35,7 +35,7 @@ class UserService implements IUserService {
 			.returning();
 		return row;
 	}
-	async delete(id: number): Promise<boolean> {
+	async delete(id: string): Promise<boolean> {
 		const res = await db.delete(users).where(eq(users.id, id)).returning({ id: users.id });
 		return res.length > 0;
 	}

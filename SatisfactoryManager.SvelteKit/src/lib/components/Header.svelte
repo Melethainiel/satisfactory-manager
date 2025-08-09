@@ -10,7 +10,6 @@
 	let newGameName = '';
 	let createDialog: HTMLDialogElement | null = null;
 
-
 	async function handleCreate(e?: Event) {
 		e?.preventDefault();
 		const name = newGameName.trim();
@@ -67,14 +66,14 @@
 					bind:value={gameState.selectedGameId}
 					disabled={gameState.isLoading || gameState.games.length === 0}
 				>
-					<option value="" disabled selected={gameState.selectedGameId == null}
-						>Select server...</option
-					>
+					<option value={null} disabled>Select server...</option>
 					{#each gameState.games as g}
 						<option value={g.id}>{g.name}</option>
 					{/each}
 				</select>
-				<button class="btn btn-xs" onclick={() => createDialog?.showModal()} title="Create new game">+</button>
+				<button class="btn btn-xs" onclick={() => createDialog?.showModal()} title="Create new game"
+					>+</button
+				>
 				{#if gameState.error}
 					<button
 						class="btn btn-ghost btn-xs text-error"
@@ -94,12 +93,18 @@
 			<h3 class="mb-2 text-lg font-bold">Create Game</h3>
 			<form onsubmit={handleCreate} class="flex flex-col gap-3">
 				<input
-					class="input input-bordered"
+					class="input input-bordered validator"
 					placeholder="Game name"
 					bind:value={newGameName}
 					required
-					minlength={2}
+					pattern="^[a-zA-Z0-9-]$"
+					minlength={3}
+					maxlength={30}
 				/>
+				<p class="validator-hint hidden">
+					Must be 3 to 30 characters
+					<br />containing only letters, numbers or dash
+				</p>
 				<div class="modal-action">
 					<button type="button" class="btn" onclick={() => createDialog?.close()}>Cancel</button>
 					<button type="submit" class="btn btn-primary" disabled={gameState.isLoading}
@@ -221,7 +226,6 @@
 </header>
 
 <style>
-	/* (Optional) custom animation could target [popover] if desired */
 	@keyframes fadeScale {
 		from {
 			opacity: 0;
@@ -234,5 +238,9 @@
 	}
 	ul[popover] {
 		animation: fadeScale 120ms ease-out;
+	}
+	/* Hide dialog when not open => fix bug of modal positioning when closing */
+	dialog:not([open]) {
+		display: none;
 	}
 </style>

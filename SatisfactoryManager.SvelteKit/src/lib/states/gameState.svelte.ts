@@ -21,12 +21,31 @@ export interface GameState {
   selectGame: (id: string) => void;
   createGame: (userEmail: string, name: string) => Promise<void>;
   updateGame: (id: string, name: string) => Promise<void>;
-  loadGameUsers: (gameId: string) => Promise<void>; // added
-  gameUsers: GameUser[]; // added
+  deleteGame: (id: string) => Promise<void>;
+  loadGameUsers: (gameId: string) => Promise<void>;
+  gameUsers: GameUser[];
   clearError: () => void;
 }
 
 class GameStateClass implements GameState {
+  async deleteGame(id: string) {
+    if (!id) { this.error = 'Game id required'; return; }
+    this.isLoading = true;
+    this.error = null;
+    try {
+      const res = await fetch(`/api/games/${id}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error(`Failed to delete game (${res.status})`);
+      // Remove from local state
+      this.games = this.games.filter(g => g.id !== id);
+      if (this.selectedGameId === id) this.selectedGameId = null;
+    } catch (e: any) {
+      this.error = e?.message ?? 'Failed to delete game';
+    } finally {
+      this.isLoading = false;
+    }
+  }
   games = $state<GameSummary[]>([]);
   selectedGameId = $state<string | null>(null);
   isLoading = $state<boolean>(false);

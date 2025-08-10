@@ -18,3 +18,12 @@ export const PATCH: RequestHandler = async ({ params, request }) => {
   if (!updated) return new Response(JSON.stringify({ error: 'game not found' }), { status: 404 });
   return new Response(JSON.stringify(updated), { status: 200, headers: { 'content-type': 'application/json' } });
 };
+
+// DELETE /api/games/[id]
+export const DELETE: RequestHandler = async ({ params }) => {
+  const id = params.id;
+  if (!id) return new Response(JSON.stringify({ error: 'id param required' }), { status: 400 });
+  const deleted = await gameService.delete(id);
+  if (!deleted) return new Response(JSON.stringify({ error: 'game not found' }), { status: 404 });
+  return new Response(null, { status: 204 });
+};

@@ -25,6 +25,7 @@ export interface GameState {
   loadGameUsers: (gameId: string) => Promise<void>;
   addGameUser: (gameId: string, users: string[]) => Promise<void>;
   removeGameUser: (gameId: string, userEmail: string) => Promise<void>;
+  updateGameUserRole: (gameId: string, userEmail: string, role: string) => Promise<void>;
   gameUsers: GameUser[];
   clearError: () => void;
   attachAuth: (apiFetch: AuthFetchFn) => void;
@@ -167,6 +168,20 @@ class GameStateClass implements GameState {
       if (!res.ok) throw new Error(`Failed to remove user (${res.status})`);
     } catch (e: any) {
       this.error = e?.message ?? 'Failed to remove game user';
+    }
+  }
+
+  async updateGameUserRole(gameId: string, userEmail: string, role: string) {
+    if (!gameId || !this.apiFetch) return;
+    try {
+      const res = await this.apiFetch(`/api/games/${gameId}/users`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email: userEmail, role })
+      });
+      if (!res.ok) throw new Error(`Failed to update role (${res.status})`);
+    } catch (e: any) {
+      this.error = e?.message ?? 'Failed to update game user role';
     }
   }
 

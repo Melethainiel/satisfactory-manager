@@ -73,3 +73,38 @@ export const DELETE: RequestHandler = async ({ params, request, locals }) => {
   const users = await gameService.getUsersDetailed(id);
   return new Response(JSON.stringify({ users }), { status: 200, headers: { 'content-type': 'application/json' } });
 };
+
+// PATCH /api/games/[id]/users  { email: string, role: string }
+export const PATCH: RequestHandler = async ({ params, request, locals }) => {
+  const id = params.id;
+  if (!id) return new Response(JSON.stringify({ error: 'id param required' }), { status: 400 });
+  const callerEmail = locals.user?.email?.toLowerCase();
+  if (!callerEmail) return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401 });
+  const caller = await userService.getByEmail(callerEmail);
+  if (!caller) return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401 });
+  const callerDetail = await gameService.getUserDetailed(id, caller.id);
+  if (!callerDetail || (callerDetail.role !== 'Administrator' && callerDetail.role !== 'Owner')) {
+    return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403 });
+  }
+  const body = (await request.json()) as { email?: string; role?: string };
+  if (!body.email || !body.role) {
+    return new Response(JSON.stringify({ error: 'email and role required' }), { status: 400 });
+  }
+  const targetEmail = body.email.trim().toLowerCase();
+  const newRole = body.role.trim();
+  if (!['Reader', 'Contributor', 'Administrator', 'Owner'].includes(newRole)) {
+    return new Response(JSON.stringify({ error: 'invalid role' }), { status: 400 });
+  }
+  const target = await userService.getByEmail(targetEmail);
+  if (!target) return new Response(JSON.stringify({ error: 'user not found' }), { status: 404 });
+  // Prevent demoting self from Owner if they are sole owner (future enhancement: enforce at db)
+  try {
+    // Upsert by deleting then re-adding with new role (simplest given current service API)
+    await gameService.removeUser(id, target.id);
+    await gameService.addUser(id, target.id, newRole as any);
+  } catch (e: any) {
+    return new Response(JSON.stringify({ error: e?.message || 'failed to update role' }), { status: 500 });
+  }
+  const users = await gameService.getUsersDetailed(id);
+  return new Response(JSON.stringify({ users }), { status: 200, headers: { 'content-type': 'application/json' } });
+};

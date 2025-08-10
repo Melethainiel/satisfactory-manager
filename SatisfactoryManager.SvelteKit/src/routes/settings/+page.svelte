@@ -8,6 +8,8 @@
 	import type { DeleteGameDialogHandle } from '$lib/dialogs/DeleteGameDialogHandle';
 	import AddUserDialog from '$lib/dialogs/AddUserDialog.svelte';
 	import type { AddUserDialogHandle } from '$lib/dialogs/AddUserDialogHandle';
+	import SelectAuthLevelDialog from '$lib/dialogs/SelectAuthLevelDialog.svelte';
+	import type { SelectAuthLevelDialogHandler } from '$lib/dialogs/SelectAuthLevelDialogHandler';
 
 	const gameState = getGameState();
 	const authState = getAuthState();
@@ -22,6 +24,7 @@
 	// Delete dialog ref
 	let deleteDialogRef: DeleteGameDialogHandle | null = $state(null);
 	let addUserDialogRef: AddUserDialogHandle | null = $state(null);
+	let selectAuthLevelDialogRef: SelectAuthLevelDialogHandler | null = $state(null);
 
 	$effect(() => {
 		const g = gameState.games.find((g) => g.id === gameState.selectedGameId);
@@ -97,7 +100,6 @@
 <svelte:head>
 	<title>Satisfactory Manager | Settings</title>
 </svelte:head>
-
 
 <h1 class="mb-6 text-2xl font-bold">Settings</h1>
 
@@ -186,7 +188,7 @@
 									<p class="font-medium leading-tight">{u.displayName}</p>
 									<p class="text-xs opacity-70">{u.email}</p>
 								</div>
-								<span class="badge badge-outline text-xs">{u.role}</span>
+								<button class="badge badge-soft text-xs cursor-pointer" onclick={() => selectAuthLevelDialogRef?.open(u.email, u.role)}>{u.role}</button>
 								<button
 									class="btn btn-xs btn-ghost btn-circle btn-error"
 									onclick={removeGameUser.bind(null, u.email)}
@@ -200,6 +202,7 @@
 			</div>
 		</div>
 		<AddUserDialog bind:this={addUserDialogRef} />
+		<SelectAuthLevelDialog bind:this={selectAuthLevelDialogRef} />
 		<!-- Danger Card for Deleting Game -->
 		<div class="card bg-base-100 border-error border shadow">
 			<div class="card-body">

@@ -24,6 +24,7 @@ export interface GameState {
   deleteGame: (id: string) => Promise<void>;
   loadGameUsers: (gameId: string) => Promise<void>;
   addGameUser: (gameId: string, users: string[]) => Promise<void>;
+  removeGameUser: (gameId: string, userEmail: string) => Promise<void>;
   gameUsers: GameUser[];
   clearError: () => void;
   attachAuth: (apiFetch: AuthFetchFn) => void;
@@ -152,6 +153,20 @@ class GameStateClass implements GameState {
       if (!res.ok) throw new Error(`Failed to add users (${res.status})`);
     } catch (e: any) {
       this.error = e?.message ?? 'Failed to add game users';
+    }
+  }
+
+  async removeGameUser(gameId: string, userEmail: string) {
+    if (!gameId || !this.apiFetch) return;
+    try {
+      const res = await this.apiFetch(`/api/games/${gameId}/users`, {
+         method: 'DELETE',
+         headers: { 'content-type': 'application/json' },
+         body: JSON.stringify({ email: userEmail })
+      });
+      if (!res.ok) throw new Error(`Failed to remove user (${res.status})`);
+    } catch (e: any) {
+      this.error = e?.message ?? 'Failed to remove game user';
     }
   }
 

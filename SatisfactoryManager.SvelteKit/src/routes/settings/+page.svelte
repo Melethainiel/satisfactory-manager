@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { getGameState } from '$lib/states/gameState.svelte';
 	import { getAuthState } from '$lib/states/authState.svelte';
-	import { Icon, Identification, AdjustmentsHorizontal } from 'svelte-hero-icons';
+	import { Icon, Identification, AdjustmentsHorizontal, Trash, Plus } from 'svelte-hero-icons';
 	import CreateGameDialog from '$lib/dialogs/CreateGameDialog.svelte';
 	import type { CreateGameDialogHandle } from '$lib/dialogs/CreateGameDialogHandle';
 	import DeleteGameDialog from '$lib/dialogs/DeleteGameDialog.svelte';
@@ -74,10 +74,30 @@
 		}
 	}
 
+	async function removeGameUser(userEmail: string) {
+		if (!confirm(`Remove ${userEmail}?`)) {
+			return;
+		}
+		const gameId = gameState.selectedGameId;
+		if (!gameId) return;
+		try {
+			await gameState.removeGameUser(gameId, userEmail);
+			// refresh local users list
+			await gameState.loadGameUsers(gameId);
+		} catch (e: any) {
+			alert(`Failed to remove user: ${e.message}`);
+		}
+	}
+
 	let createDialogRef: CreateGameDialogHandle | null = $state(null);
 
 	// deletion handled inside DeleteGameDialog component
 </script>
+
+<svelte:head>
+	<title>Satisfactory Manager | Settings</title>
+</svelte:head>
+
 
 <h1 class="mb-6 text-2xl font-bold">Settings</h1>
 
@@ -141,8 +161,12 @@
 				<h2 class="card-title">
 					<Icon src={AdjustmentsHorizontal} class="size-6 stroke-1" />
 					Authorized Users
-					<button class="btn btn-xs btn-primary ml-auto" onclick={() => addUserDialogRef?.open()} disabled={!gameState.selectedGameId}>
-						Add Users
+					<button
+						class="btn btn-xs btn-ghost btn-circle btn-primary ml-auto"
+						onclick={() => addUserDialogRef?.open()}
+						disabled={!gameState.selectedGameId}
+					>
+						<Icon src={Plus} class="size-4" />
 					</button>
 				</h2>
 				{#if usersLoading}
@@ -157,12 +181,18 @@
 				{:else}
 					<ul class="divide-base-200 divide-y">
 						{#each gameState.gameUsers as u}
-							<li class="flex items-center justify-between gap-4 py-2">
-								<div>
+							<li class="flex items-center gap-4 py-2">
+								<div class="flex-1">
 									<p class="font-medium leading-tight">{u.displayName}</p>
 									<p class="text-xs opacity-70">{u.email}</p>
 								</div>
 								<span class="badge badge-outline text-xs">{u.role}</span>
+								<button
+									class="btn btn-xs btn-ghost btn-circle btn-error"
+									onclick={removeGameUser.bind(null, u.email)}
+								>
+									<Icon src={Trash} class="size-4" />
+								</button>
 							</li>
 						{/each}
 					</ul>

@@ -11,6 +11,7 @@ export interface IGameService {
   addUser(gameId: string, userId: string, role?: GameUserRole): Promise<UserGame>;
   removeUser(gameId: string, userId: string): Promise<boolean>;
   getUsers(gameId: string): Promise<UserGame[]>; // Could later join on users
+  getUserDetailed(gameId: string, userId: string): Promise<{ id: string; displayName: string; email: string; role: GameUserRole } | undefined>;
   getUsersDetailed(gameId: string): Promise<{ id: string; displayName: string; email: string; role: GameUserRole }[]>; // Joined user details
   getForUserEmail(email: string): Promise<Game[]>; // All games a user (by email) can access
 }
@@ -52,6 +53,19 @@ class GameService implements IGameService {
   }
   async getUsers(gameId: string): Promise<UserGame[]> {
     return await db.select().from(userGames).where(eq(userGames.gameId, gameId));
+  }
+  async getUserDetailed(gameId: string, userId: string): Promise<{ id: string; displayName: string; email: string; role: GameUserRole } | undefined> {
+    const [row] = await db
+      .select({
+        id: users.id,
+        displayName: users.displayName,
+        email: users.email,
+        role: userGames.role
+      })
+      .from(userGames)
+      .innerJoin(users, eq(users.id, userGames.userId))
+      .where(and(eq(userGames.gameId, gameId), eq(users.id, userId)));
+    return row;
   }
   async getUsersDetailed(gameId: string): Promise<{ id: string; displayName: string; email: string; role: GameUserRole }[]> {
     const rows = await db

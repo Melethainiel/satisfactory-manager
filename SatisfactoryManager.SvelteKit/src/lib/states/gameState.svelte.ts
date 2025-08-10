@@ -23,30 +23,30 @@ export interface GameState {
   updateGame: (id: string, name: string) => Promise<void>;
   deleteGame: (id: string) => Promise<void>;
   loadGameUsers: (gameId: string) => Promise<void>;
+  addGameUser: (gameId: string, users: string[]) => Promise<void>;
   gameUsers: GameUser[];
   clearError: () => void;
-  attachAuth: (getApiToken: () => Promise<string | null>) => void;
+  attachAuth: (apiFetch: AuthFetchFn) => void;
 }
+
+// Narrow helper type so we don't import full AuthState here.
+type AuthFetchFn = <T = any>(input: string | URL | Request, init?: RequestInit & { autoJson?: boolean }) => Promise<T | Response>;
 
 class GameStateClass implements GameState {
   // Function injected from auth state to fetch API token
-  private getApiToken: (() => Promise<string | null>) | null = null;
+  private apiFetch: AuthFetchFn | null = null;
 
-  attachAuth(getApiToken: () => Promise<string | null>) {
-    this.getApiToken = getApiToken;
+  attachAuth(apiFetch: AuthFetchFn) {
+    this.apiFetch = apiFetch;
   }
   async deleteGame(id: string) {
     if (!id) { this.error = 'Game id required'; return; }
+    if (!this.apiFetch) return;
+
     this.isLoading = true;
     this.error = null;
     try {
-      const token = this.getApiToken ? await this.getApiToken() : null;
-      const res = await fetch(`/api/games/${id}`, {
-        method: 'DELETE',
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        }
-      });
+      const res = await this.apiFetch(`/api/games/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error(`Failed to delete game (${res.status})`);
       // Remove from local state
       this.games = this.games.filter(g => g.id !== id);
@@ -68,15 +68,12 @@ class GameStateClass implements GameState {
       this.error = 'Missing user email';
       return;
     }
+    if (!this.apiFetch) return;
+
     this.isLoading = true;
     this.error = null;
     try {
-      const token = this.getApiToken ? await this.getApiToken() : null;
-      const res = await fetch(`/api/games?email=${encodeURIComponent(userEmail)}`, {
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        }
-      });
+      const res = await this.apiFetch(`/api/games?email=${encodeURIComponent(userEmail)}`);
       if (!res.ok) throw new Error(`Failed to load games (${res.status})`);
       const data = (await res.json()) as GameSummary[];
       this.games = data;
@@ -96,15 +93,12 @@ class GameStateClass implements GameState {
   async createGame(userEmail: string, name: string) {
     if (!userEmail) { this.error = 'Missing user email'; return; }
     if (!name) { this.error = 'Game name required'; return; }
+    if (!this.apiFetch) return;
+
     this.isLoading = true;
     this.error = null;
     try {
-      const token = this.getApiToken ? await this.getApiToken() : null;
-      const res = await fetch('/api/games', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ email: userEmail, name })
-      });
+      const res = await this.apiFetch('/api/games', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: userEmail, name }) });
       if (!res.ok) throw new Error(`Failed to create game (${res.status})`);
       const created = (await res.json()) as GameSummary;
       this.games = [...this.games, created].sort((a, b) => a.name.localeCompare(b.name));
@@ -119,15 +113,12 @@ class GameStateClass implements GameState {
   async updateGame(id: string, name: string) {
     if (!id) { this.error = 'Game id required'; return; }
     if (!name) { this.error = 'Game name required'; return; }
+    if (!this.apiFetch) return;
+
     this.isLoading = true;
     this.error = null;
     try {
-      const token = this.getApiToken ? await this.getApiToken() : null;
-      const res = await fetch(`/api/games/${id}`, {
-        method: 'PATCH',
-        headers: { 'content-type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ name })
-      });
+      const res = await this.apiFetch(`/api/games/${id}`, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name }) });
       if (!res.ok) throw new Error(`Failed to update game (${res.status})`);
       const updated = (await res.json()) as GameSummary;
       this.games = this.games.map(g => g.id === id ? updated : g).sort((a, b) => a.name.localeCompare(b.name));
@@ -139,19 +130,28 @@ class GameStateClass implements GameState {
   }
 
   async loadGameUsers(gameId: string) {
-    if (!gameId) return;
+    if (!gameId || !this.apiFetch) return;
     try {
-      const token = this.getApiToken ? await this.getApiToken() : null;
-      const res = await fetch(`/api/games/${gameId}/users`, {
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        }
-      });
+      const res = await this.apiFetch(`/api/games/${gameId}/users`);
       if (!res.ok) throw new Error(`Failed to load users (${res.status})`);
       const data = (await res.json()) as GameUser[];
       this.gameUsers = data.sort((a, b) => a.displayName.localeCompare(b.displayName));
     } catch (e: any) {
       this.error = e?.message ?? 'Failed to load game users';
+    }
+  }
+
+  async addGameUser(gameId: string, users: string[]) {
+    if (!gameId || !this.apiFetch) return;
+    try {
+      const res = await this.apiFetch(`/api/games/${gameId}/users`, {
+         method: 'POST',
+         headers: { 'content-type': 'application/json' },
+         body: JSON.stringify({ emails: users })
+      });
+      if (!res.ok) throw new Error(`Failed to add users (${res.status})`);
+    } catch (e: any) {
+      this.error = e?.message ?? 'Failed to add game users';
     }
   }
 

@@ -41,6 +41,7 @@ export interface AuthState {
 	signOut: () => Promise<void>;
 	getAccessToken: (scopes?: string[]) => Promise<string | null>;
 	getApiAccessToken: () => Promise<string | null>;
+	apiFetch: <T = any>(input: string | URL | Request, init?: RequestInit & { autoJson?: boolean }) => Promise<T | Response>;
 	clearError: () => void;
 }
 
@@ -314,6 +315,36 @@ class AuthStateClass implements AuthState {
 		const token = await this.getAccessToken([API_USER_ACCESS_SCOPE]);
 		this.accessToken = token; // Store the token for future use
 		return token;
+	};
+
+	// Unified authenticated fetch helper (retries once on 401). If autoJson flag true, returns parsed JSON.
+	apiFetch = async <T = any>(input: string | URL | Request, init?: RequestInit & { autoJson?: boolean }): Promise<T | Response> => {
+		const res = await this._apiFetchInternal(input, init);
+		if (init?.['autoJson']) {
+			return (await res.json()) as T;
+		}
+		return res;
+	};
+
+	private _apiFetchInternal = async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+		let token = await this.getApiAccessToken();
+		const withAuth = async (): Promise<Response> => {
+			return fetch(input as any, {
+				...init,
+				headers: {
+					...(init?.headers || {}),
+					...(token ? { Authorization: `Bearer ${token}` } : {})
+				}
+			});
+		};
+		let res = await withAuth();
+		// If unauthorized once, try to silently refresh token and retry
+		if (res.status === 401) {
+			this.accessToken = null; // force refresh
+			token = await this.getApiAccessToken();
+			res = await withAuth();
+		}
+		return res;
 	};
 
 	// Clear error state

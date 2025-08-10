@@ -1,4 +1,5 @@
 import type { Handle } from '@sveltejs/kit';
+import { warn } from 'console';
 import { createRemoteJWKSet, jwtVerify, type JWTPayload } from 'jose';
 
 // Environment / configuration
@@ -21,70 +22,71 @@ const jwks = createRemoteJWKSet(new URL(jwksUrl));
 
 // Extend locals with auth info
 interface AuthUserLocals {
-    sub: string;
-    name?: string;
-    email?: string;
-    scopes?: string[];
-    raw: JWTPayload;
+  sub: string;
+  name?: string;
+  email?: string;
+  scopes?: string[];
+  raw: JWTPayload;
 }
 
 declare module '@sveltejs/kit' {
-    interface Locals {
-        user?: AuthUserLocals;
-    }
+  interface Locals {
+    user?: AuthUserLocals;
+  }
 }
 
 async function verifyBearer(token: string): Promise<AuthUserLocals | null> {
-    try {
-        // Azure AD B2C can emit issuer in two patterns depending on policy / configuration:
-        // 1. https://<tenant>.b2clogin.com/<tenantId>/v2.0/
-        // 2. https://<tenant>.b2clogin.com/<tenant>.onmicrosoft.com/<policy>/v2.0/
-        const issuerStyle1 = `https://${TENANT_DOMAIN}/${TENANT_DOMAIN_ID}/v2.0/`;
-        const issuerStyle2 = `https://${TENANT_DOMAIN}/${TENANT_DOMAIN.split('.')[0]}.onmicrosoft.com/${POLICY}/v2.0/`;
+  try {
+    const issuerEndpointUrl = `https://${TENANT_DOMAIN}/${TENANT_DOMAIN_ID}/v2.0/`;
+    const { payload } = await jwtVerify(token, jwks, {
+      issuer: [
+        issuerEndpointUrl
+      ],
+      audience: CLIENT_ID
+    });
 
-        // We can't pass both issuer patterns directly to jose and also allow tokens missing one;
-        // Instead, verify signature & audience first, then manually assert issuer matches one of allowed.
-        const { payload } = await jwtVerify(token, jwks, {
-            audience: CLIENT_ID,
-            // Skip 'issuer' option; we'll validate manually to allow either pattern.
-        });
+    // Scope check
+    const scpRaw = payload['scp'];
+    const scopes = typeof scpRaw === 'string' ? scpRaw.split(' ') : [];
+    if (!scopes.includes(REQUIRED_SCOPE)) return null;
 
-        const iss = payload.iss as string | undefined;
-        if (!iss || (iss !== issuerStyle1 && iss !== issuerStyle2)) {
-            console.warn('Issuer mismatch', { iss, expected: [issuerStyle1, issuerStyle2] });
-            return null;
-        }
-
-        // Scope check
-        const scpRaw = payload['scp'];
-        const scopes = typeof scpRaw === 'string' ? scpRaw.split(' ') : [];
-        if (!scopes.includes(REQUIRED_SCOPE)) return null;
-
-        return {
-            sub: String(payload.sub),
-            name: typeof payload.name === 'string' ? payload.name : undefined,
-            email: Array.isArray((payload as any).emails) ? (payload as any).emails[0] : (payload as any).email,
-            scopes,
-            raw: payload
-        };
-    } catch (e) {
-        // Silently ignore invalid tokens; downstream route can decide if auth required
-        console.warn('JWT verification failed:', e);
-        return null;
-    }
+    return {
+      sub: String(payload.sub),
+      name: typeof payload.name === 'string' ? payload.name : undefined,
+      email: Array.isArray((payload as any).emails) ? (payload as any).emails[0] : (payload as any).email,
+      scopes,
+      raw: payload
+    };
+  } catch (e) {
+    // Silently ignore invalid tokens; downstream route can decide if auth required
+    warn('Failed to verify token:', e);
+    return null;
+  }
 }
 
 export const handle: Handle = async ({ event, resolve }) => {
-    const authHeader = event.request.headers.get('authorization') || event.request.headers.get('Authorization');
+  const urlPath = event.url.pathname;
+  const authHeader = event.request.headers.get('authorization') || event.request.headers.get('Authorization');
 
-    if (authHeader?.startsWith('Bearer ')) {
-        const token = authHeader.substring('Bearer '.length).trim();
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.substring('Bearer '.length).trim();
+    const user = await verifyBearer(token);
+    if (user) event.locals.user = user;
+  }
 
-        const user = await verifyBearer(token);
-        if (user) {
-            event.locals.user = user;
-        }
+  // Enforce authentication for all API routes
+  if (urlPath.startsWith('/api')) {
+    // Allow CORS preflight or similar OPTIONS without auth enforcement
+    if (event.request.method === 'OPTIONS') {
+      return new Response(null, { status: 204 });
     }
+    if (!event.locals.user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'content-type': 'application/json' }
+      });
+    }
+  }
 
-    return resolve(event);
+  return resolve(event);
 };

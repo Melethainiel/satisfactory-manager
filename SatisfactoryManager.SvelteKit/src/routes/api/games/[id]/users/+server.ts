@@ -14,11 +14,11 @@ export const GET: RequestHandler = async ({ params }) => {
 };
 
 // POST /api/games/[id]/users  { emails: string[], role?: string }
-export const POST: RequestHandler = async ({ params, request }) => {
+export const POST: RequestHandler = async ({ params, request, locals }) => {
   const id = params.id;
   if (!id) return new Response(JSON.stringify({ error: 'id param required' }), { status: 400 });
-  // Basic auth context: expect X-User-Email header (placeholder until real auth middleware)
-  const callerEmail = request.headers.get('x-user-email')?.toLowerCase();
+  // Auth: rely on user populated by hooks.server.ts (event.locals.user)
+  const callerEmail = locals.user?.email?.toLowerCase();
   if (!callerEmail) return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401 });
   const caller = await userService.getByEmail(callerEmail);
   if (!caller) return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401 });

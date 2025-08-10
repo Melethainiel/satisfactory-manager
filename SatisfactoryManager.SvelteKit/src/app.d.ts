@@ -3,7 +3,15 @@
 declare global {
 	namespace App {
 		// interface Error {}
-		// interface Locals {}
+		interface Locals {
+			user?: {
+				sub: string;
+				name?: string;
+				email?: string;
+				scopes?: string[];
+				raw: import('jose').JWTPayload;
+			};
+		}
 		// interface PageData {}
 		// interface PageState {}
 		// interface Platform {}

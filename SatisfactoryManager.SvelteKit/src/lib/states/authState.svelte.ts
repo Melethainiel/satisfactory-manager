@@ -197,7 +197,7 @@ class AuthStateClass implements AuthState {
 		this.isAuthenticated = true;
 		this.isLoading = false;
 		this.user = userInfo;
-		this.accessToken = authResult.accessToken;
+		this.accessToken = authResult.accessToken || null; // May be empty string if only ID token was returned
 		this.error = null;
 
 		// Fire and forget ensure user exists in backend
@@ -229,7 +229,10 @@ class AuthStateClass implements AuthState {
 			this.error = null;
 
 			const loginRequest: RedirectRequest = {
-				scopes: defaultConfig.scopes || ['openid'],
+				// Ensure API scope included; if already in defaultConfig.scopes that's fine.
+				scopes: (defaultConfig.scopes || ['openid']).includes(API_USER_ACCESS_SCOPE)
+					? (defaultConfig.scopes as string[])
+					: [...(defaultConfig.scopes || ['openid']), API_USER_ACCESS_SCOPE],
 				redirectUri: defaultConfig.redirectUri
 			};
 
@@ -283,11 +286,15 @@ class AuthStateClass implements AuthState {
 			}
 
 			const silentRequest: SilentRequest = {
-				scopes: defaultConfig.scopes || ['openid'],
+				scopes: scopes && scopes.length > 0 ? scopes : (defaultConfig.scopes || ['openid']),
 				account: accounts[0]
 			};
 
 			const response = await this.msalInstance.acquireTokenSilent(silentRequest);
+			// Store last acquired token if it's for API scope.
+			if (response.accessToken) {
+				this.accessToken = response.accessToken;
+			}
 			return response.accessToken;
 		} catch (error) {
 			if (error instanceof InteractionRequiredAuthError) {
@@ -302,7 +309,11 @@ class AuthStateClass implements AuthState {
 
 	// Convenience for API token using the standard user access scope
 	getApiAccessToken = async (): Promise<string | null> => {
-		return this.getAccessToken([API_USER_ACCESS_SCOPE]);
+		// If we already have a non-empty token assume it's valid until MSAL tells otherwise
+		if (this.accessToken) return this.accessToken;
+		const token = await this.getAccessToken([API_USER_ACCESS_SCOPE]);
+		this.accessToken = token; // Store the token for future use
+		return token;
 	};
 
 	// Clear error state

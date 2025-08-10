@@ -1,6 +1,9 @@
 import type { RequestHandler } from '@sveltejs/kit';
 import { gameService } from '$lib/server/services/gameService';
 import { userService } from '$lib/server/services/userService';
+import { userGames } from '$lib/server/db/schema';
+import { db } from '$lib/server/db';
+import { and, eq } from 'drizzle-orm';
 
 // GET /api/games/[id]/users
 export const GET: RequestHandler = async ({ params }) => {
@@ -14,6 +17,19 @@ export const GET: RequestHandler = async ({ params }) => {
 export const POST: RequestHandler = async ({ params, request }) => {
   const id = params.id;
   if (!id) return new Response(JSON.stringify({ error: 'id param required' }), { status: 400 });
+  // Basic auth context: expect X-User-Email header (placeholder until real auth middleware)
+  const callerEmail = request.headers.get('x-user-email')?.toLowerCase();
+  if (!callerEmail) return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401 });
+  const caller = await userService.getByEmail(callerEmail);
+  if (!caller) return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401 });
+  // Fetch caller role
+  const [rel] = await db
+    .select({ role: userGames.role })
+    .from(userGames)
+    .where(and(eq(userGames.gameId, id), eq(userGames.userId, caller.id)));
+  if (!rel || (rel.role !== 'Administrator' && rel.role !== 'Owner')) {
+    return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403 });
+  }
   const body = (await request.json()) as { emails?: string[]; role?: string };
   if (!body.emails || !Array.isArray(body.emails) || body.emails.length === 0) {
     return new Response(JSON.stringify({ error: 'emails array required' }), { status: 400 });

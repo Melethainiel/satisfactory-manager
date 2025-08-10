@@ -25,16 +25,27 @@ export interface GameState {
   loadGameUsers: (gameId: string) => Promise<void>;
   gameUsers: GameUser[];
   clearError: () => void;
+  attachAuth: (getApiToken: () => Promise<string | null>) => void;
 }
 
 class GameStateClass implements GameState {
+  // Function injected from auth state to fetch API token
+  private getApiToken: (() => Promise<string | null>) | null = null;
+
+  attachAuth(getApiToken: () => Promise<string | null>) {
+    this.getApiToken = getApiToken;
+  }
   async deleteGame(id: string) {
     if (!id) { this.error = 'Game id required'; return; }
     this.isLoading = true;
     this.error = null;
     try {
+      const token = this.getApiToken ? await this.getApiToken() : null;
       const res = await fetch(`/api/games/${id}`, {
         method: 'DELETE',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
       });
       if (!res.ok) throw new Error(`Failed to delete game (${res.status})`);
       // Remove from local state
@@ -60,7 +71,12 @@ class GameStateClass implements GameState {
     this.isLoading = true;
     this.error = null;
     try {
-      const res = await fetch(`/api/games?email=${encodeURIComponent(userEmail)}`);
+      const token = this.getApiToken ? await this.getApiToken() : null;
+      const res = await fetch(`/api/games?email=${encodeURIComponent(userEmail)}`, {
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
+      });
       if (!res.ok) throw new Error(`Failed to load games (${res.status})`);
       const data = (await res.json()) as GameSummary[];
       this.games = data;
@@ -83,14 +99,15 @@ class GameStateClass implements GameState {
     this.isLoading = true;
     this.error = null;
     try {
+      const token = this.getApiToken ? await this.getApiToken() : null;
       const res = await fetch('/api/games', {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ email: userEmail, name })
       });
       if (!res.ok) throw new Error(`Failed to create game (${res.status})`);
       const created = (await res.json()) as GameSummary;
-      this.games = [...this.games, created].sort((a,b)=>a.name.localeCompare(b.name));
+      this.games = [...this.games, created].sort((a, b) => a.name.localeCompare(b.name));
       this.selectedGameId = created.id;
     } catch (e: any) {
       this.error = e?.message ?? 'Failed to create game';
@@ -105,14 +122,15 @@ class GameStateClass implements GameState {
     this.isLoading = true;
     this.error = null;
     try {
+      const token = this.getApiToken ? await this.getApiToken() : null;
       const res = await fetch(`/api/games/${id}`, {
         method: 'PATCH',
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ name })
       });
       if (!res.ok) throw new Error(`Failed to update game (${res.status})`);
       const updated = (await res.json()) as GameSummary;
-      this.games = this.games.map(g => g.id === id ? updated : g).sort((a,b)=>a.name.localeCompare(b.name));
+      this.games = this.games.map(g => g.id === id ? updated : g).sort((a, b) => a.name.localeCompare(b.name));
     } catch (e: any) {
       this.error = e?.message ?? 'Failed to update game';
     } finally {
@@ -123,10 +141,15 @@ class GameStateClass implements GameState {
   async loadGameUsers(gameId: string) {
     if (!gameId) return;
     try {
-      const res = await fetch(`/api/games/${gameId}/users`);
+      const token = this.getApiToken ? await this.getApiToken() : null;
+      const res = await fetch(`/api/games/${gameId}/users`, {
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
+      });
       if (!res.ok) throw new Error(`Failed to load users (${res.status})`);
       const data = (await res.json()) as GameUser[];
-      this.gameUsers = data.sort((a,b)=>a.displayName.localeCompare(b.displayName));
+      this.gameUsers = data.sort((a, b) => a.displayName.localeCompare(b.displayName));
     } catch (e: any) {
       this.error = e?.message ?? 'Failed to load game users';
     }

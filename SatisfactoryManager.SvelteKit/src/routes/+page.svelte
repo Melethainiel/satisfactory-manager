@@ -20,7 +20,7 @@
 
 		try {
 			// Get access token for API call
-			const token = await authState.getAccessToken();
+			const token = await authState.getApiAccessToken();
 			if (!token) {
 				apiResponse = 'Failed to get access token';
 				return;

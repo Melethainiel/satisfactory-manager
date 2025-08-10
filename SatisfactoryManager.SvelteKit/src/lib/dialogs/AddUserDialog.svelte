@@ -1,8 +1,10 @@
 <script lang="ts">
   import { getGameState } from '$lib/states/gameState.svelte';
+  import { getAuthState } from '$lib/states/authState.svelte';
   import type { AddUserDialogHandle } from './AddUserDialogHandle';
 
   const gameState = getGameState();
+  const authState = getAuthState();
 
   let dialogEl: HTMLDialogElement | null = null;
   let emailsText = $state('');
@@ -28,7 +30,7 @@
     try {
       const res = await fetch(`/api/games/${gameId}/users`, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json', 'x-user-email': authState.user?.email || '' },
         body: JSON.stringify({ emails })
       });
       if (!res.ok) throw new Error('Failed to add users');

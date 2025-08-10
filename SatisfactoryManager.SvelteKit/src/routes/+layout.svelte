@@ -22,6 +22,8 @@
 	onMount(async () => {
 		try {
 			await authState.initializeMsal(azureB2CConfig);
+			// Provide token acquisition to game state once auth is ready
+			gameState.attachAuth(authState.getApiAccessToken);
 			// Poll until user loaded then fetch games once
 			const tryLoad = () => {
 				if (authState.isAuthenticated && authState.user?.email) {

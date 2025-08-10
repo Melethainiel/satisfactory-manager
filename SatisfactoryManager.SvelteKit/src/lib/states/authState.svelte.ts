@@ -1,4 +1,5 @@
 import { getContext, setContext } from 'svelte';
+import { API_USER_ACCESS_SCOPE } from '$lib/auth/config';
 import {
 	PublicClientApplication,
 	type Configuration,
@@ -39,6 +40,7 @@ export interface AuthState {
 	signIn: () => Promise<void>;
 	signOut: () => Promise<void>;
 	getAccessToken: (scopes?: string[]) => Promise<string | null>;
+	getApiAccessToken: () => Promise<string | null>;
 	clearError: () => void;
 }
 
@@ -200,11 +202,19 @@ class AuthStateClass implements AuthState {
 
 		// Fire and forget ensure user exists in backend
 		if (userInfo.email) {
-			fetch('/api/auth/ensure-user', {
-				method: 'POST',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ email: userInfo.email, displayName: userInfo.displayName })
-			}).catch((e) => console.warn('Failed to ensure user in DB', e));
+			// Fire and forget ensure-user with bearer token if available
+			this.getApiAccessToken()
+				.then((token) => {
+					return fetch('/api/auth/ensure-user', {
+						method: 'POST',
+						headers: {
+							'content-type': 'application/json',
+							...(token ? { Authorization: `Bearer ${token}` } : {})
+						},
+						body: JSON.stringify({ email: userInfo.email, displayName: userInfo.displayName })
+					});
+				})
+				.catch((e) => console.warn('Failed to ensure user in DB', e));
 		}
 	};
 
@@ -273,7 +283,7 @@ class AuthStateClass implements AuthState {
 			}
 
 			const silentRequest: SilentRequest = {
-				scopes: scopes || defaultConfig.scopes || ['openid'],
+				scopes: defaultConfig.scopes || ['openid'],
 				account: accounts[0]
 			};
 
@@ -288,6 +298,11 @@ class AuthStateClass implements AuthState {
 			console.error('Error acquiring access token:', error);
 			return null;
 		}
+	};
+
+	// Convenience for API token using the standard user access scope
+	getApiAccessToken = async (): Promise<string | null> => {
+		return this.getAccessToken([API_USER_ACCESS_SCOPE]);
 	};
 
 	// Clear error state

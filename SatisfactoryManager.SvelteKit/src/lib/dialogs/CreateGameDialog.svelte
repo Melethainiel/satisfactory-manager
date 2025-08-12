@@ -2,7 +2,7 @@
 	import { getGameState } from '$lib/states/gameState.svelte';
 	import { getAuthState } from '$lib/states/authState.svelte';
 	import type { CreateGameDialogHandle } from './CreateGameDialogHandle';
-	
+
 	const gameState = getGameState();
 	const authState = getAuthState();
 
@@ -21,7 +21,6 @@
 	export const open: CreateGameDialogHandle['open'] = function () {
 		createDialog?.showModal();
 	};
-
 </script>
 
 <dialog bind:this={createDialog} id="create_game_modal" class="modal">
@@ -29,7 +28,7 @@
 		<h3 class="mb-2 text-lg font-bold">Create Game</h3>
 		<form onsubmit={handleCreate} class="flex flex-col gap-3">
 			<input
-				class="input input-bordered validator"
+				class="input-bordered validator input"
 				placeholder="Game name"
 				bind:value={newGameName}
 				required

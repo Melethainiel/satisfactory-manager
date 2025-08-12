@@ -1,3 +1,3 @@
 export interface CreateGameDialogHandle {
-  open: () => void;
+	open: () => void;
 }

@@ -1,3 +1,3 @@
 export interface SelectAuthLevelDialogHandler {
-  open: (email: string, currentRole?: string) => void;
+	open: (email: string, currentRole?: string) => void;
 }

@@ -28,11 +28,7 @@ class ModuleService implements IModuleService {
 		return row;
 	}
 	async update(id: string, data: Partial<Omit<NewModule, 'id'>>): Promise<Module | undefined> {
-		const [row] = await db
-			.update(modules)
-			.set(data)
-			.where(eq(modules.id, id))
-			.returning();
+		const [row] = await db.update(modules).set(data).where(eq(modules.id, id)).returning();
 		return row;
 	}
 	async delete(id: string): Promise<boolean> {

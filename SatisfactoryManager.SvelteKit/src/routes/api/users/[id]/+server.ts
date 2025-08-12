@@ -27,5 +27,7 @@ export const DELETE: RequestHandler = async ({ params }) => {
 	const id = params.id;
 	if (!id || typeof id !== 'string') return new Response('Invalid id', { status: 400 });
 	const deleted = await userService.delete(id);
-	return deleted ? new Response(null, { status: 204 }) : new Response(JSON.stringify({ error: 'Not found' }), { status: 404 });
+	return deleted
+		? new Response(null, { status: 204 })
+		: new Response(JSON.stringify({ error: 'Not found' }), { status: 404 });
 };

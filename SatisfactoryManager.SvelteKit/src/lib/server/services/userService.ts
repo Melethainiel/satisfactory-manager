@@ -28,11 +28,7 @@ class UserService implements IUserService {
 		return row;
 	}
 	async update(id: string, data: Partial<Omit<NewUser, 'id'>>): Promise<User | undefined> {
-		const [row] = await db
-			.update(users)
-			.set(data)
-			.where(eq(users.id, id))
-			.returning();
+		const [row] = await db.update(users).set(data).where(eq(users.id, id)).returning();
 		return row;
 	}
 	async delete(id: string): Promise<boolean> {

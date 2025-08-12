@@ -10,6 +10,10 @@
 	import type { AddUserDialogHandle } from '$lib/dialogs/AddUserDialogHandle';
 	import SelectAuthLevelDialog from '$lib/dialogs/SelectAuthLevelDialog.svelte';
 	import type { SelectAuthLevelDialogHandler } from '$lib/dialogs/SelectAuthLevelDialogHandler';
+	import AddModuleDialog from '$lib/dialogs/AddModuleDialog.svelte';
+	import type { AddModuleDialogHandle } from '$lib/dialogs/AddModuleDialogHandle';
+	import ConfirmDialog from '$lib/dialogs/ConfirmDialog.svelte';
+	import type { ConfirmDialogHandle } from '$lib/dialogs/ConfirmDialogHandle';
 
 	const gameState = getGameState();
 	const authState = getAuthState();
@@ -20,11 +24,15 @@
 	let saveSuccess = $state(false);
 	let usersLoading = $state(false);
 	let usersError = $state<string | null>(null);
+	let modulesLoading = $state(false);
+	let modulesError = $state<string | null>(null);
 
 	// Delete dialog ref
 	let deleteDialogRef: DeleteGameDialogHandle | null = $state(null);
 	let addUserDialogRef: AddUserDialogHandle | null = $state(null);
 	let selectAuthLevelDialogRef: SelectAuthLevelDialogHandler | null = $state(null);
+	let addModuleDialogRef: AddModuleDialogHandle | null = $state(null);
+	let confirmDialogRef: ConfirmDialogHandle | null = $state(null);
 
 	$effect(() => {
 		const g = gameState.games.find((g) => g.id === gameState.selectedGameId);
@@ -55,6 +63,25 @@
 		})();
 	});
 
+	$effect(() => {
+		// Load modules whenever selectedGameId changes
+		const id = gameState.selectedGameId;
+		if (!id) {
+			gameState.gameModules = [];
+			return;
+		}
+		(async () => {
+			modulesLoading = true;
+			modulesError = null;
+			await gameState.loadGameModules(id);
+			if (gameState.error) {
+				modulesError = gameState.error;
+				gameState.clearError();
+			}
+			modulesLoading = false;
+		})();
+	});
+
 	function onInput(e: Event) {
 		const v = (e.target as HTMLInputElement).value;
 		editingName = v;
@@ -78,18 +105,37 @@
 	}
 
 	async function removeGameUser(userEmail: string) {
-		if (!confirm(`Remove ${userEmail}?`)) {
-			return;
-		}
 		const gameId = gameState.selectedGameId;
 		if (!gameId) return;
-		try {
-			await gameState.removeGameUser(gameId, userEmail);
-			// refresh local users list
-			await gameState.loadGameUsers(gameId);
-		} catch (e: any) {
-			alert(`Failed to remove user: ${e.message}`);
-		}
+
+		confirmDialogRef?.open({
+			title: 'Remove User',
+			message: `Are you sure you want to remove ${userEmail} from this game?`,
+			confirmText: 'Remove User',
+			type: 'danger',
+			onConfirm: async () => {
+				await gameState.removeGameUser(gameId, userEmail);
+				// refresh local users list
+				await gameState.loadGameUsers(gameId);
+			}
+		});
+	}
+
+	async function removeGameModule(moduleId: string, moduleName: string) {
+		const gameId = gameState.selectedGameId;
+		if (!gameId) return;
+
+		confirmDialogRef?.open({
+			title: 'Remove Module',
+			message: `Are you sure you want to remove the module "${moduleName}" from this game?`,
+			confirmText: 'Remove Module',
+			type: 'danger',
+			onConfirm: async () => {
+				await gameState.removeGameModule(gameId, moduleId);
+				// refresh local modules list
+				await gameState.loadGameModules(gameId);
+			}
+		});
 	}
 
 	let createDialogRef: CreateGameDialogHandle | null = $state(null);
@@ -106,7 +152,7 @@
 {#if !authState.isAuthenticated}
 	<p class="text-sm opacity-70">Sign in to view game settings.</p>
 {:else if gameState.isLoading && gameState.games.length === 0}
-	<span class="loading loading-spinner loading-sm"></span>
+	<span class="loading loading-sm loading-spinner"></span>
 {:else if !gameState.selectedGameId}
 	<div class="mt-12 flex flex-col items-center gap-4">
 		<p class="text-lg opacity-70">No game selected. Create or select a game first</p>
@@ -122,7 +168,7 @@
 					Game Info
 				</h2>
 				{#if gameState.error}
-					<div class="alert alert-error mb-2 py-2 text-sm">
+					<div class="mb-2 alert alert-error py-2 text-sm">
 						<span>{gameState.error}</span>
 						<button class="btn btn-xs" onclick={() => gameState.clearError()}>Clear</button>
 					</div>
@@ -132,7 +178,7 @@
 						<span class="label-text">Name</span>
 					</div>
 					<input
-						class="input input-bordered w-full"
+						class="input-bordered input w-full"
 						value={editingName}
 						oninput={onInput}
 						placeholder="Game name"
@@ -140,10 +186,10 @@
 				</label>
 				<div class="mt-4 flex items-center justify-end gap-3">
 					{#if saveSuccess}
-						<span class="text-success text-sm">Saved</span>
+						<span class="text-sm text-success">Saved</span>
 					{/if}
 					{#if saveError}
-						<span class="text-error text-sm">{saveError}</span>
+						<span class="text-sm text-error">{saveError}</span>
 					{/if}
 					<button
 						class="btn btn-primary"
@@ -151,11 +197,55 @@
 						onclick={save}
 					>
 						{#if gameState.isLoading}
-							<span class="loading loading-spinner loading-sm"></span>
+							<span class="loading loading-sm loading-spinner"></span>
 						{/if}
 						Save
 					</button>
 				</div>
+
+				<!-- Modules Section -->
+				<div class="divider"></div>
+				<div class="flex items-center justify-between">
+					<h3 class="text-lg font-semibold">Modules</h3>
+					<button
+						class="btn btn-circle btn-ghost btn-xs btn-primary"
+						onclick={() => addModuleDialogRef?.open()}
+						disabled={!gameState.selectedGameId}
+					>
+						<Icon src={Plus} class="size-4" />
+					</button>
+				</div>
+				{#if modulesLoading}
+					<span class="loading loading-sm loading-spinner"></span>
+				{:else if modulesError}
+					<div class="alert alert-error py-2 text-sm">
+						<span>{modulesError}</span>
+						<button class="btn btn-xs" onclick={() => (modulesError = null)}>Dismiss</button>
+					</div>
+				{:else if gameState.gameModules.length === 0}
+					<p class="text-sm opacity-70">No modules attached to this game.</p>
+				{:else}
+					<ul class="divide-y divide-base-200">
+						{#each gameState.gameModules as module}
+							<li class="flex items-center gap-4 py-2">
+								<div class="flex-1">
+									<p class="leading-tight font-medium">{module.name}</p>
+									<p class="text-xs opacity-70">
+										<a href={module.url} target="_blank" rel="noopener noreferrer" class="link">
+											{module.url}
+										</a>
+									</p>
+								</div>
+								<button
+									class="btn btn-circle btn-ghost btn-xs btn-error"
+									onclick={removeGameModule.bind(null, module.id, module.name)}
+								>
+									<Icon src={Trash} class="size-4" />
+								</button>
+							</li>
+						{/each}
+					</ul>
+				{/if}
 			</div>
 		</div>
 		<div class="card bg-base-100 shadow">
@@ -164,7 +254,7 @@
 					<Icon src={AdjustmentsHorizontal} class="size-6 stroke-1" />
 					Authorized Users
 					<button
-						class="btn btn-xs btn-ghost btn-circle btn-primary ml-auto"
+						class="btn ml-auto btn-circle btn-ghost btn-xs btn-primary"
 						onclick={() => addUserDialogRef?.open()}
 						disabled={!gameState.selectedGameId}
 					>
@@ -172,7 +262,7 @@
 					</button>
 				</h2>
 				{#if usersLoading}
-					<span class="loading loading-spinner loading-sm"></span>
+					<span class="loading loading-sm loading-spinner"></span>
 				{:else if usersError}
 					<div class="alert alert-error py-2 text-sm">
 						<span>{usersError}</span>
@@ -181,16 +271,19 @@
 				{:else if gameState.gameUsers.length === 0}
 					<p class="text-sm opacity-70">No users found.</p>
 				{:else}
-					<ul class="divide-base-200 divide-y">
+					<ul class="divide-y divide-base-200">
 						{#each gameState.gameUsers as u}
 							<li class="flex items-center gap-4 py-2">
 								<div class="flex-1">
-									<p class="font-medium leading-tight">{u.displayName}</p>
+									<p class="leading-tight font-medium">{u.displayName}</p>
 									<p class="text-xs opacity-70">{u.email}</p>
 								</div>
-								<button class="badge badge-soft text-xs cursor-pointer" onclick={() => selectAuthLevelDialogRef?.open(u.email, u.role)}>{u.role}</button>
 								<button
-									class="btn btn-xs btn-ghost btn-circle btn-error"
+									class="badge cursor-pointer badge-soft text-xs"
+									onclick={() => selectAuthLevelDialogRef?.open(u.email, u.role)}>{u.role}</button
+								>
+								<button
+									class="btn btn-circle btn-ghost btn-xs btn-error"
 									onclick={removeGameUser.bind(null, u.email)}
 								>
 									<Icon src={Trash} class="size-4" />
@@ -203,8 +296,10 @@
 		</div>
 		<AddUserDialog bind:this={addUserDialogRef} />
 		<SelectAuthLevelDialog bind:this={selectAuthLevelDialogRef} />
+		<AddModuleDialog bind:this={addModuleDialogRef} />
+		<ConfirmDialog bind:this={confirmDialogRef} />
 		<!-- Danger Card for Deleting Game -->
-		<div class="card bg-base-100 border-error border shadow">
+		<div class="card border border-error bg-base-100 shadow">
 			<div class="card-body">
 				<h2 class="card-title text-error">Danger Zone</h2>
 				<div class="flex justify-between">

@@ -95,6 +95,7 @@ Azure AD B2C authentication is configured in `src/lib/auth/config.ts` with envir
 - Use `npm run db:studio` to inspect database contents
 - Schema changes require running `npm run generate` then `npm run db:push`
 - Migrations are stored in `drizzle/` directory
+- **IMPORTANT**: Every schema modification must be documented in Notion at https://www.notion.so/d721ef6207ca4281b642d3753dbc3c75
 
 ### Authentication Flow
 - Azure B2C handles user authentication

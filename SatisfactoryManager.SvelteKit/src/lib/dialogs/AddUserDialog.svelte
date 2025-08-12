@@ -53,14 +53,14 @@
 		<h3 class="mb-2 text-lg font-bold">Add Users</h3>
 		<form onsubmit={submit} class="flex flex-col gap-4">
 			<textarea
-				class="textarea textarea-bordered h-32"
+				class="textarea-bordered textarea h-32"
 				placeholder="Enter one or more email addresses separated by commas, spaces or new lines"
 				bind:value={emailsText}
 				required
 			></textarea>
 			<p class="text-xs opacity-70">Example: user1@example.com, user2@example.com</p>
 			{#if error}
-				<div class="alert alert-error flex justify-between py-2 text-sm">
+				<div class="alert flex justify-between alert-error py-2 text-sm">
 					<span>{error}</span>
 					<button class="btn btn-xs" onclick={() => (error = null)} type="button">Clear</button>
 				</div>
@@ -69,7 +69,7 @@
 				<button type="button" class="btn" onclick={() => dialogEl?.close()}>Cancel</button>
 				<button type="submit" class="btn btn-primary" disabled={isSubmitting}>
 					{#if isSubmitting}
-						<span class="loading loading-spinner loading-sm"></span>
+						<span class="loading loading-sm loading-spinner"></span>
 					{/if}
 					Add
 				</button>

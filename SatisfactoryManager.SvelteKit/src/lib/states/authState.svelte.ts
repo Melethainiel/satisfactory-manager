@@ -41,7 +41,10 @@ export interface AuthState {
 	signOut: () => Promise<void>;
 	getAccessToken: (scopes?: string[]) => Promise<string | null>;
 	getApiAccessToken: () => Promise<string | null>;
-	apiFetch: <T = any>(input: string | URL | Request, init?: RequestInit & { autoJson?: boolean }) => Promise<T | Response>;
+	apiFetch: <T = any>(
+		input: string | URL | Request,
+		init?: RequestInit & { autoJson?: boolean }
+	) => Promise<T | Response>;
 	clearError: () => void;
 }
 
@@ -51,7 +54,8 @@ const defaultConfig: AzureB2CConfig = {
 	authority: 'https://YOUR_TENANT.b2clogin.com/YOUR_TENANT.onmicrosoft.com/B2C_1_SIGNIN_SIGNUP', // Replace with your authority
 	knownAuthorities: ['YOUR_TENANT.b2clogin.com'], // Replace with your tenant
 	redirectUri: typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173',
-	postLogoutRedirectUri: typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173',
+	postLogoutRedirectUri:
+		typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173',
 	scopes: ['openid', 'profile', 'email']
 };
 
@@ -192,7 +196,10 @@ class AuthStateClass implements AuthState {
 		const userInfo: UserInfo = {
 			id: authResult.account?.localAccountId,
 			displayName: authResult.account?.name,
-			email: authResult.account?.idTokenClaims?.emails !== undefined ? authResult.account?.idTokenClaims?.emails[0] : undefined,
+			email:
+				authResult.account?.idTokenClaims?.emails !== undefined
+					? authResult.account?.idTokenClaims?.emails[0]
+					: undefined
 		};
 
 		this.isAuthenticated = true;
@@ -287,7 +294,7 @@ class AuthStateClass implements AuthState {
 			}
 
 			const silentRequest: SilentRequest = {
-				scopes: scopes && scopes.length > 0 ? scopes : (defaultConfig.scopes || ['openid']),
+				scopes: scopes && scopes.length > 0 ? scopes : defaultConfig.scopes || ['openid'],
 				account: accounts[0]
 			};
 
@@ -318,7 +325,10 @@ class AuthStateClass implements AuthState {
 	};
 
 	// Unified authenticated fetch helper (retries once on 401). If autoJson flag true, returns parsed JSON.
-	apiFetch = async <T = any>(input: string | URL | Request, init?: RequestInit & { autoJson?: boolean }): Promise<T | Response> => {
+	apiFetch = async <T = any>(
+		input: string | URL | Request,
+		init?: RequestInit & { autoJson?: boolean }
+	): Promise<T | Response> => {
 		const res = await this._apiFetchInternal(input, init);
 		if (init?.['autoJson']) {
 			return (await res.json()) as T;
@@ -326,7 +336,10 @@ class AuthStateClass implements AuthState {
 		return res;
 	};
 
-	private _apiFetchInternal = async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+	private _apiFetchInternal = async (
+		input: string | URL | Request,
+		init?: RequestInit
+	): Promise<Response> => {
 		let token = await this.getApiAccessToken();
 		const withAuth = async (): Promise<Response> => {
 			return fetch(input as any, {

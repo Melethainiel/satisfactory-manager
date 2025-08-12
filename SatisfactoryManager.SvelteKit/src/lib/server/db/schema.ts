@@ -19,16 +19,12 @@ export const games = pgTable('games', {
 export type Game = typeof games.$inferSelect;
 export type NewGame = typeof games.$inferInsert;
 
-
 // Module table
-export const modules = pgTable(
-	'modules',
-	{
-		id: uuid('id').defaultRandom().primaryKey(),
-		name: varchar('name', { length: 200 }).notNull(),
-		url: varchar('url', {length: 2048}).notNull()
-	}
-);
+export const modules = pgTable('modules', {
+	id: uuid('id').defaultRandom().primaryKey(),
+	name: varchar('name', { length: 200 }).notNull(),
+	url: varchar('url', { length: 2048 }).notNull()
+});
 
 export type Module = typeof modules.$inferSelect;
 export type NewModule = typeof modules.$inferInsert;
@@ -76,7 +72,7 @@ export const userGamesRelations = relations(userGames, ({ one }) => ({
 }));
 
 export type UserGame = typeof userGames.$inferSelect;
-export type NewUserGame = typeof userGames.$inferInsert
+export type NewUserGame = typeof userGames.$inferInsert;
 export type GameUserRole = (typeof gameUserRoleEnum.enumValues)[number];
 
 // Relations (many-to-many) Game/Module

@@ -39,12 +39,12 @@
 	});
 </script>
 
-<div class="bg-base-200 flex min-h-screen">
+<div class="flex min-h-screen bg-base-200">
 	<SideNav open={navOpen} onClose={() => (navOpen = false)} />
 
 	<div class="flex flex-1 flex-col">
 		<Header {toggleNav} />
-		<main class="lg:ml-64 flex-1 px-4 py-6">
+		<main class="flex-1 px-4 py-6 lg:ml-64">
 			<div class="container mx-auto">
 				{@render children()}
 			</div>

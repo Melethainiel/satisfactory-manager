@@ -10,7 +10,6 @@
 	const authState = getAuthState();
 	const gameState = getGameState();
 
-
 	let createDialogRef: CreateGameDialogHandle | null = null;
 
 	// Popover helpers
@@ -35,18 +34,29 @@
 </script>
 
 <header
-	class="navbar bg-base-100/80 supports-[backdrop-filter]:bg-base-100/70 border-base-200 sticky top-0 z-40 min-h-20 border-b px-4 shadow-lg backdrop-blur transition-colors"
+	class="sticky top-0 z-40 navbar min-h-20 border-b border-base-200 bg-base-100/80 px-4 shadow-lg backdrop-blur transition-colors supports-[backdrop-filter]:bg-base-100/70"
 >
 	<!-- Left side: Logo and Title -->
 	<div class="navbar-start items-center gap-4">
 		<!-- Mobile nav toggle -->
 		<button
-			class="btn btn-ghost btn-square lg:hidden"
+			class="btn btn-square btn-ghost lg:hidden"
 			aria-label="Toggle navigation"
 			onclick={() => toggleNav?.()}
 		>
-			<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				class="h-6 w-6"
+				fill="none"
+				viewBox="0 0 24 24"
+				stroke="currentColor"
+			>
+				<path
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					stroke-width="2"
+					d="M4 6h16M4 12h16M4 18h16"
+				/>
 			</svg>
 		</button>
 		<a href="/" class="flex text-xl font-bold">
@@ -65,7 +75,7 @@
 		{#if authState.isAuthenticated}
 			<div class="flex items-center gap-2" class:opacity-50={gameState.isLoading}>
 				<select
-					class="select select-sm w-52"
+					class="select w-52 select-sm"
 					onchange={(e: any) => gameState.selectGame(e.target.value)}
 					bind:value={gameState.selectedGameId}
 					disabled={gameState.isLoading || gameState.games.length === 0}
@@ -75,17 +85,17 @@
 						<option value={g.id}>{g.name}</option>
 					{/each}
 				</select>
-				   <button class="btn btn-xs" onclick={() => createDialogRef?.open()} title="Create new game"
-					   >+</button
-				   >
+				<button class="btn btn-xs" onclick={() => createDialogRef?.open()} title="Create new game"
+					>+</button
+				>
 				{#if gameState.error}
 					<button
-						class="btn btn-ghost btn-xs text-error"
+						class="btn text-error btn-ghost btn-xs"
 						title={gameState.error}
 						onclick={gameState.clearError}>!</button
 					>
 				{:else if gameState.isLoading}
-					<span class="loading loading-spinner loading-xs ml-2"></span>
+					<span class="loading ml-2 loading-xs loading-spinner"></span>
 				{/if}
 			</div>
 		{/if}
@@ -97,12 +107,12 @@
 	<div class="navbar-end">
 		{#if authState.isLoading}
 			<!-- Loading state -->
-			<div class="loading loading-spinner loading-sm"></div>
+			<div class="loading loading-sm loading-spinner"></div>
 		{:else if authState.isAuthenticated && authState.user}
 			<!-- User is logged in - show user info with dropdown -->
 			<div class="user-menu-container">
 				<button
-					class="btn btn-ghost h-auto min-h-0 gap-2 px-2 py-1 normal-case"
+					class="btn h-auto min-h-0 gap-2 px-2 py-1 normal-case btn-ghost"
 					popovertarget={popoverId}
 					style={`anchor-name:${anchorName}`}
 					aria-haspopup="menu"
@@ -116,7 +126,7 @@
 							alt="User avatar"
 						/>
 						<div class="hidden text-left md:block">
-							<h1 class="text-lg font-semibold capitalize text-gray-700 dark:text-white">
+							<h1 class="text-lg font-semibold text-gray-700 capitalize dark:text-white">
 								{authState.user.displayName || 'User'}
 							</h1>
 							<p class="text-sm text-gray-500 dark:text-gray-400">
@@ -136,12 +146,12 @@
 				<ul
 					id={popoverId}
 					popover
-					class="dropdown menu rounded-box bg-base-100 w-fit border p-2 shadow-lg"
+					class="menu dropdown w-fit rounded-box border bg-base-100 p-2 shadow-lg"
 					style={`position-anchor:${anchorName}`}
 					role="menu"
 				>
 					<li class="menu-title" role="presentation">
-						<span class="text-base-content/60 text-xs" role="none">
+						<span class="text-xs text-base-content/60" role="none">
 							{authState.user.email || 'No email'}
 						</span>
 					</li>
@@ -169,7 +179,7 @@
 
 		{#if authState.error}
 			<!-- Error notification -->
-			<div class="toast toast-top toast-end">
+			<div class="toast-top toast-end toast">
 				<div class="alert alert-error">
 					<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path
@@ -181,7 +191,7 @@
 					</svg>
 					<span>{authState.error}</span>
 					<button
-						class="btn btn-sm btn-ghost"
+						class="btn btn-ghost btn-sm"
 						onclick={authState.clearError}
 						aria-label="Close error"
 					>

@@ -14,7 +14,7 @@ export const GET: RequestHandler = async () => {
 
 export const POST: RequestHandler = async ({ request }) => {
 	try {
-		const { name, url } = await request.json();
+		const { name, url, githubRepo } = await request.json();
 
 		if (!name || typeof name !== 'string' || !name.trim()) {
 			return json({ error: 'Module name is required' }, { status: 400 });
@@ -31,6 +31,15 @@ export const POST: RequestHandler = async ({ request }) => {
 			return json({ error: 'Invalid URL format' }, { status: 400 });
 		}
 
+		// Validate GitHub repo URL if provided
+		if (githubRepo && typeof githubRepo === 'string' && githubRepo.trim()) {
+			try {
+				new URL(githubRepo.trim());
+			} catch {
+				return json({ error: 'Invalid GitHub repository URL format' }, { status: 400 });
+			}
+		}
+
 		// Check if module with same name already exists
 		const existingModule = await moduleService.getByName(name.trim());
 		if (existingModule) {
@@ -39,8 +48,19 @@ export const POST: RequestHandler = async ({ request }) => {
 
 		const module = await moduleService.create({
 			name: name.trim(),
-			url: url.trim()
+			url: url.trim(),
+			githubRepo: githubRepo?.trim() || null
 		});
+
+		// If GitHub repo is provided, try to fetch and sync versions
+		if (githubRepo?.trim()) {
+			try {
+				await moduleService.fetchAndSyncVersionsFromGitHub(module.id);
+			} catch (error) {
+				console.warn('Failed to sync versions from GitHub:', error);
+				// Don't fail the module creation if GitHub sync fails
+			}
+		}
 
 		return json(module, { status: 201 });
 	} catch (error) {

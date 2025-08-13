@@ -7,8 +7,11 @@
 	let dialogEl: HTMLDialogElement | null = null;
 	let moduleName = $state('');
 	let moduleUrl = $state('');
+	let githubRepo = $state('');
 	let isSubmitting = $state(false);
 	let error = $state<string | null>(null);
+	let previewVersions = $state<any[]>([]);
+	let isPreviewingVersions = $state(false);
 
 	let onCreateCallback: ((module: { id: string; name: string; url: string }) => void) | null = null;
 
@@ -18,6 +21,46 @@
 			return true;
 		} catch {
 			return false;
+		}
+	}
+
+	async function previewGitHubVersions() {
+		if (!githubRepo.trim() || !validateUrl(githubRepo.trim())) {
+			error = 'Please enter a valid GitHub URL first';
+			return;
+		}
+
+		if (!authState.apiFetch) {
+			error = 'Authentication required';
+			return;
+		}
+
+		isPreviewingVersions = true;
+		error = null;
+
+		try {
+			const res = await authState.apiFetch('/api/modules/github-preview', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					githubUrl: githubRepo.trim()
+				})
+			});
+
+			if (!res.ok) {
+				const errorData = await res.json();
+				throw new Error(errorData.error || `Failed to fetch GitHub versions (${res.status})`);
+			}
+
+			const data = await res.json();
+			previewVersions = data.versions || [];
+		} catch (e: any) {
+			error = e?.message ?? 'Failed to preview GitHub versions';
+			previewVersions = [];
+		} finally {
+			isPreviewingVersions = false;
 		}
 	}
 
@@ -55,7 +98,8 @@
 				},
 				body: JSON.stringify({
 					name: moduleName.trim(),
-					url: moduleUrl.trim()
+					url: moduleUrl.trim(),
+					githubRepo: githubRepo.trim() || null
 				})
 			});
 
@@ -85,7 +129,9 @@
 	function onClose() {
 		moduleName = '';
 		moduleUrl = '';
+		githubRepo = '';
 		error = null;
+		previewVersions = [];
 		onCreateCallback = null;
 	}
 
@@ -137,6 +183,55 @@
 					<span class="label-text-alt opacity-70">Enter the full URL to the module</span>
 				</div>
 			</label>
+
+			<label class="form-control mb-4 w-full">
+				<div class="label">
+					<span class="label-text">GitHub Repository (Optional)</span>
+				</div>
+				<div class="join w-full">
+					<input
+						bind:value={githubRepo}
+						type="url"
+						placeholder="https://github.com/owner/repo"
+						class="input-bordered input join-item flex-1"
+						disabled={isSubmitting || isPreviewingVersions}
+					/>
+					<button
+						type="button"
+						class="btn join-item"
+						onclick={previewGitHubVersions}
+						disabled={isSubmitting || isPreviewingVersions || !githubRepo.trim()}
+					>
+						{#if isPreviewingVersions}
+							<span class="loading loading-sm loading-spinner"></span>
+						{:else}
+							Preview Versions
+						{/if}
+					</button>
+				</div>
+				<div class="label">
+					<span class="label-text-alt opacity-70">Optional: GitHub repo for automatic version management</span>
+				</div>
+			</label>
+
+			{#if previewVersions.length > 0}
+				<div class="mb-4 rounded-lg border border-base-300 p-4">
+					<h4 class="mb-2 text-sm font-medium">Available Versions ({previewVersions.length})</h4>
+					<div class="max-h-32 overflow-y-auto space-y-1">
+						{#each previewVersions.slice(0, 5) as version}
+							<div class="flex items-center justify-between text-xs">
+								<span class="font-mono">{version.version}</span>
+								<span class="opacity-70">{new Date(version.publishedAt).toLocaleDateString()}</span>
+							</div>
+						{/each}
+						{#if previewVersions.length > 5}
+							<div class="text-xs opacity-70">
+								... and {previewVersions.length - 5} more versions
+							</div>
+						{/if}
+					</div>
+				</div>
+			{/if}
 
 			<div class="modal-action">
 				<button type="button" class="btn" onclick={() => dialogEl?.close()} disabled={isSubmitting}>

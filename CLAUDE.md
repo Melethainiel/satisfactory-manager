@@ -44,6 +44,9 @@ npm run db:push         # Push schema changes to database
 npm run db:migrate      # Run database migrations
 npm run db:studio       # Open Drizzle Studio (database GUI)
 npm run generate        # Generate migration files
+
+# Important: Always use explicit names for migrations
+npx drizzle-kit generate --name explicit_migration_name
 ```
 
 ### .NET Aspire AppHost (run from `SatisfactoryManager.AppHost/`)
@@ -93,7 +96,8 @@ Azure AD B2C authentication is configured in `src/lib/auth/config.ts` with envir
 
 ### Database Development
 - Use `npm run db:studio` to inspect database contents
-- Schema changes require running `npm run generate` then `npm run db:push`
+- Schema changes require running `npx drizzle-kit generate --name explicit_migration_name` then `npm run db:push`
+- **IMPORTANT**: Always use explicit names for migrations (e.g., `--name add_user_table`)
 - Migrations are stored in `drizzle/` directory
 - **IMPORTANT**: Every schema modification must be documented in Notion at https://www.notion.so/d721ef6207ca4281b642d3753dbc3c75
 

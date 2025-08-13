@@ -1,4 +1,4 @@
-import { pgTable, varchar, uuid, primaryKey, pgEnum } from 'drizzle-orm/pg-core';
+import { pgTable, varchar, uuid, primaryKey, pgEnum, timestamp } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 export const users = pgTable('users', {
@@ -23,11 +23,29 @@ export type NewGame = typeof games.$inferInsert;
 export const modules = pgTable('modules', {
 	id: uuid('id').defaultRandom().primaryKey(),
 	name: varchar('name', { length: 200 }).notNull(),
-	url: varchar('url', { length: 2048 }).notNull()
+	url: varchar('url', { length: 2048 }).notNull(),
+	currentVersion: varchar('current_version', { length: 100 }),
+	githubRepo: varchar('github_repo', { length: 500 }),
+	createdAt: timestamp('created_at').defaultNow().notNull(),
+	updatedAt: timestamp('updated_at').defaultNow().notNull()
 });
 
 export type Module = typeof modules.$inferSelect;
 export type NewModule = typeof modules.$inferInsert;
+
+// Module versions table to track available versions
+export const moduleVersions = pgTable('module_versions', {
+	id: uuid('id').defaultRandom().primaryKey(),
+	moduleId: uuid('module_id').notNull().references(() => modules.id, { onDelete: 'cascade' }),
+	version: varchar('version', { length: 100 }).notNull(),
+	releaseUrl: varchar('release_url', { length: 2048 }),
+	releaseNotes: varchar('release_notes', { length: 5000 }),
+	publishedAt: timestamp('published_at'),
+	createdAt: timestamp('created_at').defaultNow().notNull()
+});
+
+export type ModuleVersion = typeof moduleVersions.$inferSelect;
+export type NewModuleVersion = typeof moduleVersions.$inferInsert;
 
 // Authorization / role levels for a user within a game context
 export const gameUserRoleEnum = pgEnum('game_user_role', [
@@ -90,7 +108,15 @@ export const moduleGames = pgTable(
 );
 
 export const modulesRelation = relations(modules, ({ many }) => ({
-	moduleGame: many(moduleGames)
+	moduleGame: many(moduleGames),
+	versions: many(moduleVersions)
+}));
+
+export const moduleVersionsRelations = relations(moduleVersions, ({ one }) => ({
+	module: one(modules, {
+		fields: [moduleVersions.moduleId],
+		references: [modules.id]
+	})
 }));
 
 export const gamesRelation = relations(games, ({ many }) => ({

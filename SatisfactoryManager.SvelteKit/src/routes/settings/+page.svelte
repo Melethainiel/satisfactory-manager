@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { getGameState } from '$lib/states/gameState.svelte';
 	import { getAuthState } from '$lib/states/authState.svelte';
-	import { Icon, Identification, AdjustmentsHorizontal, Trash, Plus } from 'svelte-hero-icons';
+	import { Icon, Identification, AdjustmentsHorizontal, Trash, Plus, Cog6Tooth } from 'svelte-hero-icons';
 	import { t } from '$lib/i18n';
 	import CreateGameDialog from '$lib/dialogs/CreateGameDialog.svelte';
 	import type { CreateGameDialogHandle } from '$lib/dialogs/CreateGameDialogHandle';
@@ -13,6 +13,8 @@
 	import type { SelectAuthLevelDialogHandler } from '$lib/dialogs/SelectAuthLevelDialogHandler';
 	import AddModuleDialog from '$lib/dialogs/AddModuleDialog.svelte';
 	import type { AddModuleDialogHandle } from '$lib/dialogs/AddModuleDialogHandle';
+	import ModuleVersionDialog from '$lib/dialogs/ModuleVersionDialog.svelte';
+	import type { ModuleVersionDialogHandle } from '$lib/dialogs/ModuleVersionDialogHandle';
 	import ConfirmDialog from '$lib/dialogs/ConfirmDialog.svelte';
 	import type { ConfirmDialogHandle } from '$lib/dialogs/ConfirmDialogHandle';
 
@@ -33,6 +35,7 @@
 	let addUserDialogRef: AddUserDialogHandle | null = $state(null);
 	let selectAuthLevelDialogRef: SelectAuthLevelDialogHandler | null = $state(null);
 	let addModuleDialogRef: AddModuleDialogHandle | null = $state(null);
+	let moduleVersionDialogRef: ModuleVersionDialogHandle | null = $state(null);
 	let confirmDialogRef: ConfirmDialogHandle | null = $state(null);
 
 	$effect(() => {
@@ -230,19 +233,40 @@
 						{#each gameState.gameModules as module}
 							<li class="flex items-center gap-4 py-2">
 								<div class="flex-1">
-									<p class="leading-tight font-medium">{module.name}</p>
+									<div class="flex items-center gap-2">
+										<p class="leading-tight font-medium">{module.name}</p>
+										{#if module.currentVersion}
+											<span class="badge badge-sm badge-outline">v{module.currentVersion}</span>
+										{/if}
+									</div>
 									<p class="text-xs opacity-70">
 										<a href={module.url} target="_blank" rel="noopener noreferrer" class="link">
 											{module.url}
 										</a>
 									</p>
+									{#if module.githubRepo}
+										<p class="text-xs opacity-50">
+											GitHub: <a href={module.githubRepo} target="_blank" rel="noopener noreferrer" class="link">
+												{module.githubRepo}
+											</a>
+										</p>
+									{/if}
 								</div>
-								<button
-									class="btn btn-circle btn-ghost btn-xs btn-error"
-									onclick={removeGameModule.bind(null, module.id, module.name)}
-								>
-									<Icon src={Trash} class="size-4" />
-								</button>
+								<div class="flex gap-1">
+									<button
+										class="btn btn-circle btn-ghost btn-xs"
+										onclick={() => moduleVersionDialogRef?.open(module)}
+										title="Manage versions"
+									>
+										<Icon src={Cog6Tooth} class="size-4" />
+									</button>
+									<button
+										class="btn btn-circle btn-ghost btn-xs btn-error"
+										onclick={removeGameModule.bind(null, module.id, module.name)}
+									>
+										<Icon src={Trash} class="size-4" />
+									</button>
+								</div>
 							</li>
 						{/each}
 					</ul>
@@ -298,6 +322,7 @@
 		<AddUserDialog bind:this={addUserDialogRef} />
 		<SelectAuthLevelDialog bind:this={selectAuthLevelDialogRef} />
 		<AddModuleDialog bind:this={addModuleDialogRef} />
+		<ModuleVersionDialog bind:this={moduleVersionDialogRef} />
 		<ConfirmDialog bind:this={confirmDialogRef} />
 		<!-- Danger Card for Deleting Game -->
 		<div class="card border border-error bg-base-100 shadow">

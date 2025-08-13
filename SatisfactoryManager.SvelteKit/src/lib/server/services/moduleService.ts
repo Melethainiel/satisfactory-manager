@@ -1,5 +1,12 @@
 import { db } from '../db';
-import { modules, moduleVersions, type Module, type NewModule, type ModuleVersion, type NewModuleVersion } from '../db/schema';
+import {
+	modules,
+	moduleVersions,
+	type Module,
+	type NewModule,
+	type ModuleVersion,
+	type NewModuleVersion
+} from '../db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { githubService, type IModuleVersion } from './githubService';
 
@@ -8,12 +15,18 @@ export interface IModuleService {
 	getById(id: string): Promise<Module | undefined>; // UUID
 	getByName(name: string): Promise<Module | undefined>;
 	create(data: Omit<NewModule, 'id' | 'createdAt' | 'updatedAt'>): Promise<Module>;
-	update(id: string, data: Partial<Omit<NewModule, 'id' | 'createdAt' | 'updatedAt'>>): Promise<Module | undefined>; // UUID
+	update(
+		id: string,
+		data: Partial<Omit<NewModule, 'id' | 'createdAt' | 'updatedAt'>>
+	): Promise<Module | undefined>; // UUID
 	delete(id: string): Promise<boolean>; // UUID
-	
+
 	// Version management methods
 	getVersions(moduleId: string): Promise<ModuleVersion[]>;
-	addVersion(moduleId: string, versionData: Omit<NewModuleVersion, 'id' | 'moduleId' | 'createdAt'>): Promise<ModuleVersion>;
+	addVersion(
+		moduleId: string,
+		versionData: Omit<NewModuleVersion, 'id' | 'moduleId' | 'createdAt'>
+	): Promise<ModuleVersion>;
 	updateCurrentVersion(moduleId: string, version: string): Promise<Module | undefined>;
 	fetchAndSyncVersionsFromGitHub(moduleId: string): Promise<ModuleVersion[]>;
 	getAvailableVersionsFromGitHub(githubUrl: string): Promise<IModuleVersion[]>;
@@ -35,10 +48,13 @@ class ModuleService implements IModuleService {
 		const [row] = await db.insert(modules).values(data).returning();
 		return row;
 	}
-	async update(id: string, data: Partial<Omit<NewModule, 'id' | 'createdAt' | 'updatedAt'>>): Promise<Module | undefined> {
+	async update(
+		id: string,
+		data: Partial<Omit<NewModule, 'id' | 'createdAt' | 'updatedAt'>>
+	): Promise<Module | undefined> {
 		const [row] = await db
 			.update(modules)
-			.set({ 
+			.set({
 				...data,
 				updatedAt: new Date()
 			})
@@ -59,7 +75,10 @@ class ModuleService implements IModuleService {
 			.orderBy(desc(moduleVersions.publishedAt), desc(moduleVersions.createdAt));
 	}
 
-	async addVersion(moduleId: string, versionData: Omit<NewModuleVersion, 'id' | 'moduleId' | 'createdAt'>): Promise<ModuleVersion> {
+	async addVersion(
+		moduleId: string,
+		versionData: Omit<NewModuleVersion, 'id' | 'moduleId' | 'createdAt'>
+	): Promise<ModuleVersion> {
 		const [version] = await db
 			.insert(moduleVersions)
 			.values({
@@ -73,7 +92,7 @@ class ModuleService implements IModuleService {
 	async updateCurrentVersion(moduleId: string, version: string): Promise<Module | undefined> {
 		const [updatedModule] = await db
 			.update(modules)
-			.set({ 
+			.set({
 				currentVersion: version,
 				updatedAt: new Date()
 			})
@@ -94,7 +113,7 @@ class ModuleService implements IModuleService {
 
 		// Get existing versions from database
 		const existingVersions = await this.getVersions(moduleId);
-		const existingVersionNumbers = new Set(existingVersions.map(v => v.version));
+		const existingVersionNumbers = new Set(existingVersions.map((v) => v.version));
 
 		// Add new versions to database
 		const newVersions: ModuleVersion[] = [];

@@ -23,13 +23,13 @@ export const PUT: RequestHandler = async ({ request, params }) => {
 
 		// Check if the version exists for this module
 		const versions = await moduleService.getVersions(moduleId);
-		const versionExists = versions.some(v => v.version === version.trim());
+		const versionExists = versions.some((v) => v.version === version.trim());
 		if (!versionExists) {
 			return json({ error: 'Version not found for this module' }, { status: 404 });
 		}
 
 		const updatedModule = await moduleService.updateCurrentVersion(moduleId, version.trim());
-		
+
 		if (!updatedModule) {
 			return json({ error: 'Failed to update module' }, { status: 500 });
 		}

@@ -38,7 +38,7 @@
 
 		try {
 			const res = await authState.apiFetch(`/api/modules/${module.id}/versions`);
-			
+
 			if (!res.ok) {
 				const errorData = await res.json();
 				throw new Error(errorData.error || `Failed to load versions (${res.status})`);
@@ -62,14 +62,14 @@
 			const res = await authState.apiFetch(`/api/modules/${module.id}/sync-versions`, {
 				method: 'POST'
 			});
-			
+
 			if (!res.ok) {
 				const errorData = await res.json();
 				throw new Error(errorData.error || `Failed to sync versions (${res.status})`);
 			}
 
 			const data = await res.json();
-			
+
 			// Reload versions to get the updated list
 			await loadVersions();
 		} catch (e: any) {
@@ -93,7 +93,7 @@
 				},
 				body: JSON.stringify({ version })
 			});
-			
+
 			if (!res.ok) {
 				const errorData = await res.json();
 				throw new Error(errorData.error || `Failed to update version (${res.status})`);
@@ -118,11 +118,7 @@
 	<div class="mb-4 flex items-center justify-between">
 		<h3 class="text-lg font-semibold">Version Management</h3>
 		<div class="flex gap-2">
-			<button 
-				class="btn btn-sm" 
-				onclick={loadVersions} 
-				disabled={isLoading}
-			>
+			<button class="btn btn-sm" onclick={loadVersions} disabled={isLoading}>
 				{#if isLoading}
 					<span class="loading loading-sm loading-spinner"></span>
 				{:else}
@@ -130,9 +126,9 @@
 				{/if}
 			</button>
 			{#if module.githubRepo}
-				<button 
-					class="btn btn-sm btn-primary" 
-					onclick={syncFromGitHub} 
+				<button
+					class="btn btn-sm btn-primary"
+					onclick={syncFromGitHub}
 					disabled={isSyncing || isLoading}
 				>
 					{#if isSyncing}
@@ -177,7 +173,7 @@
 						<div class="flex items-center gap-2">
 							<span class="font-mono font-medium">{version.version}</span>
 							{#if version.version === module.currentVersion}
-								<span class="badge badge-primary badge-sm">Current</span>
+								<span class="badge badge-sm badge-primary">Current</span>
 							{/if}
 						</div>
 						{#if version.publishedAt}
@@ -186,25 +182,25 @@
 							</div>
 						{/if}
 						{#if version.releaseNotes}
-							<div class="mt-1 text-sm opacity-70 line-clamp-2">
+							<div class="mt-1 line-clamp-2 text-sm opacity-70">
 								{version.releaseNotes}
 							</div>
 						{/if}
 					</div>
 					<div class="flex gap-2">
 						{#if version.releaseUrl}
-							<a 
-								href={version.releaseUrl} 
-								target="_blank" 
+							<a
+								href={version.releaseUrl}
+								target="_blank"
 								rel="noopener noreferrer"
-								class="btn btn-sm btn-ghost"
+								class="btn btn-ghost btn-sm"
 							>
 								View Release
 							</a>
 						{/if}
 						{#if version.version !== module.currentVersion}
-							<button 
-								class="btn btn-sm btn-primary" 
+							<button
+								class="btn btn-sm btn-primary"
 								onclick={() => updateCurrentVersion(version.version)}
 								disabled={isUpdatingVersion}
 							>

@@ -1,7 +1,14 @@
 <script lang="ts">
 	import { getGameState } from '$lib/states/gameState.svelte';
 	import { getAuthState } from '$lib/states/authState.svelte';
-	import { Icon, Identification, AdjustmentsHorizontal, Trash, Plus, Cog6Tooth } from 'svelte-hero-icons';
+	import {
+		Icon,
+		Identification,
+		AdjustmentsHorizontal,
+		Trash,
+		Plus,
+		Cog6Tooth
+	} from 'svelte-hero-icons';
 	import { t } from '$lib/i18n';
 	import CreateGameDialog from '$lib/dialogs/CreateGameDialog.svelte';
 	import type { CreateGameDialogHandle } from '$lib/dialogs/CreateGameDialogHandle';
@@ -160,7 +167,9 @@
 {:else if !gameState.selectedGameId}
 	<div class="mt-12 flex flex-col items-center gap-4">
 		<p class="text-lg opacity-70">{$t('settings.no_game_selected')}</p>
-		<button class="btn btn-primary" onclick={() => createDialogRef?.open()}>{$t('settings.create_new_game')}</button>
+		<button class="btn btn-primary" onclick={() => createDialogRef?.open()}
+			>{$t('settings.create_new_game')}</button
+		>
 		<CreateGameDialog bind:this={createDialogRef} />
 	</div>
 {:else}
@@ -174,7 +183,9 @@
 				{#if gameState.error}
 					<div class="mb-2 alert alert-error py-2 text-sm">
 						<span>{gameState.error}</span>
-						<button class="btn btn-xs" onclick={() => gameState.clearError()}>{$t('common.clear')}</button>
+						<button class="btn btn-xs" onclick={() => gameState.clearError()}
+							>{$t('common.clear')}</button
+						>
 					</div>
 				{/if}
 				<label class="form-control w-full max-w-md">
@@ -224,7 +235,9 @@
 				{:else if modulesError}
 					<div class="alert alert-error py-2 text-sm">
 						<span>{modulesError}</span>
-						<button class="btn btn-xs" onclick={() => (modulesError = null)}>{$t('common.dismiss')}</button>
+						<button class="btn btn-xs" onclick={() => (modulesError = null)}
+							>{$t('common.dismiss')}</button
+						>
 					</div>
 				{:else if gameState.gameModules.length === 0}
 					<p class="text-sm opacity-70">{$t('modules.no_modules')}</p>
@@ -236,7 +249,7 @@
 									<div class="flex items-center gap-2">
 										<p class="leading-tight font-medium">{module.name}</p>
 										{#if module.currentVersion}
-											<span class="badge badge-sm badge-outline">v{module.currentVersion}</span>
+											<span class="badge badge-outline badge-sm">v{module.currentVersion}</span>
 										{/if}
 									</div>
 									<p class="text-xs opacity-70">
@@ -246,7 +259,12 @@
 									</p>
 									{#if module.githubRepo}
 										<p class="text-xs opacity-50">
-											GitHub: <a href={module.githubRepo} target="_blank" rel="noopener noreferrer" class="link">
+											GitHub: <a
+												href={module.githubRepo}
+												target="_blank"
+												rel="noopener noreferrer"
+												class="link"
+											>
 												{module.githubRepo}
 											</a>
 										</p>
@@ -291,7 +309,9 @@
 				{:else if usersError}
 					<div class="alert alert-error py-2 text-sm">
 						<span>{usersError}</span>
-						<button class="btn btn-xs" onclick={() => (usersError = null)}>{$t('common.dismiss')}</button>
+						<button class="btn btn-xs" onclick={() => (usersError = null)}
+							>{$t('common.dismiss')}</button
+						>
 					</div>
 				{:else if gameState.gameUsers.length === 0}
 					<p class="text-sm opacity-70">{$t('users.no_users')}</p>

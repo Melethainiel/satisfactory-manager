@@ -33,13 +33,13 @@ class GitHubService implements IGitHubService {
 	parseGitHubUrl(url: string): ParsedGitHubRepo | null {
 		try {
 			const urlObj = new URL(url);
-			
+
 			if (urlObj.hostname !== 'github.com') {
 				return null;
 			}
 
-			const pathParts = urlObj.pathname.split('/').filter(part => part.length > 0);
-			
+			const pathParts = urlObj.pathname.split('/').filter((part) => part.length > 0);
+
 			if (pathParts.length < 2) {
 				return null;
 			}
@@ -55,11 +55,11 @@ class GitHubService implements IGitHubService {
 
 	async fetchReleases(owner: string, repo: string): Promise<GitHubRelease[]> {
 		const url = `${this.baseUrl}/repos/${owner}/${repo}/releases`;
-		
+
 		try {
 			const response = await fetch(url, {
 				headers: {
-					'Accept': 'application/vnd.github.v3+json',
+					Accept: 'application/vnd.github.v3+json',
 					'User-Agent': 'SatisfactoryManager/1.0'
 				}
 			});
@@ -72,10 +72,10 @@ class GitHubService implements IGitHubService {
 			}
 
 			const releases: GitHubRelease[] = await response.json();
-			
+
 			// Filter out drafts and sort by publication date (newest first)
 			return releases
-				.filter(release => !release.draft)
+				.filter((release) => !release.draft)
 				.sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime());
 		} catch (error) {
 			if (error instanceof Error) {
@@ -87,14 +87,14 @@ class GitHubService implements IGitHubService {
 
 	async getModuleVersions(githubUrl: string): Promise<IModuleVersion[]> {
 		const parsedRepo = this.parseGitHubUrl(githubUrl);
-		
+
 		if (!parsedRepo) {
 			throw new Error('Invalid GitHub URL');
 		}
 
 		const releases = await this.fetchReleases(parsedRepo.owner, parsedRepo.repo);
-		
-		return releases.map(release => ({
+
+		return releases.map((release) => ({
 			version: release.tag_name,
 			releaseUrl: release.html_url,
 			releaseNotes: release.body || '',

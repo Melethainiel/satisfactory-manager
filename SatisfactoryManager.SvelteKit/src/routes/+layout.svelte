@@ -6,7 +6,6 @@
 	import { setGameState } from '$lib/states/gameState.svelte';
 	import Header from '$lib/components/Header.svelte';
 	import SideNav from '$lib/components/SideNav.svelte';
-	import { initClientLocale } from '$lib/i18n';
 
 	let navOpen = $state(false);
 	function toggleNav() {
@@ -22,9 +21,6 @@
 	// Initialize MSAL when the app starts
 	onMount(async () => {
 		try {
-			// Initialize client-side locale preferences
-			initClientLocale();
-
 			await authState.initializeMsal(azureB2CConfig);
 			// Provide authenticated fetch helper to game state once auth is ready
 			gameState.attachAuth(authState.apiFetch);

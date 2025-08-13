@@ -37,7 +37,9 @@
 			{#if deleteError}
 				<div class="alert alert-error py-2 text-sm">
 					<span>{deleteError}</span>
-					<button class="btn btn-xs" onclick={() => (deleteError = null)}>{$t('common.clear')}</button>
+					<button class="btn btn-xs" onclick={() => (deleteError = null)}
+						>{$t('common.clear')}</button
+					>
 				</div>
 			{/if}
 			<div class="flex w-full justify-end gap-2">

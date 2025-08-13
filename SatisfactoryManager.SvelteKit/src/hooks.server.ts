@@ -1,6 +1,7 @@
 import type { Handle } from '@sveltejs/kit';
 import { warn } from 'console';
 import { createRemoteJWKSet, jwtVerify, type JWTPayload } from 'jose';
+import { locale } from 'svelte-i18n';
 
 // Environment / configuration
 // These could be moved to a dedicated config file if needed.
@@ -66,6 +67,17 @@ async function verifyBearer(token: string): Promise<AuthUserLocals | null> {
 
 export const handle: Handle = async ({ event, resolve }) => {
 	const urlPath = event.url.pathname;
+
+	// Handle i18n locale detection from Accept-Language header
+	const lang = event.request.headers.get('accept-language')?.split(',')[0];
+	if (lang) {
+		const supportedLocales = ['en', 'fr'];
+		const detectedLocale = lang.slice(0, 2);
+		if (supportedLocales.includes(detectedLocale)) {
+			locale.set(detectedLocale);
+		}
+	}
+
 	const authHeader =
 		event.request.headers.get('authorization') || event.request.headers.get('Authorization');
 

@@ -1,5 +1,16 @@
-import { register, init, getLocaleFromNavigator, locale, _, isLoading } from 'svelte-i18n';
+import {
+	register,
+	init,
+	getLocaleFromNavigator,
+	locale,
+	_,
+	isLoading,
+	waitLocale
+} from 'svelte-i18n';
 import { browser } from '$app/environment';
+
+const defaultLocale = 'en';
+const supportedLocales = ['en', 'fr'];
 
 // Register translations
 register('en', () => import('./en/common.json'));
@@ -17,17 +28,29 @@ export function getSavedLocale(): string {
 export function detectBrowserLocale(): string {
 	if (browser) {
 		const browserLocale = getLocaleFromNavigator();
-		return browserLocale && ['en', 'fr'].includes(browserLocale.slice(0, 2))
+		return browserLocale && supportedLocales.includes(browserLocale.slice(0, 2))
 			? browserLocale.slice(0, 2)
-			: 'en';
+			: defaultLocale;
 	}
-	return 'en';
+	return defaultLocale;
 }
 
-// Initialize i18n immediately with default locale
+// Get initial locale based on context
+function getInitialLocale(): string {
+	if (browser) {
+		const savedLocale = getSavedLocale();
+		if (savedLocale && supportedLocales.includes(savedLocale)) {
+			return savedLocale;
+		}
+		return detectBrowserLocale();
+	}
+	return defaultLocale;
+}
+
+// Initialize i18n with dynamic initial locale
 init({
-	fallbackLocale: 'en',
-	initialLocale: 'en'
+	fallbackLocale: defaultLocale,
+	initialLocale: getInitialLocale()
 });
 
 // Initialize locale preferences on client side
@@ -37,7 +60,7 @@ export function initClientLocale() {
 		const browserLocale = detectBrowserLocale();
 		const preferredLocale = savedLocale || browserLocale;
 
-		if (preferredLocale !== 'en') {
+		if (preferredLocale !== defaultLocale) {
 			locale.set(preferredLocale);
 		}
 	}
@@ -45,11 +68,13 @@ export function initClientLocale() {
 
 // Helper function to change locale and save preference
 export function setLocale(newLocale: string) {
-	locale.set(newLocale);
-	if (browser) {
-		localStorage.setItem('preferred-locale', newLocale);
+	if (supportedLocales.includes(newLocale)) {
+		locale.set(newLocale);
+		if (browser) {
+			localStorage.setItem('preferred-locale', newLocale);
+		}
 	}
 }
 
-// Export the translation function and locale store
-export { locale, _ as t, isLoading };
+// Export the translation function, locale store, and utilities
+export { locale, _ as t, isLoading, waitLocale };

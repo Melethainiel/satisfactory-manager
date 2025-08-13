@@ -17,19 +17,25 @@ export const POST: RequestHandler = async ({ params }) => {
 		}
 
 		if (!module.githubRepo) {
-			return json({ error: 'Module does not have a GitHub repository configured' }, { status: 400 });
+			return json(
+				{ error: 'Module does not have a GitHub repository configured' },
+				{ status: 400 }
+			);
 		}
 
 		const newVersions = await moduleService.fetchAndSyncVersionsFromGitHub(moduleId);
-		
+
 		return json({
 			message: `Synchronized ${newVersions.length} new versions from GitHub`,
 			newVersions
 		});
 	} catch (error) {
 		console.error('Error syncing module versions from GitHub:', error);
-		return json({ 
-			error: error instanceof Error ? error.message : 'Failed to sync versions from GitHub' 
-		}, { status: 500 });
+		return json(
+			{
+				error: error instanceof Error ? error.message : 'Failed to sync versions from GitHub'
+			},
+			{ status: 500 }
+		);
 	}
 };

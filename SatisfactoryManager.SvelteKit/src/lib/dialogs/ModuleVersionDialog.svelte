@@ -27,25 +27,20 @@
 <dialog bind:this={dialogEl} class="modal" onclose={onClose}>
 	<div class="modal-box max-w-4xl">
 		{#if currentModule}
-			<h3 class="text-lg font-bold mb-4">
+			<h3 class="mb-4 text-lg font-bold">
 				Version Management - {currentModule.name}
 			</h3>
-			
+
 			<div class="mb-4 rounded bg-base-200 p-3">
 				<div class="text-sm opacity-70">Module URL</div>
-				<a 
-					href={currentModule.url} 
-					target="_blank" 
-					rel="noopener noreferrer"
-					class="link text-sm"
-				>
+				<a href={currentModule.url} target="_blank" rel="noopener noreferrer" class="link text-sm">
 					{currentModule.url}
 				</a>
 				{#if currentModule.githubRepo}
-					<div class="text-sm opacity-70 mt-2">GitHub Repository</div>
-					<a 
-						href={currentModule.githubRepo} 
-						target="_blank" 
+					<div class="mt-2 text-sm opacity-70">GitHub Repository</div>
+					<a
+						href={currentModule.githubRepo}
+						target="_blank"
 						rel="noopener noreferrer"
 						class="link text-sm"
 					>
@@ -56,11 +51,9 @@
 
 			<ModuleVersionManager module={currentModule} />
 		{/if}
-		
+
 		<div class="modal-action">
-			<button type="button" class="btn" onclick={() => dialogEl?.close()}>
-				Close
-			</button>
+			<button type="button" class="btn" onclick={() => dialogEl?.close()}> Close </button>
 		</div>
 	</div>
 </dialog>

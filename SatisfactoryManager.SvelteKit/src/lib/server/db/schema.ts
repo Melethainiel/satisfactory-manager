@@ -36,7 +36,9 @@ export type NewModule = typeof modules.$inferInsert;
 // Module versions table to track available versions
 export const moduleVersions = pgTable('module_versions', {
 	id: uuid('id').defaultRandom().primaryKey(),
-	moduleId: uuid('module_id').notNull().references(() => modules.id, { onDelete: 'cascade' }),
+	moduleId: uuid('module_id')
+		.notNull()
+		.references(() => modules.id, { onDelete: 'cascade' }),
 	version: varchar('version', { length: 100 }).notNull(),
 	releaseUrl: varchar('release_url', { length: 2048 }),
 	releaseNotes: varchar('release_notes', { length: 5000 }),

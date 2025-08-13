@@ -63,11 +63,15 @@
 			{#if error}
 				<div class="alert flex justify-between alert-error py-2 text-sm">
 					<span>{error}</span>
-					<button class="btn btn-xs" onclick={() => (error = null)} type="button">{$t('common.clear')}</button>
+					<button class="btn btn-xs" onclick={() => (error = null)} type="button"
+						>{$t('common.clear')}</button
+					>
 				</div>
 			{/if}
 			<div class="modal-action">
-				<button type="button" class="btn" onclick={() => dialogEl?.close()}>{$t('common.cancel')}</button>
+				<button type="button" class="btn" onclick={() => dialogEl?.close()}
+					>{$t('common.cancel')}</button
+				>
 				<button type="submit" class="btn btn-primary" disabled={isSubmitting}>
 					{#if isSubmitting}
 						<span class="loading loading-sm loading-spinner"></span>

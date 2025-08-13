@@ -210,14 +210,16 @@
 					</button>
 				</div>
 				<div class="label">
-					<span class="label-text-alt opacity-70">Optional: GitHub repo for automatic version management</span>
+					<span class="label-text-alt opacity-70"
+						>Optional: GitHub repo for automatic version management</span
+					>
 				</div>
 			</label>
 
 			{#if previewVersions.length > 0}
 				<div class="mb-4 rounded-lg border border-base-300 p-4">
 					<h4 class="mb-2 text-sm font-medium">Available Versions ({previewVersions.length})</h4>
-					<div class="max-h-32 overflow-y-auto space-y-1">
+					<div class="max-h-32 space-y-1 overflow-y-auto">
 						{#each previewVersions.slice(0, 5) as version}
 							<div class="flex items-center justify-between text-xs">
 								<span class="font-mono">{version.version}</span>

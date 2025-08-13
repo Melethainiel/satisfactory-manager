@@ -195,13 +195,10 @@
 					</li>
 					<div class="divider my-1"></div>
 					<li>
-						<a href="/profile" role="menuitem" onclick={hideUserMenu}>{$t('auth.profile')}</a
-						>
+						<a href="/profile" role="menuitem" onclick={hideUserMenu}>{$t('auth.profile')}</a>
 					</li>
 					<li>
-						<a href="/settings" role="menuitem" onclick={hideUserMenu}
-							>{$t('auth.settings')}</a
-						>
+						<a href="/settings" role="menuitem" onclick={hideUserMenu}>{$t('auth.settings')}</a>
 					</li>
 					<div class="divider my-1"></div>
 					<li>

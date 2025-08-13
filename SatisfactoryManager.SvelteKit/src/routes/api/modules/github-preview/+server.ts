@@ -18,15 +18,18 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 
 		const versions = await moduleService.getAvailableVersionsFromGitHub(githubUrl.trim());
-		
+
 		return json({
 			githubUrl: githubUrl.trim(),
 			versions
 		});
 	} catch (error) {
 		console.error('Error fetching GitHub versions:', error);
-		return json({ 
-			error: error instanceof Error ? error.message : 'Failed to fetch versions from GitHub' 
-		}, { status: 500 });
+		return json(
+			{
+				error: error instanceof Error ? error.message : 'Failed to fetch versions from GitHub'
+			},
+			{ status: 500 }
+		);
 	}
 };

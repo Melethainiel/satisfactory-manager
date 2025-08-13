@@ -53,7 +53,9 @@
 		<h3 class="mb-2 text-lg font-bold">{$t('dialogs.select_auth_level.title')}</h3>
 		<form onsubmit={submit} class="flex flex-col gap-4">
 			<div>
-				<label class="label" for="role_user_email"><span class="label-text">{$t('dialogs.select_auth_level.user')}</span></label>
+				<label class="label" for="role_user_email"
+					><span class="label-text">{$t('dialogs.select_auth_level.user')}</span></label
+				>
 				<input
 					id="role_user_email"
 					class="input-bordered input w-full"
@@ -62,7 +64,9 @@
 				/>
 			</div>
 			<div class="flex flex-col gap-2">
-				<label class="label" for="role_choices"><span class="label-text">{$t('dialogs.select_auth_level.role')}</span></label>
+				<label class="label" for="role_choices"
+					><span class="label-text">{$t('dialogs.select_auth_level.role')}</span></label
+				>
 				<div class="join-vertical join sm:join-horizontal">
 					{#each roles as r}
 						<input
@@ -78,20 +82,40 @@
 				</div>
 				<p class="text-xs opacity-70">{$t('dialogs.select_auth_level.role_description')}</p>
 				<ul class="ml-4 list-disc space-y-1 text-xs opacity-70">
-					<li><strong>{$t('dialogs.select_auth_level.reader')}</strong>: {$t('dialogs.select_auth_level.reader_desc')}</li>
-					<li><strong>{$t('dialogs.select_auth_level.contributor')}</strong>: {$t('dialogs.select_auth_level.contributor_desc')}</li>
-					<li><strong>{$t('dialogs.select_auth_level.administrator')}</strong>: {$t('dialogs.select_auth_level.administrator_desc')}</li>
-					<li><strong>{$t('dialogs.select_auth_level.owner')}</strong>: {$t('dialogs.select_auth_level.owner_desc')}</li>
+					<li>
+						<strong>{$t('dialogs.select_auth_level.reader')}</strong>: {$t(
+							'dialogs.select_auth_level.reader_desc'
+						)}
+					</li>
+					<li>
+						<strong>{$t('dialogs.select_auth_level.contributor')}</strong>: {$t(
+							'dialogs.select_auth_level.contributor_desc'
+						)}
+					</li>
+					<li>
+						<strong>{$t('dialogs.select_auth_level.administrator')}</strong>: {$t(
+							'dialogs.select_auth_level.administrator_desc'
+						)}
+					</li>
+					<li>
+						<strong>{$t('dialogs.select_auth_level.owner')}</strong>: {$t(
+							'dialogs.select_auth_level.owner_desc'
+						)}
+					</li>
 				</ul>
 			</div>
 			{#if error}
 				<div class="alert flex justify-between alert-error py-2 text-sm">
 					<span>{error}</span>
-					<button type="button" class="btn btn-xs" onclick={() => (error = null)}>{$t('common.clear')}</button>
+					<button type="button" class="btn btn-xs" onclick={() => (error = null)}
+						>{$t('common.clear')}</button
+					>
 				</div>
 			{/if}
 			<div class="modal-action">
-				<button type="button" class="btn" onclick={() => dialogEl?.close()}>{$t('common.cancel')}</button>
+				<button type="button" class="btn" onclick={() => dialogEl?.close()}
+					>{$t('common.cancel')}</button
+				>
 				<button type="submit" class="btn btn-primary" disabled={isSubmitting}>
 					{#if isSubmitting}
 						<span class="loading loading-sm loading-spinner"></span>
@@ -102,7 +126,7 @@
 		</form>
 	</div>
 	<form method="dialog" class="modal-backdrop">
-		<button aria-label="{$t('dialogs.select_auth_level.close_label')}">{$t('common.close')}</button>
+		<button aria-label={$t('dialogs.select_auth_level.close_label')}>{$t('common.close')}</button>
 	</form>
 </dialog>
 

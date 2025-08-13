@@ -45,7 +45,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
 
 		// Check if version already exists
 		const existingVersions = await moduleService.getVersions(moduleId);
-		const versionExists = existingVersions.some(v => v.version === version.trim());
+		const versionExists = existingVersions.some((v) => v.version === version.trim());
 		if (versionExists) {
 			return json({ error: 'Version already exists' }, { status: 409 });
 		}

@@ -2,6 +2,7 @@
 	import { getGameState } from '$lib/states/gameState.svelte';
 	import { getAuthState } from '$lib/states/authState.svelte';
 	import { Icon, Identification, AdjustmentsHorizontal, Trash, Plus } from 'svelte-hero-icons';
+	import { t } from '$lib/i18n';
 	import CreateGameDialog from '$lib/dialogs/CreateGameDialog.svelte';
 	import type { CreateGameDialogHandle } from '$lib/dialogs/CreateGameDialogHandle';
 	import DeleteGameDialog from '$lib/dialogs/DeleteGameDialog.svelte';
@@ -109,9 +110,9 @@
 		if (!gameId) return;
 
 		confirmDialogRef?.open({
-			title: 'Remove User',
-			message: `Are you sure you want to remove ${userEmail} from this game?`,
-			confirmText: 'Remove User',
+			title: $t('users.remove_user'),
+			message: $t('users.remove_user_confirm', { values: { email: userEmail } }),
+			confirmText: $t('users.remove_user'),
 			type: 'danger',
 			onConfirm: async () => {
 				await gameState.removeGameUser(gameId, userEmail);
@@ -126,9 +127,9 @@
 		if (!gameId) return;
 
 		confirmDialogRef?.open({
-			title: 'Remove Module',
-			message: `Are you sure you want to remove the module "${moduleName}" from this game?`,
-			confirmText: 'Remove Module',
+			title: $t('modules.remove_module'),
+			message: $t('modules.remove_module_confirm', { values: { name: moduleName } }),
+			confirmText: $t('modules.remove_module'),
 			type: 'danger',
 			onConfirm: async () => {
 				await gameState.removeGameModule(gameId, moduleId);
@@ -144,19 +145,19 @@
 </script>
 
 <svelte:head>
-	<title>Satisfactory Manager | Settings</title>
+	<title>Satisfactory Manager | {$t('settings.title')}</title>
 </svelte:head>
 
-<h1 class="mb-6 text-2xl font-bold">Settings</h1>
+<h1 class="mb-6 text-2xl font-bold">{$t('settings.title')}</h1>
 
 {#if !authState.isAuthenticated}
-	<p class="text-sm opacity-70">Sign in to view game settings.</p>
+	<p class="text-sm opacity-70">{$t('settings.sign_in_prompt')}</p>
 {:else if gameState.isLoading && gameState.games.length === 0}
 	<span class="loading loading-sm loading-spinner"></span>
 {:else if !gameState.selectedGameId}
 	<div class="mt-12 flex flex-col items-center gap-4">
-		<p class="text-lg opacity-70">No game selected. Create or select a game first</p>
-		<button class="btn btn-primary" onclick={() => createDialogRef?.open()}>Create New Game</button>
+		<p class="text-lg opacity-70">{$t('settings.no_game_selected')}</p>
+		<button class="btn btn-primary" onclick={() => createDialogRef?.open()}>{$t('settings.create_new_game')}</button>
 		<CreateGameDialog bind:this={createDialogRef} />
 	</div>
 {:else}
@@ -165,28 +166,28 @@
 			<div class="card-body">
 				<h2 class="card-title">
 					<Icon src={Identification} class="size-6 stroke-1" />
-					Game Info
+					{$t('settings.game_info')}
 				</h2>
 				{#if gameState.error}
 					<div class="mb-2 alert alert-error py-2 text-sm">
 						<span>{gameState.error}</span>
-						<button class="btn btn-xs" onclick={() => gameState.clearError()}>Clear</button>
+						<button class="btn btn-xs" onclick={() => gameState.clearError()}>{$t('common.clear')}</button>
 					</div>
 				{/if}
 				<label class="form-control w-full max-w-md">
 					<div class="label">
-						<span class="label-text">Name</span>
+						<span class="label-text">{$t('settings.name')}</span>
 					</div>
 					<input
 						class="input-bordered input w-full"
 						value={editingName}
 						oninput={onInput}
-						placeholder="Game name"
+						placeholder={$t('game.game_name_placeholder')}
 					/>
 				</label>
 				<div class="mt-4 flex items-center justify-end gap-3">
 					{#if saveSuccess}
-						<span class="text-sm text-success">Saved</span>
+						<span class="text-sm text-success">{$t('settings.saved')}</span>
 					{/if}
 					{#if saveError}
 						<span class="text-sm text-error">{saveError}</span>
@@ -199,14 +200,14 @@
 						{#if gameState.isLoading}
 							<span class="loading loading-sm loading-spinner"></span>
 						{/if}
-						Save
+						{$t('common.save')}
 					</button>
 				</div>
 
 				<!-- Modules Section -->
 				<div class="divider"></div>
 				<div class="flex items-center justify-between">
-					<h3 class="text-lg font-semibold">Modules</h3>
+					<h3 class="text-lg font-semibold">{$t('modules.title')}</h3>
 					<button
 						class="btn btn-circle btn-ghost btn-xs btn-primary"
 						onclick={() => addModuleDialogRef?.open()}
@@ -220,10 +221,10 @@
 				{:else if modulesError}
 					<div class="alert alert-error py-2 text-sm">
 						<span>{modulesError}</span>
-						<button class="btn btn-xs" onclick={() => (modulesError = null)}>Dismiss</button>
+						<button class="btn btn-xs" onclick={() => (modulesError = null)}>{$t('common.dismiss')}</button>
 					</div>
 				{:else if gameState.gameModules.length === 0}
-					<p class="text-sm opacity-70">No modules attached to this game.</p>
+					<p class="text-sm opacity-70">{$t('modules.no_modules')}</p>
 				{:else}
 					<ul class="divide-y divide-base-200">
 						{#each gameState.gameModules as module}
@@ -252,7 +253,7 @@
 			<div class="card-body">
 				<h2 class="card-title">
 					<Icon src={AdjustmentsHorizontal} class="size-6 stroke-1" />
-					Authorized Users
+					{$t('users.title')}
 					<button
 						class="btn ml-auto btn-circle btn-ghost btn-xs btn-primary"
 						onclick={() => addUserDialogRef?.open()}
@@ -266,10 +267,10 @@
 				{:else if usersError}
 					<div class="alert alert-error py-2 text-sm">
 						<span>{usersError}</span>
-						<button class="btn btn-xs" onclick={() => (usersError = null)}>Dismiss</button>
+						<button class="btn btn-xs" onclick={() => (usersError = null)}>{$t('common.dismiss')}</button>
 					</div>
 				{:else if gameState.gameUsers.length === 0}
-					<p class="text-sm opacity-70">No users found.</p>
+					<p class="text-sm opacity-70">{$t('users.no_users')}</p>
 				{:else}
 					<ul class="divide-y divide-base-200">
 						{#each gameState.gameUsers as u}
@@ -301,14 +302,13 @@
 		<!-- Danger Card for Deleting Game -->
 		<div class="card border border-error bg-base-100 shadow">
 			<div class="card-body">
-				<h2 class="card-title text-error">Danger Zone</h2>
+				<h2 class="card-title text-error">{$t('settings.danger_zone')}</h2>
 				<div class="flex justify-between">
 					<p class="mb-2 text-sm opacity-80">
-						Deleting a game is <span class="font-bold">permanent</span> and cannot be undone. All data
-						will be lost.
+						{$t('settings.delete_warning')}
 					</p>
 					<button class="btn btn-outline btn-error" onclick={() => deleteDialogRef?.open()}>
-						Delete Game
+						{$t('settings.delete_game')}
 					</button>
 				</div>
 				<DeleteGameDialog bind:this={deleteDialogRef} />

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { getGameState } from '$lib/states/gameState.svelte';
 	import { getAuthState } from '$lib/states/authState.svelte';
+	import { t } from '$lib/i18n';
 
 	const gameState = getGameState();
 	const authState = getAuthState();
@@ -25,12 +26,12 @@
 	async function submit(e?: Event) {
 		e?.preventDefault();
 		if (!userEmail) {
-			error = 'No user selected';
+			error = $t('dialogs.select_auth_level.error_no_user');
 			return;
 		}
 		const gameId = gameState.selectedGameId;
 		if (!gameId) {
-			error = 'No game selected';
+			error = $t('dialogs.select_auth_level.error_no_game');
 			return;
 		}
 		isSubmitting = true;
@@ -40,7 +41,7 @@
 			await gameState.loadGameUsers(gameId);
 			dialogEl?.close();
 		} catch (e: any) {
-			error = e?.message ?? 'Failed to update role';
+			error = e?.message ?? $t('dialogs.select_auth_level.error_failed');
 		} finally {
 			isSubmitting = false;
 		}
@@ -49,10 +50,10 @@
 
 <dialog bind:this={dialogEl} id="select_auth_level_modal" class="modal">
 	<div class="modal-box max-w-md">
-		<h3 class="mb-2 text-lg font-bold">Set Authorization Level</h3>
+		<h3 class="mb-2 text-lg font-bold">{$t('dialogs.select_auth_level.title')}</h3>
 		<form onsubmit={submit} class="flex flex-col gap-4">
 			<div>
-				<label class="label" for="role_user_email"><span class="label-text">User</span></label>
+				<label class="label" for="role_user_email"><span class="label-text">{$t('dialogs.select_auth_level.user')}</span></label>
 				<input
 					id="role_user_email"
 					class="input-bordered input w-full"
@@ -61,7 +62,7 @@
 				/>
 			</div>
 			<div class="flex flex-col gap-2">
-				<label class="label" for="role_choices"><span class="label-text">Role</span></label>
+				<label class="label" for="role_choices"><span class="label-text">{$t('dialogs.select_auth_level.role')}</span></label>
 				<div class="join-vertical join sm:join-horizontal">
 					{#each roles as r}
 						<input
@@ -75,33 +76,33 @@
 						/>
 					{/each}
 				</div>
-				<p class="text-xs opacity-70">Controls what the user can do inside this game.</p>
+				<p class="text-xs opacity-70">{$t('dialogs.select_auth_level.role_description')}</p>
 				<ul class="ml-4 list-disc space-y-1 text-xs opacity-70">
-					<li><strong>Reader</strong>: View only</li>
-					<li><strong>Contributor</strong>: View + contribute standard data</li>
-					<li><strong>Administrator</strong>: Manage users & settings</li>
-					<li><strong>Owner</strong>: Full control</li>
+					<li><strong>{$t('dialogs.select_auth_level.reader')}</strong>: {$t('dialogs.select_auth_level.reader_desc')}</li>
+					<li><strong>{$t('dialogs.select_auth_level.contributor')}</strong>: {$t('dialogs.select_auth_level.contributor_desc')}</li>
+					<li><strong>{$t('dialogs.select_auth_level.administrator')}</strong>: {$t('dialogs.select_auth_level.administrator_desc')}</li>
+					<li><strong>{$t('dialogs.select_auth_level.owner')}</strong>: {$t('dialogs.select_auth_level.owner_desc')}</li>
 				</ul>
 			</div>
 			{#if error}
 				<div class="alert flex justify-between alert-error py-2 text-sm">
 					<span>{error}</span>
-					<button type="button" class="btn btn-xs" onclick={() => (error = null)}>Clear</button>
+					<button type="button" class="btn btn-xs" onclick={() => (error = null)}>{$t('common.clear')}</button>
 				</div>
 			{/if}
 			<div class="modal-action">
-				<button type="button" class="btn" onclick={() => dialogEl?.close()}>Cancel</button>
+				<button type="button" class="btn" onclick={() => dialogEl?.close()}>{$t('common.cancel')}</button>
 				<button type="submit" class="btn btn-primary" disabled={isSubmitting}>
 					{#if isSubmitting}
 						<span class="loading loading-sm loading-spinner"></span>
 					{/if}
-					Save
+					{$t('common.save')}
 				</button>
 			</div>
 		</form>
 	</div>
 	<form method="dialog" class="modal-backdrop">
-		<button aria-label="Close select auth level modal">close</button>
+		<button aria-label="{$t('dialogs.select_auth_level.close_label')}">{$t('common.close')}</button>
 	</form>
 </dialog>
 

@@ -5,6 +5,7 @@
 	import type { GameModule } from '$lib/states/gameState.svelte';
 	import CreateModuleDialog from './CreateModuleDialog.svelte';
 	import type { CreateModuleDialogHandle } from './CreateModuleDialogHandle';
+	import { t } from '$lib/i18n';
 
 	const gameState = getGameState();
 	const authState = getAuthState();
@@ -29,7 +30,7 @@
 			const attachedModuleIds = new Set(gameState.gameModules.map((m) => m.id));
 			availableModules = data.filter((m) => !attachedModuleIds.has(m.id));
 		} catch (e: any) {
-			error = e?.message ?? 'Failed to load available modules';
+			error = e?.message ?? $t('dialogs.add_module.error_load_failed');
 		} finally {
 			isLoadingModules = false;
 		}
@@ -49,7 +50,7 @@
 			selectedModuleId = '';
 			dialogEl?.close();
 		} catch (e: any) {
-			error = e?.message ?? 'Failed to add module';
+			error = e?.message ?? $t('dialogs.add_module.error_failed');
 		} finally {
 			isSubmitting = false;
 		}
@@ -78,7 +79,7 @@
 
 <dialog bind:this={dialogEl} class="modal" onclose={onClose}>
 	<div class="modal-box">
-		<h3 class="text-lg font-bold">Add Module</h3>
+		<h3 class="text-lg font-bold">{$t('dialogs.add_module.title')}</h3>
 		<form onsubmit={submit} class="mt-4">
 			{#if error}
 				<div class="mb-4 alert alert-error py-2 text-sm">
@@ -89,27 +90,27 @@
 			{#if isLoadingModules}
 				<div class="mb-4 flex items-center gap-2">
 					<span class="loading loading-sm loading-spinner"></span>
-					<span class="text-sm opacity-70">Loading available modules...</span>
+					<span class="text-sm opacity-70">{$t('dialogs.add_module.loading_modules')}</span>
 				</div>
 			{:else if availableModules.length === 0}
 				<div class="mb-4 text-center">
-					<p class="mb-3 text-sm opacity-70">No modules available to add.</p>
+					<p class="mb-3 text-sm opacity-70">{$t('dialogs.add_module.no_modules_available')}</p>
 					<button
 						type="button"
 						class="btn btn-outline btn-sm"
 						onclick={handleCreateModule}
 						disabled={isSubmitting}
 					>
-						Create New Module
+						{$t('dialogs.add_module.create_new_module')}
 					</button>
 				</div>
 			{:else}
 				<label class="form-control mb-4 w-full">
 					<div class="label">
-						<span class="label-text">Select Module</span>
+						<span class="label-text">{$t('dialogs.add_module.select_module')}</span>
 					</div>
 					<select bind:value={selectedModuleId} class="select-bordered select w-full">
-						<option value="">Choose a module...</option>
+						<option value="">{$t('dialogs.add_module.choose_module')}</option>
 						{#each availableModules as module}
 							<option value={module.id}>{module.name}</option>
 						{/each}
@@ -122,14 +123,14 @@
 						onclick={handleCreateModule}
 						disabled={isSubmitting}
 					>
-						Or create a new module
+						{$t('dialogs.add_module.or_create_new')}
 					</button>
 				</div>
 			{/if}
 
 			<div class="modal-action">
 				<button type="button" class="btn" onclick={() => dialogEl?.close()} disabled={isSubmitting}>
-					Cancel
+					{$t('common.cancel')}
 				</button>
 				<button
 					type="submit"
@@ -139,7 +140,7 @@
 					{#if isSubmitting}
 						<span class="loading loading-sm loading-spinner"></span>
 					{/if}
-					Add Module
+					{$t('dialogs.add_module.add')}
 				</button>
 			</div>
 		</form>

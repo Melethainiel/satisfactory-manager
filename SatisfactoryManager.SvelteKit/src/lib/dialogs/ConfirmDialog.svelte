@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { ConfirmDialogHandle } from './ConfirmDialogHandle';
+	import { t } from '$lib/i18n';
 
 	let dialogEl: HTMLDialogElement | null = null;
 	let isLoading = $state(false);
@@ -15,8 +16,8 @@
 	}>({
 		title: '',
 		message: '',
-		confirmText: 'Confirm',
-		cancelText: 'Cancel',
+		confirmText: $t('dialogs.confirm.confirm'),
+		cancelText: $t('common.cancel'),
 		type: 'info',
 		onConfirm: () => {}
 	});
@@ -31,7 +32,7 @@
 			await options.onConfirm();
 			dialogEl?.close();
 		} catch (e: any) {
-			error = e?.message ?? 'An error occurred';
+			error = e?.message ?? $t('dialogs.confirm.error_occurred');
 		} finally {
 			isLoading = false;
 		}
@@ -77,8 +78,8 @@
 		options = {
 			title: dialogOptions.title,
 			message: dialogOptions.message,
-			confirmText: dialogOptions.confirmText ?? 'Confirm',
-			cancelText: dialogOptions.cancelText ?? 'Cancel',
+			confirmText: dialogOptions.confirmText ?? $t('dialogs.confirm.confirm'),
+			cancelText: dialogOptions.cancelText ?? $t('common.cancel'),
 			type: dialogOptions.type ?? 'info',
 			onConfirm: dialogOptions.onConfirm
 		};

@@ -29,6 +29,84 @@
 		"game_name_placeholder": "Game name",
 		"game_name_validation": "Must be 3 to 30 characters containing only letters, numbers or dash"
 	},
+	"settings": {
+		"title": "Settings",
+		"sign_in_prompt": "Sign in to view game settings.",
+		"no_game_selected": "No game selected. Create or select a game first",
+		"create_new_game": "Create New Game",
+		"game_info": "Game Info",
+		"name": "Name",
+		"saved": "Saved",
+		"danger_zone": "Danger Zone",
+		"delete_warning": "Deleting a game is permanent and cannot be undone. All data will be lost.",
+		"delete_game": "Delete Game"
+	},
+	"users": {
+		"title": "Authorized Users",
+		"no_users": "No users found.",
+		"add_users": "Add Users",
+		"remove_user": "Remove User",
+		"remove_user_confirm": "Are you sure you want to remove {email} from this game?"
+	},
+	"modules": {
+		"title": "Modules",
+		"no_modules": "No modules attached to this game.",
+		"add_module": "Add Module",
+		"remove_module": "Remove Module",
+		"remove_module_confirm": "Are you sure you want to remove the module \"{name}\" from this game?"
+	},
+	"dialogs": {
+		"add_users": {
+			"title": "Add Users",
+			"placeholder": "Enter one or more email addresses separated by commas, spaces or new lines",
+			"example": "Example: user1@example.com, user2@example.com",
+			"error_no_emails": "Enter at least one valid email",
+			"error_failed": "Failed to add users",
+			"add": "Add",
+			"close_label": "Close add users modal"
+		},
+		"add_module": {
+			"title": "Add Module",
+			"loading_modules": "Loading available modules...",
+			"no_modules_available": "No modules available to add.",
+			"create_new_module": "Create New Module",
+			"select_module": "Select Module",
+			"choose_module": "Choose a module...",
+			"or_create_new": "Or create a new module",
+			"add": "Add Module",
+			"error_failed": "Failed to add module",
+			"error_load_failed": "Failed to load available modules"
+		},
+		"select_auth_level": {
+			"title": "Set Authorization Level",
+			"user": "User",
+			"role": "Role",
+			"role_description": "Controls what the user can do inside this game.",
+			"reader": "Reader",
+			"reader_desc": "View only",
+			"contributor": "Contributor",
+			"contributor_desc": "View + contribute standard data",
+			"administrator": "Administrator",
+			"administrator_desc": "Manage users & settings",
+			"owner": "Owner",
+			"owner_desc": "Full control",
+			"error_no_user": "No user selected",
+			"error_no_game": "No game selected",
+			"error_failed": "Failed to update role",
+			"close_label": "Close select auth level modal"
+		},
+		"delete_game": {
+			"title": "Confirm Delete",
+			"message": "Are you sure you want to delete this game? This action cannot be undone.",
+			"yes_delete": "Yes, Delete",
+			"error_failed": "Failed to delete game",
+			"close_label": "Close delete game modal"
+		},
+		"confirm": {
+			"confirm": "Confirm",
+			"error_occurred": "An error occurred"
+		}
+	},
 	"common": {
 		"cancel": "Cancel",
 		"create": "Create",
@@ -38,7 +116,9 @@
 		"close": "Close",
 		"loading": "Loading...",
 		"error": "Error",
-		"success": "Success"
+		"success": "Success",
+		"clear": "Clear",
+		"dismiss": "Dismiss"
 	},
 	"demo": {
 		"title": "Azure AD B2C Authentication Demo",

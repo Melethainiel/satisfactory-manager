@@ -105,6 +105,22 @@
 		"confirm": {
 			"confirm": "Confirm",
 			"error_occurred": "An error occurred"
+		},
+		"module_version": {
+			"title": "Version Management - {name}",
+			"module_url": "Module URL",
+			"github_repo": "GitHub Repository",
+			"close_label": "Close module version dialog",
+			"version_management": "Version Management",
+			"refresh": "Refresh",
+			"sync_from_github": "Sync from GitHub",
+			"current_version": "Current Version",
+			"no_versions": "No versions available",
+			"sync_github_hint": "Try syncing from GitHub to fetch available versions",
+			"current_badge": "Current",
+			"published": "Published",
+			"view_release": "View Release",
+			"use_this_version": "Use This Version"
 		}
 	},
 	"common": {

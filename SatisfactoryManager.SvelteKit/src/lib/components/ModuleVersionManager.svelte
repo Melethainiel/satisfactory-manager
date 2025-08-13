@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { getAuthState } from '$lib/states/authState.svelte';
+	import { t } from '$lib/i18n';
 
 	interface ModuleVersion {
 		id: string;
@@ -116,13 +117,13 @@
 
 <div class="rounded-lg border border-base-300 p-4">
 	<div class="mb-4 flex items-center justify-between">
-		<h3 class="text-lg font-semibold">Version Management</h3>
+		<h3 class="text-lg font-semibold">{$t('dialogs.module_version.version_management')}</h3>
 		<div class="flex gap-2">
 			<button class="btn btn-sm" onclick={loadVersions} disabled={isLoading}>
 				{#if isLoading}
 					<span class="loading loading-sm loading-spinner"></span>
 				{:else}
-					Refresh
+					{$t('dialogs.module_version.refresh')}
 				{/if}
 			</button>
 			{#if module.githubRepo}
@@ -134,7 +135,7 @@
 					{#if isSyncing}
 						<span class="loading loading-sm loading-spinner"></span>
 					{:else}
-						Sync from GitHub
+						{$t('dialogs.module_version.sync_from_github')}
 					{/if}
 				</button>
 			{/if}
@@ -149,7 +150,7 @@
 
 	{#if module.currentVersion}
 		<div class="mb-4 rounded bg-base-200 p-3">
-			<div class="text-sm font-medium">Current Version</div>
+			<div class="text-sm font-medium">{$t('dialogs.module_version.current_version')}</div>
 			<div class="font-mono text-lg">{module.currentVersion}</div>
 		</div>
 	{/if}
@@ -160,9 +161,9 @@
 		</div>
 	{:else if versions.length === 0}
 		<div class="py-8 text-center text-gray-500">
-			<div class="mb-2">No versions available</div>
+			<div class="mb-2">{$t('dialogs.module_version.no_versions')}</div>
 			{#if module.githubRepo}
-				<div class="text-sm">Try syncing from GitHub to fetch available versions</div>
+				<div class="text-sm">{$t('dialogs.module_version.sync_github_hint')}</div>
 			{/if}
 		</div>
 	{:else}
@@ -173,12 +174,12 @@
 						<div class="flex items-center gap-2">
 							<span class="font-mono font-medium">{version.version}</span>
 							{#if version.version === module.currentVersion}
-								<span class="badge badge-sm badge-primary">Current</span>
+								<span class="badge badge-sm badge-primary">{$t('dialogs.module_version.current_badge')}</span>
 							{/if}
 						</div>
 						{#if version.publishedAt}
 							<div class="text-sm opacity-70">
-								Published: {new Date(version.publishedAt).toLocaleDateString()}
+								{$t('dialogs.module_version.published')}: {new Date(version.publishedAt).toLocaleDateString()}
 							</div>
 						{/if}
 						{#if version.releaseNotes}
@@ -195,7 +196,7 @@
 								rel="noopener noreferrer"
 								class="btn btn-ghost btn-sm"
 							>
-								View Release
+								{$t('dialogs.module_version.view_release')}
 							</a>
 						{/if}
 						{#if version.version !== module.currentVersion}
@@ -207,7 +208,7 @@
 								{#if isUpdatingVersion}
 									<span class="loading loading-sm loading-spinner"></span>
 								{:else}
-									Use This Version
+									{$t('dialogs.module_version.use_this_version')}
 								{/if}
 							</button>
 						{/if}

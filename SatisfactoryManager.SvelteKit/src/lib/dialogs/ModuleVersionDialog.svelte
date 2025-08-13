@@ -1,5 +1,6 @@
 <script lang="ts">
 	import ModuleVersionManager from '$lib/components/ModuleVersionManager.svelte';
+	import { t } from '$lib/i18n';
 
 	interface Module {
 		id: string;
@@ -25,19 +26,19 @@
 </script>
 
 <dialog bind:this={dialogEl} class="modal" onclose={onClose}>
-	<div class="modal-box max-w-4xl">
+	<div class="modal-box max-w-4xl max-h-[80vh] overflow-y-auto">
 		{#if currentModule}
 			<h3 class="mb-4 text-lg font-bold">
-				Version Management - {currentModule.name}
+				{$t('dialogs.module_version.title').replace('{name}', currentModule.name)}
 			</h3>
 
 			<div class="mb-4 rounded bg-base-200 p-3">
-				<div class="text-sm opacity-70">Module URL</div>
+				<div class="text-sm opacity-70">{$t('dialogs.module_version.module_url')}</div>
 				<a href={currentModule.url} target="_blank" rel="noopener noreferrer" class="link text-sm">
 					{currentModule.url}
 				</a>
 				{#if currentModule.githubRepo}
-					<div class="mt-2 text-sm opacity-70">GitHub Repository</div>
+					<div class="mt-2 text-sm opacity-70">{$t('dialogs.module_version.github_repo')}</div>
 					<a
 						href={currentModule.githubRepo}
 						target="_blank"
@@ -53,7 +54,10 @@
 		{/if}
 
 		<div class="modal-action">
-			<button type="button" class="btn" onclick={() => dialogEl?.close()}> Close </button>
+			<button type="button" class="btn" onclick={() => dialogEl?.close()}>{$t('common.close')}</button>
 		</div>
 	</div>
+	<form method="dialog" class="modal-backdrop">
+		<button aria-label={$t('dialogs.module_version.close_label')}>{$t('common.close')}</button>
+	</form>
 </dialog>

@@ -105,6 +105,22 @@
 		"confirm": {
 			"confirm": "Confirmer",
 			"error_occurred": "Une erreur est survenue"
+		},
+		"module_version": {
+			"title": "Gestion des versions - {name}",
+			"module_url": "URL du module",
+			"github_repo": "Dépôt GitHub",
+			"close_label": "Fermer la boîte de dialogue des versions de module",
+			"version_management": "Gestion des versions",
+			"refresh": "Actualiser",
+			"sync_from_github": "Synchroniser depuis GitHub",
+			"current_version": "Version actuelle",
+			"no_versions": "Aucune version disponible",
+			"sync_github_hint": "Essayez de synchroniser depuis GitHub pour récupérer les versions disponibles",
+			"current_badge": "Actuelle",
+			"published": "Publiée",
+			"view_release": "Voir la version",
+			"use_this_version": "Utiliser cette version"
 		}
 	},
 	"common": {

@@ -1,14 +1,17 @@
 <script lang="ts">
 	import { getAuthState } from '$lib/states/authState.svelte';
 	import { getGameState } from '$lib/states/gameState.svelte';
+	import { getLocaleState } from '$lib/states/localeState.svelte';
 	import CreateGameDialog from '$lib/dialogs/CreateGameDialog.svelte';
 	import type { CreateGameDialogHandle } from '$lib/dialogs/CreateGameDialogHandle';
+	import { t, locale } from '$lib/i18n';
 	// New Svelte 5 pattern: accept a callback prop instead of dispatching an event
 	let { toggleNav } = $props<{ toggleNav?: () => void }>();
 
 	// Get auth & game state from context
 	const authState = getAuthState();
 	const gameState = getGameState();
+	const localeState = getLocaleState();
 
 	let createDialogRef: CreateGameDialogHandle | null = null;
 
@@ -41,7 +44,7 @@
 		<!-- Mobile nav toggle -->
 		<button
 			class="btn btn-square btn-ghost lg:hidden"
-			aria-label="Toggle navigation"
+			aria-label={$t('nav.toggle_nav')}
 			onclick={() => toggleNav?.()}
 		>
 			<svg
@@ -63,13 +66,13 @@
 			<!-- Logo -->
 			<img
 				src="/logo-256.png"
-				alt="Satisfactory Manager logo"
+				alt={$t('app.logo_alt')}
 				class="mr-2 h-8 w-8 rounded-lg object-contain"
 				width="32"
 				height="32"
 				loading="lazy"
 			/>
-			Satisfactory Manager
+			{$t('app.name')}
 		</a>
 		<!-- Game selector when authenticated -->
 		{#if authState.isAuthenticated}
@@ -80,12 +83,12 @@
 					bind:value={gameState.selectedGameId}
 					disabled={gameState.isLoading || gameState.games.length === 0}
 				>
-					<option value={null} disabled>Select server...</option>
+					<option value={null} disabled>{$t('game.select_server')}</option>
 					{#each gameState.games as g}
 						<option value={g.id}>{g.name}</option>
 					{/each}
 				</select>
-				<button class="btn btn-xs" onclick={() => createDialogRef?.open()} title="Create new game"
+				<button class="btn btn-xs" onclick={() => createDialogRef?.open()} title={$t('game.create_new')}
 					>+</button
 				>
 				{#if gameState.error}
@@ -103,8 +106,38 @@
 
 	<CreateGameDialog bind:this={createDialogRef} />
 
-	<!-- Right side: Authentication -->
-	<div class="navbar-end">
+	<!-- Right side: Language selector and Authentication -->
+	<div class="navbar-end gap-2">
+		<!-- Language selector -->
+		<div class="dropdown dropdown-end">
+			<button class="btn btn-ghost btn-sm" tabindex="0" aria-label="Change language">
+				<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"></path>
+				</svg>
+				{$locale?.toUpperCase() || 'EN'}
+			</button>
+			<ul class="dropdown-content menu bg-base-100 rounded-box z-[1] w-24 p-2 shadow border">
+				<li>
+					<button 
+						class="btn btn-ghost btn-sm justify-start" 
+						class:btn-active={$locale === 'en'}
+						onclick={() => localeState.changeLocale('en')}
+					>
+						🇺🇸 EN
+					</button>
+				</li>
+				<li>
+					<button 
+						class="btn btn-ghost btn-sm justify-start" 
+						class:btn-active={$locale === 'fr'}
+						onclick={() => localeState.changeLocale('fr')}
+					>
+						🇫🇷 FR
+					</button>
+				</li>
+			</ul>
+		</div>
+
 		{#if authState.isLoading}
 			<!-- Loading state -->
 			<div class="loading loading-sm loading-spinner"></div>
@@ -127,10 +160,10 @@
 						/>
 						<div class="hidden text-left md:block">
 							<h1 class="text-lg font-semibold text-gray-700 capitalize dark:text-white">
-								{authState.user.displayName || 'User'}
+								{authState.user.displayName || $t('auth.user')}
 							</h1>
 							<p class="text-sm text-gray-500 dark:text-gray-400">
-								{authState.user.email || 'No email'}
+								{authState.user.email || $t('auth.no_email')}
 							</p>
 						</div>
 						<svg class="ml-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -152,14 +185,14 @@
 				>
 					<li class="menu-title" role="presentation">
 						<span class="text-xs text-base-content/60" role="none">
-							{authState.user.email || 'No email'}
+							{authState.user.email || $t('auth.no_email')}
 						</span>
 					</li>
 					<div class="divider my-1"></div>
-					<li><a href="/profile" role="menuitem" onclick={hideUserMenu}>Profile</a></li>
-					<li><a href="/settings" role="menuitem" onclick={hideUserMenu}>Settings</a></li>
+					<li><a href="/profile" role="menuitem" onclick={hideUserMenu}>{$t('auth.profile')}</a></li>
+					<li><a href="/settings" role="menuitem" onclick={hideUserMenu}>{$t('auth.settings')}</a></li>
 					<div class="divider my-1"></div>
-					<li><button role="menuitem" class="text-error" onclick={handleLogout}>Logout</button></li>
+					<li><button role="menuitem" class="text-error" onclick={handleLogout}>{$t('auth.logout')}</button></li>
 				</ul>
 			</div>
 		{:else}
@@ -173,7 +206,7 @@
 						d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
 					></path>
 				</svg>
-				Login
+				{$t('auth.login')}
 			</button>
 		{/if}
 

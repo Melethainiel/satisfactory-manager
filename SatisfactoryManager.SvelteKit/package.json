@@ -47,7 +47,8 @@
 		"@azure/msal-browser": "^4.19.0",
 		"daisyui": "^5.0.50",
 		"drizzle-orm": "^0.40.0",
+		"jose": "^5.9.3",
 		"postgres": "^3.4.5",
-		"jose": "^5.9.3"
+		"sveltekit-i18n": "^2.4.2"
 	}
 }

@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { afterNavigate } from '$app/navigation';
 	import { Icon, Map, WrenchScrewdriver } from 'svelte-hero-icons';
+	import { t } from '$lib/i18n';
 
 	// Props
 	let { open, onClose } = $props<{ open: boolean; onClose?: () => void }>();
@@ -28,14 +29,14 @@
 >
 	<ul class="menu mt-2 w-full">
 		<li>
-			<h2 class="menu-title">Navigation</h2>
+			<h2 class="menu-title">{$t('nav.navigation')}</h2>
 			<ul>
 				<li>
 					<a
 						href="/"
 						class={`rounded-lg transition-colors hover:text-primary ${isHomeActive() ? 'font-semibold text-primary' : ''}`}
 					>
-						<Icon src={Map} class="inline-block size-5 stroke-1" /> Game
+						<Icon src={Map} class="inline-block size-5 stroke-1" /> {$t('nav.game')}
 					</a>
 				</li>
 				<li>
@@ -43,7 +44,7 @@
 						href="/settings"
 						class={`rounded-lg transition-colors hover:text-primary ${isSettingsActive() ? 'font-semibold text-primary' : ''}`}
 					>
-						<Icon src={WrenchScrewdriver} class="inline-block size-5 stroke-1" /> Settings
+						<Icon src={WrenchScrewdriver} class="inline-block size-5 stroke-1" /> {$t('nav.settings')}
 					</a>
 				</li>
 			</ul>
@@ -70,15 +71,15 @@
 	aria-label="Navigation menu"
 >
 	<div class="mb-2 flex items-center justify-between">
-		<h2 class="text-lg font-semibold">Menu</h2>
-		<button class="btn btn-ghost btn-sm" aria-label="Close navigation" onclick={() => onClose?.()}
+		<h2 class="text-lg font-semibold">{$t('nav.menu')}</h2>
+		<button class="btn btn-ghost btn-sm" aria-label={$t('nav.close_nav')} onclick={() => onClose?.()}
 			>✕</button
 		>
 	</div>
 	<nav class="flex-1">
 		<ul class="menu w-full">
 			<li>
-				<h2 class="menu-title">Navigation</h2>
+				<h2 class="menu-title">{$t('nav.navigation')}</h2>
 				<ul>
 					<li>
 						<a
@@ -86,7 +87,7 @@
 							onclick={() => onClose?.()}
 							class={`rounded-lg transition-colors hover:text-primary ${isHomeActive() ? 'font-semibold text-primary' : ''}`}
 						>
-							<Icon src={Map} class="inline-block size-4 stroke-1" /> Game
+							<Icon src={Map} class="inline-block size-4 stroke-1" /> {$t('nav.game')}
 						</a>
 					</li>
 					<li>
@@ -95,7 +96,7 @@
 							onclick={() => onClose?.()}
 							class={`rounded-lg transition-colors hover:text-primary ${isSettingsActive() ? 'font-semibold text-primary' : ''}`}
 						>
-							<Icon src={WrenchScrewdriver} class="inline-block size-4 stroke-1" /> Settings
+							<Icon src={WrenchScrewdriver} class="inline-block size-4 stroke-1" /> {$t('nav.settings')}
 						</a>
 					</li>
 				</ul>

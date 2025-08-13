@@ -4,8 +4,10 @@
 	import { setAuthState } from '$lib/states/authState.svelte';
 	import { azureB2CConfig } from '$lib/auth/config';
 	import { setGameState } from '$lib/states/gameState.svelte';
+	import { setLocaleState } from '$lib/states/localeState.svelte';
 	import Header from '$lib/components/Header.svelte';
 	import SideNav from '$lib/components/SideNav.svelte';
+	import { loadTranslations, getSavedLocale, detectBrowserLocale } from '$lib/i18n';
 
 	let navOpen = $state(false);
 	function toggleNav() {
@@ -17,10 +19,17 @@
 	// Initialize contexts
 	const authState = setAuthState();
 	const gameState = setGameState();
+	const localeState = setLocaleState();
 
 	// Initialize MSAL when the app starts
 	onMount(async () => {
 		try {
+			// Initialize i18n first
+			const savedLocale = getSavedLocale();
+			const browserLocale = detectBrowserLocale();
+			const initialLocale = savedLocale !== 'en' ? savedLocale : browserLocale;
+			await localeState.changeLocale(initialLocale);
+			
 			await authState.initializeMsal(azureB2CConfig);
 			// Provide authenticated fetch helper to game state once auth is ready
 			gameState.attachAuth(authState.apiFetch);

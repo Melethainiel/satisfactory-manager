@@ -41,8 +41,12 @@
 				{$t('game.game_name_validation')}
 			</p>
 			<div class="modal-action">
-				<button type="button" class="btn" onclick={() => createDialog?.close()}>{$t('common.cancel')}</button>
-				<button type="submit" class="btn btn-primary" disabled={gameState.isLoading}>{$t('common.create')}</button>
+				<button type="button" class="btn" onclick={() => createDialog?.close()}
+					>{$t('common.cancel')}</button
+				>
+				<button type="submit" class="btn btn-primary" disabled={gameState.isLoading}
+					>{$t('common.create')}</button
+				>
 			</div>
 		</form>
 	</div>

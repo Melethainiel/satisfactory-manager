@@ -36,7 +36,8 @@
 						href="/"
 						class={`rounded-lg transition-colors hover:text-primary ${isHomeActive() ? 'font-semibold text-primary' : ''}`}
 					>
-						<Icon src={Map} class="inline-block size-5 stroke-1" /> {$t('nav.game')}
+						<Icon src={Map} class="inline-block size-5 stroke-1" />
+						{$t('nav.game')}
 					</a>
 				</li>
 				<li>
@@ -44,7 +45,8 @@
 						href="/settings"
 						class={`rounded-lg transition-colors hover:text-primary ${isSettingsActive() ? 'font-semibold text-primary' : ''}`}
 					>
-						<Icon src={WrenchScrewdriver} class="inline-block size-5 stroke-1" /> {$t('nav.settings')}
+						<Icon src={WrenchScrewdriver} class="inline-block size-5 stroke-1" />
+						{$t('nav.settings')}
 					</a>
 				</li>
 			</ul>
@@ -72,8 +74,10 @@
 >
 	<div class="mb-2 flex items-center justify-between">
 		<h2 class="text-lg font-semibold">{$t('nav.menu')}</h2>
-		<button class="btn btn-ghost btn-sm" aria-label={$t('nav.close_nav')} onclick={() => onClose?.()}
-			>✕</button
+		<button
+			class="btn btn-ghost btn-sm"
+			aria-label={$t('nav.close_nav')}
+			onclick={() => onClose?.()}>✕</button
 		>
 	</div>
 	<nav class="flex-1">
@@ -87,7 +91,8 @@
 							onclick={() => onClose?.()}
 							class={`rounded-lg transition-colors hover:text-primary ${isHomeActive() ? 'font-semibold text-primary' : ''}`}
 						>
-							<Icon src={Map} class="inline-block size-4 stroke-1" /> {$t('nav.game')}
+							<Icon src={Map} class="inline-block size-4 stroke-1" />
+							{$t('nav.game')}
 						</a>
 					</li>
 					<li>
@@ -96,7 +101,8 @@
 							onclick={() => onClose?.()}
 							class={`rounded-lg transition-colors hover:text-primary ${isSettingsActive() ? 'font-semibold text-primary' : ''}`}
 						>
-							<Icon src={WrenchScrewdriver} class="inline-block size-4 stroke-1" /> {$t('nav.settings')}
+							<Icon src={WrenchScrewdriver} class="inline-block size-4 stroke-1" />
+							{$t('nav.settings')}
 						</a>
 					</li>
 				</ul>

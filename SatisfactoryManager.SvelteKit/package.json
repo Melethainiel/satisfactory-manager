@@ -49,6 +49,6 @@
 		"drizzle-orm": "^0.40.0",
 		"jose": "^5.9.3",
 		"postgres": "^3.4.5",
-		"sveltekit-i18n": "^2.4.2"
+		"svelte-i18n": "^4.0.1"
 	}
 }

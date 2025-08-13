@@ -1,5 +1,5 @@
 import { getContext, setContext } from 'svelte';
-import { locale, loadTranslations } from '$lib/i18n';
+import { setLocale } from '$lib/i18n';
 
 export interface LocaleState {
 	currentLocale: string;
@@ -13,20 +13,12 @@ class LocaleStateClass implements LocaleState {
 
 	async changeLocale(newLocale: string) {
 		if (this.currentLocale === newLocale) return;
-		
+
 		this.isLoading = true;
 		try {
-			// Load translations for the new locale
-			await loadTranslations(newLocale, '/');
-			
-			// Update the locale
-			locale.set(newLocale);
+			// Update the locale using svelte-i18n
+			setLocale(newLocale);
 			this.currentLocale = newLocale;
-			
-			// Save preference
-			if (typeof window !== 'undefined') {
-				localStorage.setItem('preferred-locale', newLocale);
-			}
 		} catch (error) {
 			console.error('Failed to change locale:', error);
 		} finally {
@@ -37,7 +29,8 @@ class LocaleStateClass implements LocaleState {
 
 const DEFAULT_LOCALE_STATE_KEY = '$_locale_state';
 
-export const getLocaleState = (key = DEFAULT_LOCALE_STATE_KEY): LocaleState => getContext<LocaleState>(key);
+export const getLocaleState = (key = DEFAULT_LOCALE_STATE_KEY): LocaleState =>
+	getContext<LocaleState>(key);
 export const setLocaleState = (key = DEFAULT_LOCALE_STATE_KEY): LocaleState => {
 	const ls = new LocaleStateClass();
 	return setContext(key, ls);

@@ -1,63 +1,63 @@
 {
-  "app": {
-    "name": "Satisfactory Manager",
-    "logo_alt": "Satisfactory Manager logo"
-  },
-  "nav": {
-    "game": "Game",
-    "settings": "Settings",
-    "menu": "Menu",
-    "navigation": "Navigation",
-    "toggle_nav": "Toggle navigation",
-    "close_nav": "Close navigation"
-  },
-  "auth": {
-    "login": "Login",
-    "logout": "Logout",
-    "profile": "Profile",
-    "settings": "Settings",
-    "welcome": "Welcome, {name}!",
-    "sign_in_required": "Sign In Required",
-    "no_email": "No email",
-    "user": "User"
-  },
-  "game": {
-    "select_server": "Select server...",
-    "create_new": "Create new game",
-    "create_game": "Create Game",
-    "game_name": "Game name",
-    "game_name_placeholder": "Game name",
-    "game_name_validation": "Must be 3 to 30 characters containing only letters, numbers or dash"
-  },
-  "common": {
-    "cancel": "Cancel",
-    "create": "Create",
-    "save": "Save",
-    "delete": "Delete",
-    "edit": "Edit",
-    "close": "Close",
-    "loading": "Loading...",
-    "error": "Error",
-    "success": "Success"
-  },
-  "demo": {
-    "title": "Azure AD B2C Authentication Demo",
-    "auth_status": "Authentication Status",
-    "api_testing": "API Testing",
-    "test_api_call": "Test Authenticated API Call",
-    "test_api_description": "This demonstrates making an API call with the access token automatically attached.",
-    "testing": "Testing...",
-    "test_api": "Test API Call",
-    "api_response": "API Response:",
-    "debug_info": "Debug Information",
-    "current_auth_state": "Current Auth State",
-    "setup_instructions": "Setup Instructions",
-    "config_required": "Configuration Required",
-    "config_steps": "To use this authentication demo, you need to:",
-    "config_step_1": "Set up an Azure AD B2C tenant",
-    "config_step_2": "Register your application",
-    "config_step_3": "Update the configuration in src/lib/auth/config.ts",
-    "config_step_4": "Set environment variables in .env.local",
-    "config_note": "See src/lib/auth/README.md for detailed instructions."
-  }
+	"app": {
+		"name": "Satisfactory Manager",
+		"logo_alt": "Satisfactory Manager logo"
+	},
+	"nav": {
+		"game": "Game",
+		"settings": "Settings",
+		"menu": "Menu",
+		"navigation": "Navigation",
+		"toggle_nav": "Toggle navigation",
+		"close_nav": "Close navigation"
+	},
+	"auth": {
+		"login": "Login",
+		"logout": "Logout",
+		"profile": "Profile",
+		"settings": "Settings",
+		"welcome": "Welcome, {name}!",
+		"sign_in_required": "Sign In Required",
+		"no_email": "No email",
+		"user": "User"
+	},
+	"game": {
+		"select_server": "Select server...",
+		"create_new": "Create new game",
+		"create_game": "Create Game",
+		"game_name": "Game name",
+		"game_name_placeholder": "Game name",
+		"game_name_validation": "Must be 3 to 30 characters containing only letters, numbers or dash"
+	},
+	"common": {
+		"cancel": "Cancel",
+		"create": "Create",
+		"save": "Save",
+		"delete": "Delete",
+		"edit": "Edit",
+		"close": "Close",
+		"loading": "Loading...",
+		"error": "Error",
+		"success": "Success"
+	},
+	"demo": {
+		"title": "Azure AD B2C Authentication Demo",
+		"auth_status": "Authentication Status",
+		"api_testing": "API Testing",
+		"test_api_call": "Test Authenticated API Call",
+		"test_api_description": "This demonstrates making an API call with the access token automatically attached.",
+		"testing": "Testing...",
+		"test_api": "Test API Call",
+		"api_response": "API Response:",
+		"debug_info": "Debug Information",
+		"current_auth_state": "Current Auth State",
+		"setup_instructions": "Setup Instructions",
+		"config_required": "Configuration Required",
+		"config_steps": "To use this authentication demo, you need to:",
+		"config_step_1": "Set up an Azure AD B2C tenant",
+		"config_step_2": "Register your application",
+		"config_step_3": "Update the configuration in src/lib/auth/config.ts",
+		"config_step_4": "Set environment variables in .env.local",
+		"config_note": "See src/lib/auth/README.md for detailed instructions."
+	}
 }

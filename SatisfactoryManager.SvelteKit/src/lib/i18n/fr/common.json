@@ -1,63 +1,63 @@
 {
-  "app": {
-    "name": "Gestionnaire Satisfactory",
-    "logo_alt": "Logo du Gestionnaire Satisfactory"
-  },
-  "nav": {
-    "game": "Jeu",
-    "settings": "Paramètres",
-    "menu": "Menu",
-    "navigation": "Navigation",
-    "toggle_nav": "Basculer la navigation",
-    "close_nav": "Fermer la navigation"
-  },
-  "auth": {
-    "login": "Connexion",
-    "logout": "Déconnexion",
-    "profile": "Profil",
-    "settings": "Paramètres",
-    "welcome": "Bienvenue, {name} !",
-    "sign_in_required": "Connexion requise",
-    "no_email": "Aucun email",
-    "user": "Utilisateur"
-  },
-  "game": {
-    "select_server": "Sélectionner un serveur...",
-    "create_new": "Créer un nouveau jeu",
-    "create_game": "Créer un jeu",
-    "game_name": "Nom du jeu",
-    "game_name_placeholder": "Nom du jeu",
-    "game_name_validation": "Doit contenir de 3 à 30 caractères avec uniquement des lettres, chiffres ou tirets"
-  },
-  "common": {
-    "cancel": "Annuler",
-    "create": "Créer",
-    "save": "Enregistrer",
-    "delete": "Supprimer",
-    "edit": "Modifier",
-    "close": "Fermer",
-    "loading": "Chargement...",
-    "error": "Erreur",
-    "success": "Succès"
-  },
-  "demo": {
-    "title": "Démo d'authentification Azure AD B2C",
-    "auth_status": "Statut d'authentification",
-    "api_testing": "Test de l'API",
-    "test_api_call": "Test d'appel API authentifié",
-    "test_api_description": "Ceci démontre un appel API avec le token d'accès automatiquement attaché.",
-    "testing": "Test en cours...",
-    "test_api": "Tester l'API",
-    "api_response": "Réponse de l'API :",
-    "debug_info": "Informations de débogage",
-    "current_auth_state": "État d'authentification actuel",
-    "setup_instructions": "Instructions de configuration",
-    "config_required": "Configuration requise",
-    "config_steps": "Pour utiliser cette démo d'authentification, vous devez :",
-    "config_step_1": "Configurer un tenant Azure AD B2C",
-    "config_step_2": "Enregistrer votre application",
-    "config_step_3": "Mettre à jour la configuration dans src/lib/auth/config.ts",
-    "config_step_4": "Définir les variables d'environnement dans .env.local",
-    "config_note": "Voir src/lib/auth/README.md pour des instructions détaillées."
-  }
+	"app": {
+		"name": "Gestionnaire Satisfactory",
+		"logo_alt": "Logo du Gestionnaire Satisfactory"
+	},
+	"nav": {
+		"game": "Jeu",
+		"settings": "Paramètres",
+		"menu": "Menu",
+		"navigation": "Navigation",
+		"toggle_nav": "Basculer la navigation",
+		"close_nav": "Fermer la navigation"
+	},
+	"auth": {
+		"login": "Connexion",
+		"logout": "Déconnexion",
+		"profile": "Profil",
+		"settings": "Paramètres",
+		"welcome": "Bienvenue, {name} !",
+		"sign_in_required": "Connexion requise",
+		"no_email": "Aucun email",
+		"user": "Utilisateur"
+	},
+	"game": {
+		"select_server": "Sélectionner un serveur...",
+		"create_new": "Créer un nouveau jeu",
+		"create_game": "Créer un jeu",
+		"game_name": "Nom du jeu",
+		"game_name_placeholder": "Nom du jeu",
+		"game_name_validation": "Doit contenir de 3 à 30 caractères avec uniquement des lettres, chiffres ou tirets"
+	},
+	"common": {
+		"cancel": "Annuler",
+		"create": "Créer",
+		"save": "Enregistrer",
+		"delete": "Supprimer",
+		"edit": "Modifier",
+		"close": "Fermer",
+		"loading": "Chargement...",
+		"error": "Erreur",
+		"success": "Succès"
+	},
+	"demo": {
+		"title": "Démo d'authentification Azure AD B2C",
+		"auth_status": "Statut d'authentification",
+		"api_testing": "Test de l'API",
+		"test_api_call": "Test d'appel API authentifié",
+		"test_api_description": "Ceci démontre un appel API avec le token d'accès automatiquement attaché.",
+		"testing": "Test en cours...",
+		"test_api": "Tester l'API",
+		"api_response": "Réponse de l'API :",
+		"debug_info": "Informations de débogage",
+		"current_auth_state": "État d'authentification actuel",
+		"setup_instructions": "Instructions de configuration",
+		"config_required": "Configuration requise",
+		"config_steps": "Pour utiliser cette démo d'authentification, vous devez :",
+		"config_step_1": "Configurer un tenant Azure AD B2C",
+		"config_step_2": "Enregistrer votre application",
+		"config_step_3": "Mettre à jour la configuration dans src/lib/auth/config.ts",
+		"config_step_4": "Définir les variables d'environnement dans .env.local",
+		"config_note": "Voir src/lib/auth/README.md pour des instructions détaillées."
+	}
 }

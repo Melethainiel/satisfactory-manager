@@ -1,54 +1,55 @@
-import i18n from 'sveltekit-i18n';
+import { register, init, getLocaleFromNavigator, locale, _, isLoading } from 'svelte-i18n';
+import { browser } from '$app/environment';
 
-/** @type {import('sveltekit-i18n').Config} */
-const config = {
-  initLocale: 'en',
-  fallbackLocale: 'en',
-  loaders: [
-    {
-      locale: 'en',
-      key: 'common',
-      loader: async () => (await import('./en/common.json')).default,
-    },
-    {
-      locale: 'fr',
-      key: 'common',
-      loader: async () => (await import('./fr/common.json')).default,
-    },
-  ],
-};
-
-export const { t, locale, locales, loading, loadTranslations } = new i18n(config);
-
-// Helper function to change locale and save preference
-export function setLocale(newLocale: string) {
-  locale.set(newLocale);
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('preferred-locale', newLocale);
-  }
-}
+// Register translations
+register('en', () => import('./en/common.json'));
+register('fr', () => import('./fr/common.json'));
 
 // Helper function to get saved locale preference
 export function getSavedLocale(): string {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem('preferred-locale') || 'en';
-  }
-  return 'en';
+	if (browser) {
+		return localStorage.getItem('preferred-locale') || '';
+	}
+	return '';
 }
 
 // Helper function to detect browser locale
 export function detectBrowserLocale(): string {
-  if (typeof window !== 'undefined') {
-    const browserLang = navigator.language.slice(0, 2);
-    return ['en', 'fr'].includes(browserLang) ? browserLang : 'en';
-  }
-  return 'en';
+	if (browser) {
+		const browserLocale = getLocaleFromNavigator();
+		return browserLocale && ['en', 'fr'].includes(browserLocale.slice(0, 2))
+			? browserLocale.slice(0, 2)
+			: 'en';
+	}
+	return 'en';
 }
 
-// Initialize locale on app start
-export function initLocale() {
-  const savedLocale = getSavedLocale();
-  const browserLocale = detectBrowserLocale();
-  const initialLocale = savedLocale !== 'en' ? savedLocale : browserLocale;
-  setLocale(initialLocale);
+// Initialize i18n immediately with default locale
+init({
+	fallbackLocale: 'en',
+	initialLocale: 'en'
+});
+
+// Initialize locale preferences on client side
+export function initClientLocale() {
+	if (browser) {
+		const savedLocale = getSavedLocale();
+		const browserLocale = detectBrowserLocale();
+		const preferredLocale = savedLocale || browserLocale;
+
+		if (preferredLocale !== 'en') {
+			locale.set(preferredLocale);
+		}
+	}
 }
+
+// Helper function to change locale and save preference
+export function setLocale(newLocale: string) {
+	locale.set(newLocale);
+	if (browser) {
+		localStorage.setItem('preferred-locale', newLocale);
+	}
+}
+
+// Export the translation function and locale store
+export { locale, _ as t, isLoading };

@@ -1,17 +1,15 @@
 <script lang="ts">
 	import { getAuthState } from '$lib/states/authState.svelte';
 	import { getGameState } from '$lib/states/gameState.svelte';
-	import { getLocaleState } from '$lib/states/localeState.svelte';
 	import CreateGameDialog from '$lib/dialogs/CreateGameDialog.svelte';
 	import type { CreateGameDialogHandle } from '$lib/dialogs/CreateGameDialogHandle';
-	import { t, locale } from '$lib/i18n';
+	import { t, locale, setLocale } from '$lib/i18n';
 	// New Svelte 5 pattern: accept a callback prop instead of dispatching an event
 	let { toggleNav } = $props<{ toggleNav?: () => void }>();
 
 	// Get auth & game state from context
 	const authState = getAuthState();
 	const gameState = getGameState();
-	const localeState = getLocaleState();
 
 	let createDialogRef: CreateGameDialogHandle | null = null;
 
@@ -88,8 +86,10 @@
 						<option value={g.id}>{g.name}</option>
 					{/each}
 				</select>
-				<button class="btn btn-xs" onclick={() => createDialogRef?.open()} title={$t('game.create_new')}
-					>+</button
+				<button
+					class="btn btn-xs"
+					onclick={() => createDialogRef?.open()}
+					title={$t('game.create_new')}>+</button
 				>
 				{#if gameState.error}
 					<button
@@ -112,25 +112,30 @@
 		<div class="dropdown dropdown-end">
 			<button class="btn btn-ghost btn-sm" tabindex="0" aria-label="Change language">
 				<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"></path>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
+					></path>
 				</svg>
 				{$locale?.toUpperCase() || 'EN'}
 			</button>
-			<ul class="dropdown-content menu bg-base-100 rounded-box z-[1] w-24 p-2 shadow border">
+			<ul class="dropdown-content menu z-[1] w-24 rounded-box border bg-base-100 p-2 shadow">
 				<li>
-					<button 
-						class="btn btn-ghost btn-sm justify-start" 
+					<button
+						class="btn justify-start btn-ghost btn-sm"
 						class:btn-active={$locale === 'en'}
-						onclick={() => localeState.changeLocale('en')}
+						onclick={() => setLocale('en')}
 					>
 						🇺🇸 EN
 					</button>
 				</li>
 				<li>
-					<button 
-						class="btn btn-ghost btn-sm justify-start" 
+					<button
+						class="btn justify-start btn-ghost btn-sm"
 						class:btn-active={$locale === 'fr'}
-						onclick={() => localeState.changeLocale('fr')}
+						onclick={() => setLocale('fr')}
 					>
 						🇫🇷 FR
 					</button>
@@ -189,10 +194,21 @@
 						</span>
 					</li>
 					<div class="divider my-1"></div>
-					<li><a href="/profile" role="menuitem" onclick={hideUserMenu}>{$t('auth.profile')}</a></li>
-					<li><a href="/settings" role="menuitem" onclick={hideUserMenu}>{$t('auth.settings')}</a></li>
+					<li>
+						<a href="/profile" role="menuitem" onclick={hideUserMenu}>{$t('auth.profile')}</a
+						>
+					</li>
+					<li>
+						<a href="/settings" role="menuitem" onclick={hideUserMenu}
+							>{$t('auth.settings')}</a
+						>
+					</li>
 					<div class="divider my-1"></div>
-					<li><button role="menuitem" class="text-error" onclick={handleLogout}>{$t('auth.logout')}</button></li>
+					<li>
+						<button role="menuitem" class="text-error" onclick={handleLogout}
+							>{$t('auth.logout')}</button
+						>
+					</li>
 				</ul>
 			</div>
 		{:else}

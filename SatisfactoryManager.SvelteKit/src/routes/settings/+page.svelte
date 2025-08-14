@@ -17,7 +17,7 @@
 	import AddUserDialog from '$lib/dialogs/AddUserDialog.svelte';
 	import type { AddUserDialogHandle } from '$lib/dialogs/AddUserDialogHandle';
 	import SelectAuthLevelDialog from '$lib/dialogs/SelectAuthLevelDialog.svelte';
-	import type { SelectAuthLevelDialogHandler } from '$lib/dialogs/SelectAuthLevelDialogHandler';
+	import type { SelectAuthLevelDialogHandle } from '$lib/dialogs/SelectAuthLevelDialogHandle';
 	import AddModuleDialog from '$lib/dialogs/AddModuleDialog.svelte';
 	import type { AddModuleDialogHandle } from '$lib/dialogs/AddModuleDialogHandle';
 	import ModuleVersionDialog from '$lib/dialogs/ModuleVersionDialog.svelte';
@@ -40,7 +40,7 @@
 	// Delete dialog ref
 	let deleteDialogRef: DeleteGameDialogHandle | null = $state(null);
 	let addUserDialogRef: AddUserDialogHandle | null = $state(null);
-	let selectAuthLevelDialogRef: SelectAuthLevelDialogHandler | null = $state(null);
+	let selectAuthLevelDialogRef: SelectAuthLevelDialogHandle | null = $state(null);
 	let addModuleDialogRef: AddModuleDialogHandle | null = $state(null);
 	let moduleVersionDialogRef: ModuleVersionDialogHandle | null = $state(null);
 	let confirmDialogRef: ConfirmDialogHandle | null = $state(null);
@@ -66,10 +66,6 @@
 			usersLoading = true;
 			usersError = null;
 			await gameState.loadGameUsers(id);
-			if (gameState.error) {
-				usersError = gameState.error;
-				gameState.clearError();
-			}
 			usersLoading = false;
 		})();
 	});
@@ -85,10 +81,6 @@
 			modulesLoading = true;
 			modulesError = null;
 			await gameState.loadGameModules(id);
-			if (gameState.error) {
-				modulesError = gameState.error;
-				gameState.clearError();
-			}
 			modulesLoading = false;
 		})();
 	});
@@ -107,12 +99,8 @@
 		saveError = null;
 		saveSuccess = false;
 		await gameState.updateGame(id, editingName.trim());
-		if (gameState.error) {
-			saveError = gameState.error;
-		} else {
-			saveSuccess = true;
-			isDirty = false;
-		}
+		saveSuccess = true;
+		isDirty = false;
 	}
 
 	async function removeGameUser(userEmail: string) {
@@ -180,14 +168,6 @@
 					<Icon src={Identification} class="size-6 stroke-1" />
 					{$t('settings.game_info')}
 				</h2>
-				{#if gameState.error}
-					<div class="mb-2 alert alert-error py-2 text-sm">
-						<span>{gameState.error}</span>
-						<button class="btn btn-xs" onclick={() => gameState.clearError()}
-							>{$t('common.clear')}</button
-						>
-					</div>
-				{/if}
 				<label class="form-control w-full max-w-md">
 					<div class="label">
 						<span class="label-text">{$t('settings.name')}</span>

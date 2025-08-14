@@ -91,13 +91,7 @@
 					onclick={() => createDialogRef?.open()}
 					title={$t('game.create_new')}>+</button
 				>
-				{#if gameState.error}
-					<button
-						class="btn text-error btn-ghost btn-xs"
-						title={gameState.error}
-						onclick={gameState.clearError}>!</button
-					>
-				{:else if gameState.isLoading}
+				{#if gameState.isLoading}
 					<span class="loading ml-2 loading-xs loading-spinner"></span>
 				{/if}
 			</div>
@@ -221,37 +215,6 @@
 				</svg>
 				{$t('auth.login')}
 			</button>
-		{/if}
-
-		{#if authState.error}
-			<!-- Error notification -->
-			<div class="toast-top toast-end toast">
-				<div class="alert alert-error">
-					<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-						></path>
-					</svg>
-					<span>{authState.error}</span>
-					<button
-						class="btn btn-ghost btn-sm"
-						onclick={authState.clearError}
-						aria-label="Close error"
-					>
-						<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M6 18L18 6M6 6l12 12"
-							></path>
-						</svg>
-					</button>
-				</div>
-			</div>
 		{/if}
 	</div>
 </header>

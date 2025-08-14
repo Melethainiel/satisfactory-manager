@@ -6,6 +6,7 @@
 	import { setGameState } from '$lib/states/gameState.svelte';
 	import Header from '$lib/components/Header.svelte';
 	import SideNav from '$lib/components/SideNav.svelte';
+	import ToastContainer from '$lib/components/ToastContainer.svelte';
 
 	let navOpen = $state(false);
 	function toggleNav() {
@@ -51,5 +52,8 @@
 		</main>
 	</div>
 </div>
+
+<!-- Global toast notifications -->
+<ToastContainer />
 
 <!-- No component styles needed -->

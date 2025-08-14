@@ -104,8 +104,7 @@
 							{
 								isAuthenticated: authState.isAuthenticated,
 								isLoading: authState.isLoading,
-								user: authState.user,
-								error: authState.error
+								user: authState.user
 							},
 							null,
 							2

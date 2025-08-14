@@ -5,6 +5,26 @@ yarn.lock
 bun.lock
 bun.lockb
 
-# Miscellaneous
-/static/
+# Build artifacts
+.svelte-kit/
+build/
+dist/
+
+# Dependencies
+node_modules/
+
+# Generated files
 /drizzle/
+
+# Static files
+/static/
+
+# IDE files
+.vscode/
+.idea/
+
+# Environment files
+.env*
+
+# Logs
+*.log

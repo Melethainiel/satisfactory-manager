@@ -1,4 +1,5 @@
 import { getContext, setContext } from 'svelte';
+import { notificationService } from '$lib/services/notificationService.svelte';
 
 export interface GameSummary {
 	id: string;
@@ -26,7 +27,6 @@ export interface GameState {
 	games: GameSummary[];
 	selectedGameId: string | null;
 	isLoading: boolean;
-	error: string | null;
 	loadGames: (userEmail: string) => Promise<void>;
 	selectGame: (id: string) => void;
 	createGame: (userEmail: string, name: string) => Promise<void>;
@@ -41,7 +41,6 @@ export interface GameState {
 	addGameModule: (gameId: string, moduleId: string) => Promise<void>;
 	removeGameModule: (gameId: string, moduleId: string) => Promise<void>;
 	gameModules: GameModule[];
-	clearError: () => void;
 	attachAuth: (apiFetch: AuthFetchFn) => void;
 }
 
@@ -60,21 +59,21 @@ class GameStateClass implements GameState {
 	}
 	async deleteGame(id: string) {
 		if (!id) {
-			this.error = 'Game id required';
+			notificationService.error('Game ID is required');
 			return;
 		}
 		if (!this.apiFetch) return;
 
 		this.isLoading = true;
-		this.error = null;
 		try {
 			const res = await this.apiFetch(`/api/games/${id}`, { method: 'DELETE' });
 			if (!res.ok) throw new Error(`Failed to delete game (${res.status})`);
 			// Remove from local state
 			this.games = this.games.filter((g) => g.id !== id);
 			if (this.selectedGameId === id) this.selectedGameId = null;
+			notificationService.success('Game deleted successfully');
 		} catch (e: any) {
-			this.error = e?.message ?? 'Failed to delete game';
+			notificationService.error(e?.message ?? 'Failed to delete game');
 		} finally {
 			this.isLoading = false;
 		}
@@ -82,19 +81,17 @@ class GameStateClass implements GameState {
 	games = $state<GameSummary[]>([]);
 	selectedGameId = $state<string | null>(null);
 	isLoading = $state<boolean>(false);
-	error = $state<string | null>(null);
 	gameUsers = $state<GameUser[]>([]);
 	gameModules = $state<GameModule[]>([]);
 
 	async loadGames(userEmail: string) {
 		if (!userEmail) {
-			this.error = 'Missing user email';
+			notificationService.error('User email is required');
 			return;
 		}
 		if (!this.apiFetch) return;
 
 		this.isLoading = true;
-		this.error = null;
 		try {
 			const res = await this.apiFetch(`/api/games?email=${encodeURIComponent(userEmail)}`);
 			if (!res.ok) throw new Error(`Failed to load games (${res.status})`);
@@ -103,7 +100,7 @@ class GameStateClass implements GameState {
 			// Auto-select if only one
 			if (data.length === 1) this.selectedGameId = data[0].id;
 		} catch (e: any) {
-			this.error = e?.message ?? 'Failed to load games';
+			notificationService.error(e?.message ?? 'Failed to load games');
 		} finally {
 			this.isLoading = false;
 		}
@@ -115,17 +112,16 @@ class GameStateClass implements GameState {
 
 	async createGame(userEmail: string, name: string) {
 		if (!userEmail) {
-			this.error = 'Missing user email';
+			notificationService.error('User email is required');
 			return;
 		}
 		if (!name) {
-			this.error = 'Game name required';
+			notificationService.error('Game name is required');
 			return;
 		}
 		if (!this.apiFetch) return;
 
 		this.isLoading = true;
-		this.error = null;
 		try {
 			const res = await this.apiFetch('/api/games', {
 				method: 'POST',
@@ -136,8 +132,9 @@ class GameStateClass implements GameState {
 			const created = (await res.json()) as GameSummary;
 			this.games = [...this.games, created].sort((a, b) => a.name.localeCompare(b.name));
 			this.selectedGameId = created.id;
+			notificationService.success(`Game "${name}" created successfully`);
 		} catch (e: any) {
-			this.error = e?.message ?? 'Failed to create game';
+			notificationService.error(e?.message ?? 'Failed to create game');
 		} finally {
 			this.isLoading = false;
 		}
@@ -145,17 +142,16 @@ class GameStateClass implements GameState {
 
 	async updateGame(id: string, name: string) {
 		if (!id) {
-			this.error = 'Game id required';
+			notificationService.error('Game ID is required');
 			return;
 		}
 		if (!name) {
-			this.error = 'Game name required';
+			notificationService.error('Game name is required');
 			return;
 		}
 		if (!this.apiFetch) return;
 
 		this.isLoading = true;
-		this.error = null;
 		try {
 			const res = await this.apiFetch(`/api/games/${id}`, {
 				method: 'PATCH',
@@ -167,8 +163,9 @@ class GameStateClass implements GameState {
 			this.games = this.games
 				.map((g) => (g.id === id ? updated : g))
 				.sort((a, b) => a.name.localeCompare(b.name));
+			notificationService.success(`Game updated to "${name}"`);
 		} catch (e: any) {
-			this.error = e?.message ?? 'Failed to update game';
+			notificationService.error(e?.message ?? 'Failed to update game');
 		} finally {
 			this.isLoading = false;
 		}
@@ -182,7 +179,7 @@ class GameStateClass implements GameState {
 			const data = (await res.json()) as GameUser[];
 			this.gameUsers = data.sort((a, b) => a.displayName.localeCompare(b.displayName));
 		} catch (e: any) {
-			this.error = e?.message ?? 'Failed to load game users';
+			notificationService.error(e?.message ?? 'Failed to load game users');
 		}
 	}
 
@@ -196,7 +193,7 @@ class GameStateClass implements GameState {
 			});
 			if (!res.ok) throw new Error(`Failed to add users (${res.status})`);
 		} catch (e: any) {
-			this.error = e?.message ?? 'Failed to add game users';
+			notificationService.error(e?.message ?? 'Failed to add game users');
 		}
 	}
 
@@ -210,7 +207,7 @@ class GameStateClass implements GameState {
 			});
 			if (!res.ok) throw new Error(`Failed to remove user (${res.status})`);
 		} catch (e: any) {
-			this.error = e?.message ?? 'Failed to remove game user';
+			notificationService.error(e?.message ?? 'Failed to remove game user');
 		}
 	}
 
@@ -224,7 +221,7 @@ class GameStateClass implements GameState {
 			});
 			if (!res.ok) throw new Error(`Failed to update role (${res.status})`);
 		} catch (e: any) {
-			this.error = e?.message ?? 'Failed to update game user role';
+			notificationService.error(e?.message ?? 'Failed to update game user role');
 		}
 	}
 
@@ -236,7 +233,7 @@ class GameStateClass implements GameState {
 			const data = (await res.json()) as GameModule[];
 			this.gameModules = data.sort((a, b) => a.name.localeCompare(b.name));
 		} catch (e: any) {
-			this.error = e?.message ?? 'Failed to load game modules';
+			notificationService.error(e?.message ?? 'Failed to load game modules');
 		}
 	}
 
@@ -250,7 +247,7 @@ class GameStateClass implements GameState {
 			});
 			if (!res.ok) throw new Error(`Failed to add module (${res.status})`);
 		} catch (e: any) {
-			this.error = e?.message ?? 'Failed to add game module';
+			notificationService.error(e?.message ?? 'Failed to add game module');
 		}
 	}
 
@@ -264,12 +261,8 @@ class GameStateClass implements GameState {
 			});
 			if (!res.ok) throw new Error(`Failed to remove module (${res.status})`);
 		} catch (e: any) {
-			this.error = e?.message ?? 'Failed to remove game module';
+			notificationService.error(e?.message ?? 'Failed to remove game module');
 		}
-	}
-
-	clearError() {
-		this.error = null;
 	}
 }
 

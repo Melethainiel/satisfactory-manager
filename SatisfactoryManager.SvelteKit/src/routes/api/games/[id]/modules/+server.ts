@@ -4,6 +4,7 @@ import { db } from '$lib/server/db';
 import { moduleGames, modules } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
 
+// GET /api/games/[id]/modules - Get all modules for a game
 export const GET: RequestHandler = async ({ params }) => {
 	try {
 		const gameId = params.id;
@@ -29,6 +30,7 @@ export const GET: RequestHandler = async ({ params }) => {
 	}
 };
 
+// POST /api/games/[id]/modules - Add module to game
 export const POST: RequestHandler = async ({ params, request }) => {
 	try {
 		const gameId = params.id;
@@ -56,6 +58,7 @@ export const POST: RequestHandler = async ({ params, request }) => {
 	}
 };
 
+// DELETE /api/games/[id]/modules - Remove module from game
 export const DELETE: RequestHandler = async ({ params, request }) => {
 	try {
 		const gameId = params.id;

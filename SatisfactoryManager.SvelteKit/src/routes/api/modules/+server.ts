@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { moduleService } from '$lib/server/services/moduleService';
 
+// GET /api/modules - List all modules
 export const GET: RequestHandler = async () => {
 	try {
 		const modules = await moduleService.getAll();
@@ -12,6 +13,7 @@ export const GET: RequestHandler = async () => {
 	}
 };
 
+// POST /api/modules - Create a new module
 export const POST: RequestHandler = async ({ request }) => {
 	try {
 		const { name, url, githubRepo } = await request.json();

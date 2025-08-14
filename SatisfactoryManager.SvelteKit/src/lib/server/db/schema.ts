@@ -1,4 +1,4 @@
-import { pgTable, varchar, uuid, primaryKey, pgEnum, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, varchar, uuid, primaryKey, pgEnum, timestamp, numeric } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 export const users = pgTable('users', {
@@ -49,6 +49,25 @@ export const moduleVersions = pgTable('module_versions', {
 export type ModuleVersion = typeof moduleVersions.$inferSelect;
 export type NewModuleVersion = typeof moduleVersions.$inferInsert;
 
+// Building versions table - version-specific building stats
+export const buildingVersions = pgTable('building_versions', {
+	id: uuid('id').defaultRandom().primaryKey(),
+	buildingId: uuid('building_id')
+		.notNull()
+		.references(() => buildings.id, { onDelete: 'cascade' }),
+	moduleVersionId: uuid('module_version_id')
+		.notNull()
+		.references(() => moduleVersions.id, { onDelete: 'cascade' }),
+	energyConsumption: numeric('energy_consumption', { precision: 10, scale: 2 }),
+	energyProduction: numeric('energy_production', { precision: 10, scale: 2 }),
+	supplementalLoadAmount: numeric('supplemental_load_amount', { precision: 10, scale: 2 }),
+	output: numeric('output', { precision: 10, scale: 2 }),
+	createdAt: timestamp('created_at').defaultNow().notNull()
+});
+
+export type BuildingVersion = typeof buildingVersions.$inferSelect;
+export type NewBuildingVersion = typeof buildingVersions.$inferInsert;
+
 // Authorization / role levels for a user within a game context
 export const gameUserRoleEnum = pgEnum('game_user_role', [
 	'Reader',
@@ -56,6 +75,27 @@ export const gameUserRoleEnum = pgEnum('game_user_role', [
 	'Administrator',
 	'Owner'
 ]);
+
+// Building types for Satisfactory buildings
+export const buildingTypeEnum = pgEnum('building_type', [
+	'Generator',
+	'Constructor',
+	'Miner'
+]);
+
+// Buildings table - base building definitions
+export const buildings = pgTable('buildings', {
+	id: uuid('id').defaultRandom().primaryKey(),
+	className: varchar('class_name', { length: 100 }).notNull().unique(),
+	name: varchar('name', { length: 200 }).notNull(),
+	type: buildingTypeEnum('type').notNull(),
+	createdAt: timestamp('created_at').defaultNow().notNull(),
+	updatedAt: timestamp('updated_at').defaultNow().notNull()
+});
+
+export type Building = typeof buildings.$inferSelect;
+export type NewBuilding = typeof buildings.$inferInsert;
+export type BuildingType = (typeof buildingTypeEnum.enumValues)[number];
 
 // Relations (many-to-many) User/Game
 export const userGames = pgTable(
@@ -114,10 +154,26 @@ export const modulesRelation = relations(modules, ({ many }) => ({
 	versions: many(moduleVersions)
 }));
 
-export const moduleVersionsRelations = relations(moduleVersions, ({ one }) => ({
+export const moduleVersionsRelations = relations(moduleVersions, ({ one, many }) => ({
 	module: one(modules, {
 		fields: [moduleVersions.moduleId],
 		references: [modules.id]
+	}),
+	buildingVersions: many(buildingVersions)
+}));
+
+export const buildingsRelations = relations(buildings, ({ many }) => ({
+	versions: many(buildingVersions)
+}));
+
+export const buildingVersionsRelations = relations(buildingVersions, ({ one }) => ({
+	building: one(buildings, {
+		fields: [buildingVersions.buildingId],
+		references: [buildings.id]
+	}),
+	moduleVersion: one(moduleVersions, {
+		fields: [buildingVersions.moduleVersionId],
+		references: [moduleVersions.id]
 	})
 }));
 

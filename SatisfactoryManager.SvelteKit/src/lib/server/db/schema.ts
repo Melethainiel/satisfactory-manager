@@ -83,6 +83,44 @@ export const buildingTypeEnum = pgEnum('building_type', [
 	'Miner'
 ]);
 
+// Item forms for Satisfactory items
+export const itemFormEnum = pgEnum('item_form', [
+	'RF_SOLID',
+	'RF_LIQUID',
+	'RF_GAS'
+]);
+
+// Items table - base item definitions
+export const items = pgTable('items', {
+	id: uuid('id').defaultRandom().primaryKey(),
+	className: varchar('class_name', { length: 100 }).notNull().unique(),
+	displayName: varchar('display_name', { length: 200 }).notNull(),
+	description: varchar('description', { length: 1000 }),
+	form: itemFormEnum('form').notNull(),
+	createdAt: timestamp('created_at').defaultNow().notNull(),
+	updatedAt: timestamp('updated_at').defaultNow().notNull()
+});
+
+export type Item = typeof items.$inferSelect;
+export type NewItem = typeof items.$inferInsert;
+export type ItemForm = (typeof itemFormEnum.enumValues)[number];
+
+// Item versions table - version-specific item data
+export const itemVersions = pgTable('item_versions', {
+	id: uuid('id').defaultRandom().primaryKey(),
+	itemId: uuid('item_id')
+		.notNull()
+		.references(() => items.id, { onDelete: 'cascade' }),
+	moduleVersionId: uuid('module_version_id')
+		.notNull()
+		.references(() => moduleVersions.id, { onDelete: 'cascade' }),
+	energyValue: numeric('energy_value', { precision: 10, scale: 2 }).notNull().default('0'),
+	createdAt: timestamp('created_at').defaultNow().notNull()
+});
+
+export type ItemVersion = typeof itemVersions.$inferSelect;
+export type NewItemVersion = typeof itemVersions.$inferInsert;
+
 // Buildings table - base building definitions
 export const buildings = pgTable('buildings', {
 	id: uuid('id').defaultRandom().primaryKey(),
@@ -159,7 +197,8 @@ export const moduleVersionsRelations = relations(moduleVersions, ({ one, many })
 		fields: [moduleVersions.moduleId],
 		references: [modules.id]
 	}),
-	buildingVersions: many(buildingVersions)
+	buildingVersions: many(buildingVersions),
+	itemVersions: many(itemVersions)
 }));
 
 export const buildingsRelations = relations(buildings, ({ many }) => ({
@@ -173,6 +212,21 @@ export const buildingVersionsRelations = relations(buildingVersions, ({ one }) =
 	}),
 	moduleVersion: one(moduleVersions, {
 		fields: [buildingVersions.moduleVersionId],
+		references: [moduleVersions.id]
+	})
+}));
+
+export const itemsRelations = relations(items, ({ many }) => ({
+	versions: many(itemVersions)
+}));
+
+export const itemVersionsRelations = relations(itemVersions, ({ one }) => ({
+	item: one(items, {
+		fields: [itemVersions.itemId],
+		references: [items.id]
+	}),
+	moduleVersion: one(moduleVersions, {
+		fields: [itemVersions.moduleVersionId],
 		references: [moduleVersions.id]
 	})
 }));

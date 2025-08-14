@@ -43,6 +43,13 @@
       "when": 1755147761991,
       "tag": "0005_add_buildings_system",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1755183769364,
+      "tag": "0006_add_items_system",
+      "breakpoints": true
     }
   ]
 }

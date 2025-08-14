@@ -10,7 +10,7 @@ export const GET: RequestHandler = async ({ params }) => {
 		}
 
 		const item = await itemService.getItemById(params.id);
-		
+
 		if (!item) {
 			return json({ error: 'Item not found' }, { status: 404 });
 		}
@@ -30,7 +30,7 @@ export const PATCH: RequestHandler = async ({ params, request }) => {
 		}
 
 		const updates = await request.json();
-		
+
 		// Validate update fields
 		if (updates.className !== undefined) {
 			if (typeof updates.className !== 'string' || !updates.className.trim()) {
@@ -55,12 +55,15 @@ export const PATCH: RequestHandler = async ({ params, request }) => {
 
 		if (updates.form !== undefined) {
 			if (!['RF_SOLID', 'RF_LIQUID', 'RF_GAS'].includes(updates.form)) {
-				return json({ error: 'Invalid item form. Must be RF_SOLID, RF_LIQUID, or RF_GAS' }, { status: 400 });
+				return json(
+					{ error: 'Invalid item form. Must be RF_SOLID, RF_LIQUID, or RF_GAS' },
+					{ status: 400 }
+				);
 			}
 		}
 
 		const item = await itemService.updateItem(params.id, updates);
-		
+
 		if (!item) {
 			return json({ error: 'Item not found' }, { status: 404 });
 		}
@@ -80,7 +83,7 @@ export const DELETE: RequestHandler = async ({ params }) => {
 		}
 
 		const deleted = await itemService.deleteItem(params.id);
-		
+
 		if (!deleted) {
 			return json({ error: 'Item not found' }, { status: 404 });
 		}

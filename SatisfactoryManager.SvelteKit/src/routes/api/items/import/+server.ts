@@ -31,7 +31,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			.select()
 			.from(moduleVersions)
 			.where(eq(moduleVersions.id, moduleVersionId));
-		
+
 		if (!moduleVersion) {
 			return json({ error: 'Invalid moduleVersionId' }, { status: 400 });
 		}
@@ -46,18 +46,32 @@ export const POST: RequestHandler = async ({ request }) => {
 		for (const itemData of itemsData as ImportItemData[]) {
 			try {
 				// Validate required fields
-				if (!itemData.className || typeof itemData.className !== 'string' || !itemData.className.trim()) {
-					results.errors.push(`Invalid item data: missing or invalid className for ${itemData.className || 'unknown'}`);
+				if (
+					!itemData.className ||
+					typeof itemData.className !== 'string' ||
+					!itemData.className.trim()
+				) {
+					results.errors.push(
+						`Invalid item data: missing or invalid className for ${itemData.className || 'unknown'}`
+					);
 					continue;
 				}
 
-				if (!itemData.displayName || typeof itemData.displayName !== 'string' || !itemData.displayName.trim()) {
-					results.errors.push(`Invalid item data: missing or invalid displayName for ${itemData.className}`);
+				if (
+					!itemData.displayName ||
+					typeof itemData.displayName !== 'string' ||
+					!itemData.displayName.trim()
+				) {
+					results.errors.push(
+						`Invalid item data: missing or invalid displayName for ${itemData.className}`
+					);
 					continue;
 				}
 
 				if (!itemData.form || !['RF_SOLID', 'RF_LIQUID', 'RF_GAS'].includes(itemData.form)) {
-					results.errors.push(`Invalid item data: missing or invalid form for ${itemData.className}`);
+					results.errors.push(
+						`Invalid item data: missing or invalid form for ${itemData.className}`
+					);
 					continue;
 				}
 
@@ -65,14 +79,16 @@ export const POST: RequestHandler = async ({ request }) => {
 				if (itemData.energyValue !== undefined && itemData.energyValue !== null) {
 					const value = Number(itemData.energyValue);
 					if (isNaN(value) || value < 0) {
-						results.errors.push(`Invalid item data: energyValue must be a non-negative number for ${itemData.className}`);
+						results.errors.push(
+							`Invalid item data: energyValue must be a non-negative number for ${itemData.className}`
+						);
 						continue;
 					}
 				}
 
 				// Check if item exists
 				let item = await itemService.getItemByClassName(itemData.className.trim());
-				
+
 				if (!item) {
 					// Create new item
 					item = await itemService.createItem({
@@ -84,11 +100,10 @@ export const POST: RequestHandler = async ({ request }) => {
 					results.created++;
 				} else {
 					// Check if item needs updating
-					const needsUpdate = (
+					const needsUpdate =
 						item.displayName !== itemData.displayName.trim() ||
 						item.description !== (itemData.description?.trim() || null) ||
-						item.form !== itemData.form
-					);
+						item.form !== itemData.form;
 
 					if (needsUpdate) {
 						item = await itemService.updateItem(item.id, {

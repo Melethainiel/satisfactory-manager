@@ -35,8 +35,12 @@ export interface IBuildingService {
 	): Promise<BuildingVersion | undefined>;
 
 	// Bulk operations
-	bulkCreateBuildings(buildingsData: Omit<NewBuilding, 'id' | 'createdAt' | 'updatedAt'>[]): Promise<Building[]>;
-	bulkCreateBuildingVersions(versionsData: Omit<NewBuildingVersion, 'id' | 'createdAt'>[]): Promise<BuildingVersion[]>;
+	bulkCreateBuildings(
+		buildingsData: Omit<NewBuilding, 'id' | 'createdAt' | 'updatedAt'>[]
+	): Promise<Building[]>;
+	bulkCreateBuildingVersions(
+		versionsData: Omit<NewBuildingVersion, 'id' | 'createdAt'>[]
+	): Promise<BuildingVersion[]>;
 
 	// Helper methods
 	getBuildingsByType(type: BuildingType): Promise<Building[]>;
@@ -57,7 +61,9 @@ class BuildingService implements IBuildingService {
 		return row;
 	}
 
-	async createBuilding(data: Omit<NewBuilding, 'id' | 'createdAt' | 'updatedAt'>): Promise<Building> {
+	async createBuilding(
+		data: Omit<NewBuilding, 'id' | 'createdAt' | 'updatedAt'>
+	): Promise<Building> {
 		const [row] = await db.insert(buildings).values(data).returning();
 		return row;
 	}
@@ -78,7 +84,10 @@ class BuildingService implements IBuildingService {
 	}
 
 	async deleteBuilding(id: string): Promise<boolean> {
-		const res = await db.delete(buildings).where(eq(buildings.id, id)).returning({ id: buildings.id });
+		const res = await db
+			.delete(buildings)
+			.where(eq(buildings.id, id))
+			.returning({ id: buildings.id });
 		return res.length > 0;
 	}
 
@@ -121,17 +130,21 @@ class BuildingService implements IBuildingService {
 			.from(buildingVersions)
 			.where(
 				eq(buildingVersions.buildingId, buildingId) &&
-				eq(buildingVersions.moduleVersionId, moduleVersionId)
+					eq(buildingVersions.moduleVersionId, moduleVersionId)
 			);
 		return row;
 	}
 
-	async bulkCreateBuildings(buildingsData: Omit<NewBuilding, 'id' | 'createdAt' | 'updatedAt'>[]): Promise<Building[]> {
+	async bulkCreateBuildings(
+		buildingsData: Omit<NewBuilding, 'id' | 'createdAt' | 'updatedAt'>[]
+	): Promise<Building[]> {
 		if (buildingsData.length === 0) return [];
 		return await db.insert(buildings).values(buildingsData).returning();
 	}
 
-	async bulkCreateBuildingVersions(versionsData: Omit<NewBuildingVersion, 'id' | 'createdAt'>[]): Promise<BuildingVersion[]> {
+	async bulkCreateBuildingVersions(
+		versionsData: Omit<NewBuildingVersion, 'id' | 'createdAt'>[]
+	): Promise<BuildingVersion[]> {
 		if (versionsData.length === 0) return [];
 		return await db.insert(buildingVersions).values(versionsData).returning();
 	}

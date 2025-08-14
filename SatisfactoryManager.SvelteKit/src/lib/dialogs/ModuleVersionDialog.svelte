@@ -26,7 +26,7 @@
 </script>
 
 <dialog bind:this={dialogEl} class="modal" onclose={onClose}>
-	<div class="modal-box max-w-4xl max-h-[80vh] overflow-y-auto">
+	<div class="modal-box max-h-[80vh] max-w-4xl overflow-y-auto">
 		{#if currentModule}
 			<h3 class="mb-4 text-lg font-bold">
 				{$t('dialogs.module_version.title').replace('{name}', currentModule.name)}
@@ -54,7 +54,9 @@
 		{/if}
 
 		<div class="modal-action">
-			<button type="button" class="btn" onclick={() => dialogEl?.close()}>{$t('common.close')}</button>
+			<button type="button" class="btn" onclick={() => dialogEl?.close()}
+				>{$t('common.close')}</button
+			>
 		</div>
 	</div>
 	<form method="dialog" class="modal-backdrop">

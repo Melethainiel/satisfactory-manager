@@ -174,12 +174,16 @@
 						<div class="flex items-center gap-2">
 							<span class="font-mono font-medium">{version.version}</span>
 							{#if version.version === module.currentVersion}
-								<span class="badge badge-sm badge-primary">{$t('dialogs.module_version.current_badge')}</span>
+								<span class="badge badge-sm badge-primary"
+									>{$t('dialogs.module_version.current_badge')}</span
+								>
 							{/if}
 						</div>
 						{#if version.publishedAt}
 							<div class="text-sm opacity-70">
-								{$t('dialogs.module_version.published')}: {new Date(version.publishedAt).toLocaleDateString()}
+								{$t('dialogs.module_version.published')}: {new Date(
+									version.publishedAt
+								).toLocaleDateString()}
 							</div>
 						{/if}
 						{#if version.releaseNotes}

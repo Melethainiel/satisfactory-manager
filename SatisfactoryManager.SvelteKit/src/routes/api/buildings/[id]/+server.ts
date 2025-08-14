@@ -10,7 +10,7 @@ export const GET: RequestHandler = async ({ params }) => {
 		}
 
 		const building = await buildingService.getBuildingById(params.id);
-		
+
 		if (!building) {
 			return json({ error: 'Building not found' }, { status: 404 });
 		}
@@ -30,7 +30,7 @@ export const PATCH: RequestHandler = async ({ params, request }) => {
 		}
 
 		const updates = await request.json();
-		
+
 		// Validate update fields
 		if (updates.className !== undefined) {
 			if (typeof updates.className !== 'string' || !updates.className.trim()) {
@@ -48,12 +48,15 @@ export const PATCH: RequestHandler = async ({ params, request }) => {
 
 		if (updates.type !== undefined) {
 			if (!['Generator', 'Constructor', 'Miner'].includes(updates.type)) {
-				return json({ error: 'Invalid building type. Must be Generator, Constructor, or Miner' }, { status: 400 });
+				return json(
+					{ error: 'Invalid building type. Must be Generator, Constructor, or Miner' },
+					{ status: 400 }
+				);
 			}
 		}
 
 		const building = await buildingService.updateBuilding(params.id, updates);
-		
+
 		if (!building) {
 			return json({ error: 'Building not found' }, { status: 404 });
 		}
@@ -73,7 +76,7 @@ export const DELETE: RequestHandler = async ({ params }) => {
 		}
 
 		const deleted = await buildingService.deleteBuilding(params.id);
-		
+
 		if (!deleted) {
 			return json({ error: 'Building not found' }, { status: 404 });
 		}

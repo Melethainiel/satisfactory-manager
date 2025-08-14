@@ -31,7 +31,7 @@ export const POST: RequestHandler = async ({ params, request }) => {
 		}
 
 		const versionData = await request.json();
-		
+
 		if (!versionData.moduleVersionId || typeof versionData.moduleVersionId !== 'string') {
 			return json({ error: 'moduleVersionId is required' }, { status: 400 });
 		}
@@ -57,7 +57,10 @@ export const POST: RequestHandler = async ({ params, request }) => {
 			versionData.moduleVersionId
 		);
 		if (existingVersion) {
-			return json({ error: 'Item version already exists for this module version' }, { status: 409 });
+			return json(
+				{ error: 'Item version already exists for this module version' },
+				{ status: 409 }
+			);
 		}
 
 		const itemVersion = await itemService.addItemVersion(params.id, versionData);

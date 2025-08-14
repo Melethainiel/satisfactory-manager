@@ -1,4 +1,12 @@
-import { pgTable, varchar, uuid, primaryKey, pgEnum, timestamp, numeric } from 'drizzle-orm/pg-core';
+import {
+	pgTable,
+	varchar,
+	uuid,
+	primaryKey,
+	pgEnum,
+	timestamp,
+	numeric
+} from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 export const users = pgTable('users', {
@@ -77,18 +85,10 @@ export const gameUserRoleEnum = pgEnum('game_user_role', [
 ]);
 
 // Building types for Satisfactory buildings
-export const buildingTypeEnum = pgEnum('building_type', [
-	'Generator',
-	'Constructor',
-	'Miner'
-]);
+export const buildingTypeEnum = pgEnum('building_type', ['Generator', 'Constructor', 'Miner']);
 
 // Item forms for Satisfactory items
-export const itemFormEnum = pgEnum('item_form', [
-	'RF_SOLID',
-	'RF_LIQUID',
-	'RF_GAS'
-]);
+export const itemFormEnum = pgEnum('item_form', ['RF_SOLID', 'RF_LIQUID', 'RF_GAS']);
 
 // Items table - base item definitions
 export const items = pgTable('items', {
@@ -120,6 +120,75 @@ export const itemVersions = pgTable('item_versions', {
 
 export type ItemVersion = typeof itemVersions.$inferSelect;
 export type NewItemVersion = typeof itemVersions.$inferInsert;
+
+// Recipes table - base recipe definitions
+export const recipes = pgTable('recipes', {
+	id: uuid('id').defaultRandom().primaryKey(),
+	className: varchar('class_name', { length: 100 }).notNull().unique(),
+	displayName: varchar('display_name', { length: 200 }).notNull(),
+	createdAt: timestamp('created_at').defaultNow().notNull(),
+	updatedAt: timestamp('updated_at').defaultNow().notNull()
+});
+
+export type Recipe = typeof recipes.$inferSelect;
+export type NewRecipe = typeof recipes.$inferInsert;
+
+// Recipe versions table - version-specific recipe data
+export const recipeVersions = pgTable('recipe_versions', {
+	id: uuid('id').defaultRandom().primaryKey(),
+	recipeId: uuid('recipe_id')
+		.notNull()
+		.references(() => recipes.id, { onDelete: 'cascade' }),
+	moduleVersionId: uuid('module_version_id')
+		.notNull()
+		.references(() => moduleVersions.id, { onDelete: 'cascade' }),
+	manufacturingDuration: numeric('manufacturing_duration', { precision: 10, scale: 2 }).notNull(),
+	createdAt: timestamp('created_at').defaultNow().notNull()
+});
+
+export type RecipeVersion = typeof recipeVersions.$inferSelect;
+export type NewRecipeVersion = typeof recipeVersions.$inferInsert;
+
+// Recipe ingredients table - ingredients for each recipe version
+export const recipeIngredients = pgTable('recipe_ingredients', {
+	id: uuid('id').defaultRandom().primaryKey(),
+	recipeVersionId: uuid('recipe_version_id')
+		.notNull()
+		.references(() => recipeVersions.id, { onDelete: 'cascade' }),
+	itemClassName: varchar('item_class_name', { length: 100 }).notNull(),
+	count: numeric('count', { precision: 10, scale: 2 }).notNull(),
+	createdAt: timestamp('created_at').defaultNow().notNull()
+});
+
+export type RecipeIngredient = typeof recipeIngredients.$inferSelect;
+export type NewRecipeIngredient = typeof recipeIngredients.$inferInsert;
+
+// Recipe products table - products for each recipe version
+export const recipeProducts = pgTable('recipe_products', {
+	id: uuid('id').defaultRandom().primaryKey(),
+	recipeVersionId: uuid('recipe_version_id')
+		.notNull()
+		.references(() => recipeVersions.id, { onDelete: 'cascade' }),
+	itemClassName: varchar('item_class_name', { length: 100 }).notNull(),
+	count: numeric('count', { precision: 10, scale: 2 }).notNull(),
+	createdAt: timestamp('created_at').defaultNow().notNull()
+});
+
+export type RecipeProduct = typeof recipeProducts.$inferSelect;
+export type NewRecipeProduct = typeof recipeProducts.$inferInsert;
+
+// Recipe buildings table - buildings that can craft each recipe version
+export const recipeBuildings = pgTable('recipe_buildings', {
+	id: uuid('id').defaultRandom().primaryKey(),
+	recipeVersionId: uuid('recipe_version_id')
+		.notNull()
+		.references(() => recipeVersions.id, { onDelete: 'cascade' }),
+	buildingClassName: varchar('building_class_name', { length: 100 }).notNull(),
+	createdAt: timestamp('created_at').defaultNow().notNull()
+});
+
+export type RecipeBuilding = typeof recipeBuildings.$inferSelect;
+export type NewRecipeBuilding = typeof recipeBuildings.$inferInsert;
 
 // Buildings table - base building definitions
 export const buildings = pgTable('buildings', {
@@ -198,7 +267,8 @@ export const moduleVersionsRelations = relations(moduleVersions, ({ one, many })
 		references: [modules.id]
 	}),
 	buildingVersions: many(buildingVersions),
-	itemVersions: many(itemVersions)
+	itemVersions: many(itemVersions),
+	recipeVersions: many(recipeVersions)
 }));
 
 export const buildingsRelations = relations(buildings, ({ many }) => ({
@@ -228,6 +298,45 @@ export const itemVersionsRelations = relations(itemVersions, ({ one }) => ({
 	moduleVersion: one(moduleVersions, {
 		fields: [itemVersions.moduleVersionId],
 		references: [moduleVersions.id]
+	})
+}));
+
+export const recipesRelations = relations(recipes, ({ many }) => ({
+	versions: many(recipeVersions)
+}));
+
+export const recipeVersionsRelations = relations(recipeVersions, ({ one, many }) => ({
+	recipe: one(recipes, {
+		fields: [recipeVersions.recipeId],
+		references: [recipes.id]
+	}),
+	moduleVersion: one(moduleVersions, {
+		fields: [recipeVersions.moduleVersionId],
+		references: [moduleVersions.id]
+	}),
+	ingredients: many(recipeIngredients),
+	products: many(recipeProducts),
+	buildings: many(recipeBuildings)
+}));
+
+export const recipeIngredientsRelations = relations(recipeIngredients, ({ one }) => ({
+	recipeVersion: one(recipeVersions, {
+		fields: [recipeIngredients.recipeVersionId],
+		references: [recipeVersions.id]
+	})
+}));
+
+export const recipeProductsRelations = relations(recipeProducts, ({ one }) => ({
+	recipeVersion: one(recipeVersions, {
+		fields: [recipeProducts.recipeVersionId],
+		references: [recipeVersions.id]
+	})
+}));
+
+export const recipeBuildingsRelations = relations(recipeBuildings, ({ one }) => ({
+	recipeVersion: one(recipeVersions, {
+		fields: [recipeBuildings.recipeVersionId],
+		references: [recipeVersions.id]
 	})
 }));
 

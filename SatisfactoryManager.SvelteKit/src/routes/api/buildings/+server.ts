@@ -6,12 +6,15 @@ import { buildingService } from '$lib/server/services/buildingService';
 export const GET: RequestHandler = async ({ url }) => {
 	try {
 		const type = url.searchParams.get('type');
-		
+
 		// Validate type if provided
 		if (type && !['Generator', 'Constructor', 'Miner'].includes(type)) {
-			return json({ error: 'Invalid building type. Must be Generator, Constructor, or Miner' }, { status: 400 });
+			return json(
+				{ error: 'Invalid building type. Must be Generator, Constructor, or Miner' },
+				{ status: 400 }
+			);
 		}
-		
+
 		let buildings;
 		if (type) {
 			buildings = await buildingService.getBuildingsByType(type as any);
@@ -40,7 +43,10 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 
 		if (!type || !['Generator', 'Constructor', 'Miner'].includes(type)) {
-			return json({ error: 'Valid building type is required (Generator, Constructor, or Miner)' }, { status: 400 });
+			return json(
+				{ error: 'Valid building type is required (Generator, Constructor, or Miner)' },
+				{ status: 400 }
+			);
 		}
 
 		// Check if building with this className already exists

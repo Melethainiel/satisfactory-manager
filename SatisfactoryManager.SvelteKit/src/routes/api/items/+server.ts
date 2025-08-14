@@ -6,12 +6,15 @@ import { itemService } from '$lib/server/services/itemService';
 export const GET: RequestHandler = async ({ url }) => {
 	try {
 		const form = url.searchParams.get('form');
-		
+
 		// Validate form if provided
 		if (form && !['RF_SOLID', 'RF_LIQUID', 'RF_GAS'].includes(form)) {
-			return json({ error: 'Invalid item form. Must be RF_SOLID, RF_LIQUID, or RF_GAS' }, { status: 400 });
+			return json(
+				{ error: 'Invalid item form. Must be RF_SOLID, RF_LIQUID, or RF_GAS' },
+				{ status: 400 }
+			);
 		}
-		
+
 		let items;
 		if (form) {
 			items = await itemService.getItemsByForm(form as any);
@@ -40,7 +43,10 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 
 		if (!form || !['RF_SOLID', 'RF_LIQUID', 'RF_GAS'].includes(form)) {
-			return json({ error: 'Valid item form is required (RF_SOLID, RF_LIQUID, or RF_GAS)' }, { status: 400 });
+			return json(
+				{ error: 'Valid item form is required (RF_SOLID, RF_LIQUID, or RF_GAS)' },
+				{ status: 400 }
+			);
 		}
 
 		// Check if item with this className already exists

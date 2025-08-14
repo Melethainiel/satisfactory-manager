@@ -36,7 +36,9 @@ export interface IItemService {
 
 	// Bulk operations
 	bulkCreateItems(itemsData: Omit<NewItem, 'id' | 'createdAt' | 'updatedAt'>[]): Promise<Item[]>;
-	bulkCreateItemVersions(versionsData: Omit<NewItemVersion, 'id' | 'createdAt'>[]): Promise<ItemVersion[]>;
+	bulkCreateItemVersions(
+		versionsData: Omit<NewItemVersion, 'id' | 'createdAt'>[]
+	): Promise<ItemVersion[]>;
 
 	// Helper methods
 	getItemsByForm(form: ItemForm): Promise<Item[]>;
@@ -119,29 +121,26 @@ class ItemService implements IItemService {
 		const [row] = await db
 			.select()
 			.from(itemVersions)
-			.where(
-				eq(itemVersions.itemId, itemId) &&
-				eq(itemVersions.moduleVersionId, moduleVersionId)
-			);
+			.where(eq(itemVersions.itemId, itemId) && eq(itemVersions.moduleVersionId, moduleVersionId));
 		return row;
 	}
 
-	async bulkCreateItems(itemsData: Omit<NewItem, 'id' | 'createdAt' | 'updatedAt'>[]): Promise<Item[]> {
+	async bulkCreateItems(
+		itemsData: Omit<NewItem, 'id' | 'createdAt' | 'updatedAt'>[]
+	): Promise<Item[]> {
 		if (itemsData.length === 0) return [];
 		return await db.insert(items).values(itemsData).returning();
 	}
 
-	async bulkCreateItemVersions(versionsData: Omit<NewItemVersion, 'id' | 'createdAt'>[]): Promise<ItemVersion[]> {
+	async bulkCreateItemVersions(
+		versionsData: Omit<NewItemVersion, 'id' | 'createdAt'>[]
+	): Promise<ItemVersion[]> {
 		if (versionsData.length === 0) return [];
 		return await db.insert(itemVersions).values(versionsData).returning();
 	}
 
 	async getItemsByForm(form: ItemForm): Promise<Item[]> {
-		return await db
-			.select()
-			.from(items)
-			.where(eq(items.form, form))
-			.orderBy(items.displayName);
+		return await db.select().from(items).where(eq(items.form, form)).orderBy(items.displayName);
 	}
 }
 

@@ -34,7 +34,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			.select()
 			.from(moduleVersions)
 			.where(eq(moduleVersions.id, moduleVersionId));
-		
+
 		if (!moduleVersion) {
 			return json({ error: 'Invalid moduleVersionId' }, { status: 400 });
 		}
@@ -49,29 +49,53 @@ export const POST: RequestHandler = async ({ request }) => {
 		for (const buildingData of buildingsData as ImportBuildingData[]) {
 			try {
 				// Validate required fields
-				if (!buildingData.className || typeof buildingData.className !== 'string' || !buildingData.className.trim()) {
-					results.errors.push(`Invalid building data: missing or invalid className for ${buildingData.className || 'unknown'}`);
+				if (
+					!buildingData.className ||
+					typeof buildingData.className !== 'string' ||
+					!buildingData.className.trim()
+				) {
+					results.errors.push(
+						`Invalid building data: missing or invalid className for ${buildingData.className || 'unknown'}`
+					);
 					continue;
 				}
 
-				if (!buildingData.name || typeof buildingData.name !== 'string' || !buildingData.name.trim()) {
-					results.errors.push(`Invalid building data: missing or invalid name for ${buildingData.className}`);
+				if (
+					!buildingData.name ||
+					typeof buildingData.name !== 'string' ||
+					!buildingData.name.trim()
+				) {
+					results.errors.push(
+						`Invalid building data: missing or invalid name for ${buildingData.className}`
+					);
 					continue;
 				}
 
-				if (!buildingData.type || !['Generator', 'Constructor', 'Miner'].includes(buildingData.type)) {
-					results.errors.push(`Invalid building data: missing or invalid type for ${buildingData.className}`);
+				if (
+					!buildingData.type ||
+					!['Generator', 'Constructor', 'Miner'].includes(buildingData.type)
+				) {
+					results.errors.push(
+						`Invalid building data: missing or invalid type for ${buildingData.className}`
+					);
 					continue;
 				}
 
 				// Validate numeric fields
-				const numericFields = ['energyConsumption', 'energyProduction', 'supplementalLoadAmount', 'output'];
+				const numericFields = [
+					'energyConsumption',
+					'energyProduction',
+					'supplementalLoadAmount',
+					'output'
+				];
 				let validNumericData = true;
 				for (const field of numericFields) {
 					if (buildingData[field as keyof ImportBuildingData] !== undefined) {
 						const value = Number(buildingData[field as keyof ImportBuildingData]);
 						if (isNaN(value) || value < 0) {
-							results.errors.push(`Invalid building data: ${field} must be a non-negative number for ${buildingData.className}`);
+							results.errors.push(
+								`Invalid building data: ${field} must be a non-negative number for ${buildingData.className}`
+							);
 							validNumericData = false;
 							break;
 						}
@@ -84,7 +108,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
 				// Check if building exists
 				let building = await buildingService.getBuildingByClassName(buildingData.className.trim());
-				
+
 				if (!building) {
 					// Create new building
 					building = await buildingService.createBuilding({
@@ -93,7 +117,10 @@ export const POST: RequestHandler = async ({ request }) => {
 						type: buildingData.type
 					});
 					results.created++;
-				} else if (building.name !== buildingData.name.trim() || building.type !== buildingData.type) {
+				} else if (
+					building.name !== buildingData.name.trim() ||
+					building.type !== buildingData.type
+				) {
 					// Update building if name or type changed
 					building = await buildingService.updateBuilding(building.id, {
 						name: buildingData.name.trim(),

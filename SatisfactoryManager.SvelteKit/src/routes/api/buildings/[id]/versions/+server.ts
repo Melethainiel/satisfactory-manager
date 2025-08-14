@@ -31,13 +31,18 @@ export const POST: RequestHandler = async ({ params, request }) => {
 		}
 
 		const versionData = await request.json();
-		
+
 		if (!versionData.moduleVersionId || typeof versionData.moduleVersionId !== 'string') {
 			return json({ error: 'moduleVersionId is required' }, { status: 400 });
 		}
 
 		// Validate numeric fields if provided
-		const numericFields = ['energyConsumption', 'energyProduction', 'supplementalLoadAmount', 'output'];
+		const numericFields = [
+			'energyConsumption',
+			'energyProduction',
+			'supplementalLoadAmount',
+			'output'
+		];
 		for (const field of numericFields) {
 			if (versionData[field] !== undefined && versionData[field] !== null) {
 				const value = Number(versionData[field]);
@@ -60,7 +65,10 @@ export const POST: RequestHandler = async ({ params, request }) => {
 			versionData.moduleVersionId
 		);
 		if (existingVersion) {
-			return json({ error: 'Building version already exists for this module version' }, { status: 409 });
+			return json(
+				{ error: 'Building version already exists for this module version' },
+				{ status: 409 }
+			);
 		}
 
 		const buildingVersion = await buildingService.addBuildingVersion(params.id, versionData);

@@ -19,10 +19,21 @@ interface ImportBuildingData {
 // POST /api/buildings/import - Bulk import building data
 export const POST: RequestHandler = async ({ request }) => {
 	try {
+		// Check content length to prevent DoS attacks
+		const contentLength = request.headers.get('content-length');
+		if (contentLength && parseInt(contentLength) > 10 * 1024 * 1024) { // 10MB limit
+			return json({ error: 'Request payload too large (max 10MB)' }, { status: 413 });
+		}
+
 		const { buildings: buildingsData, moduleVersionId } = await request.json();
 
 		if (!Array.isArray(buildingsData) || buildingsData.length === 0) {
 			return json({ error: 'buildings array is required and must not be empty' }, { status: 400 });
+		}
+
+		// Limit number of buildings that can be imported at once
+		if (buildingsData.length > 1000) {
+			return json({ error: 'Maximum 1000 buildings can be imported at once' }, { status: 400 });
 		}
 
 		if (!moduleVersionId || typeof moduleVersionId !== 'string') {

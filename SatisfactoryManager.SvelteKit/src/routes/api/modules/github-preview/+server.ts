@@ -10,9 +10,12 @@ export const POST: RequestHandler = async ({ request }) => {
 			return json({ error: 'GitHub URL is required' }, { status: 400 });
 		}
 
-		// Validate URL format
+		// Validate URL format and ensure it's from GitHub
 		try {
-			new URL(githubUrl.trim());
+			const url = new URL(githubUrl.trim());
+			if (url.hostname !== 'github.com') {
+				return json({ error: 'Only GitHub URLs are allowed' }, { status: 400 });
+			}
 		} catch {
 			return json({ error: 'Invalid GitHub URL format' }, { status: 400 });
 		}

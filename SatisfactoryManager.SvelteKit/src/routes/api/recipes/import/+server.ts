@@ -23,10 +23,21 @@ interface ImportRecipeData {
 // POST /api/recipes/import - Bulk import recipe data
 export const POST: RequestHandler = async ({ request }) => {
 	try {
+		// Check content length to prevent DoS attacks
+		const contentLength = request.headers.get('content-length');
+		if (contentLength && parseInt(contentLength) > 10 * 1024 * 1024) { // 10MB limit
+			return json({ error: 'Request payload too large (max 10MB)' }, { status: 413 });
+		}
+
 		const { recipes: recipesData, moduleVersionId } = await request.json();
 
 		if (!Array.isArray(recipesData) || recipesData.length === 0) {
 			return json({ error: 'recipes array is required and must not be empty' }, { status: 400 });
+		}
+
+		// Limit number of recipes that can be imported at once
+		if (recipesData.length > 500) {
+			return json({ error: 'Maximum 500 recipes can be imported at once' }, { status: 400 });
 		}
 
 		if (!moduleVersionId || typeof moduleVersionId !== 'string') {

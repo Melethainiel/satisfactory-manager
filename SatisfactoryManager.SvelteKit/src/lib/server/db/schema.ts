@@ -5,7 +5,8 @@ import {
 	primaryKey,
 	pgEnum,
 	timestamp,
-	numeric
+	numeric,
+	index
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
@@ -99,7 +100,9 @@ export const items = pgTable('items', {
 	form: itemFormEnum('form').notNull(),
 	createdAt: timestamp('created_at').defaultNow().notNull(),
 	updatedAt: timestamp('updated_at').defaultNow().notNull()
-});
+}, (table) => ({
+	classNameIdx: index('items_class_name_idx').on(table.className)
+}));
 
 export type Item = typeof items.$inferSelect;
 export type NewItem = typeof items.$inferInsert;
@@ -128,7 +131,9 @@ export const recipes = pgTable('recipes', {
 	displayName: varchar('display_name', { length: 200 }).notNull(),
 	createdAt: timestamp('created_at').defaultNow().notNull(),
 	updatedAt: timestamp('updated_at').defaultNow().notNull()
-});
+}, (table) => ({
+	classNameIdx: index('recipes_class_name_idx').on(table.className)
+}));
 
 export type Recipe = typeof recipes.$inferSelect;
 export type NewRecipe = typeof recipes.$inferInsert;
@@ -155,7 +160,9 @@ export const recipeIngredients = pgTable('recipe_ingredients', {
 	recipeVersionId: uuid('recipe_version_id')
 		.notNull()
 		.references(() => recipeVersions.id, { onDelete: 'cascade' }),
-	itemClassName: varchar('item_class_name', { length: 100 }).notNull(),
+	itemId: uuid('item_id')
+		.notNull()
+		.references(() => items.id, { onDelete: 'cascade' }),
 	count: numeric('count', { precision: 10, scale: 2 }).notNull(),
 	createdAt: timestamp('created_at').defaultNow().notNull()
 });
@@ -169,7 +176,9 @@ export const recipeProducts = pgTable('recipe_products', {
 	recipeVersionId: uuid('recipe_version_id')
 		.notNull()
 		.references(() => recipeVersions.id, { onDelete: 'cascade' }),
-	itemClassName: varchar('item_class_name', { length: 100 }).notNull(),
+	itemId: uuid('item_id')
+		.notNull()
+		.references(() => items.id, { onDelete: 'cascade' }),
 	count: numeric('count', { precision: 10, scale: 2 }).notNull(),
 	createdAt: timestamp('created_at').defaultNow().notNull()
 });
@@ -183,7 +192,9 @@ export const recipeBuildings = pgTable('recipe_buildings', {
 	recipeVersionId: uuid('recipe_version_id')
 		.notNull()
 		.references(() => recipeVersions.id, { onDelete: 'cascade' }),
-	buildingClassName: varchar('building_class_name', { length: 100 }).notNull(),
+	buildingId: uuid('building_id')
+		.notNull()
+		.references(() => buildings.id, { onDelete: 'cascade' }),
 	createdAt: timestamp('created_at').defaultNow().notNull()
 });
 
@@ -198,7 +209,9 @@ export const buildings = pgTable('buildings', {
 	type: buildingTypeEnum('type').notNull(),
 	createdAt: timestamp('created_at').defaultNow().notNull(),
 	updatedAt: timestamp('updated_at').defaultNow().notNull()
-});
+}, (table) => ({
+	classNameIdx: index('buildings_class_name_idx').on(table.className)
+}));
 
 export type Building = typeof buildings.$inferSelect;
 export type NewBuilding = typeof buildings.$inferInsert;
@@ -323,6 +336,10 @@ export const recipeIngredientsRelations = relations(recipeIngredients, ({ one })
 	recipeVersion: one(recipeVersions, {
 		fields: [recipeIngredients.recipeVersionId],
 		references: [recipeVersions.id]
+	}),
+	item: one(items, {
+		fields: [recipeIngredients.itemId],
+		references: [items.id]
 	})
 }));
 
@@ -330,6 +347,10 @@ export const recipeProductsRelations = relations(recipeProducts, ({ one }) => ({
 	recipeVersion: one(recipeVersions, {
 		fields: [recipeProducts.recipeVersionId],
 		references: [recipeVersions.id]
+	}),
+	item: one(items, {
+		fields: [recipeProducts.itemId],
+		references: [items.id]
 	})
 }));
 
@@ -337,6 +358,10 @@ export const recipeBuildingsRelations = relations(recipeBuildings, ({ one }) => 
 	recipeVersion: one(recipeVersions, {
 		fields: [recipeBuildings.recipeVersionId],
 		references: [recipeVersions.id]
+	}),
+	building: one(buildings, {
+		fields: [recipeBuildings.buildingId],
+		references: [buildings.id]
 	})
 }));
 

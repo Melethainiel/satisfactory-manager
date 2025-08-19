@@ -24,18 +24,52 @@ tests/
 
 ## Running Tests
 
-### Prerequisites
+### 🐳 Docker Setup (Recommended)
 
-1. **Test Database**: Set up a separate PostgreSQL database for testing:
+The easiest way to run tests is using Docker, which automatically manages the test database:
+
+```bash
+# Run tests with automatic Docker database management
+npm run test:docker
+
+# Or step by step:
+npm run test:docker:setup    # Start test database
+npm run test:run            # Run tests
+npm run test:docker:cleanup # Stop test database
+```
+
+**Docker Commands:**
+```bash
+# Start test database only
+docker compose up -d postgres-test
+
+# Check database status
+docker compose ps postgres-test
+
+# View database logs
+npm run test:docker:logs
+
+# Stop test database
+npm run test:docker:cleanup
+
+# Remove test database completely
+npm run test:docker:down
+```
+
+### 🛠️ Manual Setup (Alternative)
+
+If you prefer manual database setup:
+
+1. **Test Database**: Set up a separate PostgreSQL database:
    ```bash
-   # Create test database
+   # Create test database manually
    createdb satisfactory_test
    
    # Or set custom test database URL
    export TEST_DATABASE_URL="postgres://user:pass@localhost:5432/your_test_db"
    ```
 
-2. **Environment Variables**: Copy your `.env` file and update database URL for testing.
+2. **Environment Variables**: The `.env.test` file is automatically loaded during tests.
 
 ### Test Commands
 
@@ -139,12 +173,19 @@ The test suite covers **24+ API endpoints** across 7 main resources:
 
 ## Test Database Configuration
 
-The test database is automatically configured with:
+### 🐳 Docker Database (postgres-test)
+- **Port**: 5433 (different from main database on 5432)
+- **Database**: `satisfactory_test`
+- **User/Password**: `app/app`
+- **Connection**: `postgres://app:app@localhost:5433/satisfactory_test`
+- **Storage**: In-memory (tmpfs) for faster tests
+- **Memory**: Limited to 256MB for efficiency
 
-1. **Separate database** - Uses `satisfactory_test` or custom `TEST_DATABASE_URL`
-2. **Schema migrations** - Automatically applies latest schema
-3. **Data cleanup** - Clears data between tests
-4. **Connection pooling** - Single connection for performance
+### ⚙️ Automatic Configuration
+1. **Schema migrations** - Automatically applies latest schema on startup
+2. **Data cleanup** - Clears all data between tests for isolation
+3. **Connection retry** - Handles Docker container startup delays
+4. **Health checks** - Ensures database is ready before running tests
 
 ## Error Handling
 
@@ -172,27 +213,96 @@ When adding new API endpoints:
 4. Include error cases and edge cases
 5. Update this README with new coverage
 
+## 🧰 Helper Scripts
+
+### Database Management Script
+Use the comprehensive database management script for advanced operations:
+
+```bash
+# Make script executable (if needed)
+chmod +x scripts/test-db.sh
+
+# Available commands
+./scripts/test-db.sh start     # Start test database
+./scripts/test-db.sh stop      # Stop test database  
+./scripts/test-db.sh reset     # Reset database (fresh start)
+./scripts/test-db.sh status    # Check database status
+./scripts/test-db.sh logs      # View database logs
+./scripts/test-db.sh shell     # Open database shell (psql)
+./scripts/test-db.sh test      # Run tests with auto-management
+./scripts/test-db.sh help      # Show help
+```
+
+### Advanced Usage
+```bash
+# Run tests but keep database running for debugging
+TEST_CLEANUP=false ./scripts/test-db.sh test
+
+# Open database shell for inspection
+./scripts/test-db.sh shell
+# Inside psql:
+# \dt                          # List tables  
+# SELECT * FROM users;         # Query users table
+# \q                          # Exit psql
+```
+
 ## Troubleshooting
 
-### Database Connection Issues
+### 🐳 Docker Issues
 ```bash
-# Check database exists
-psql -l | grep satisfactory_test
+# Check if Docker is running
+docker info
 
-# Create missing test database  
-createdb satisfactory_test
+# Check test database container
+docker compose ps postgres-test
+
+# View container logs
+docker compose logs postgres-test
+
+# Restart test database
+docker compose restart postgres-test
+
+# Force recreate test database
+docker compose down postgres-test && docker compose up -d postgres-test
 ```
 
-### Migration Issues
+### 🔌 Connection Issues
 ```bash
-# Reset test database
-dropdb satisfactory_test && createdb satisfactory_test
-npm run test
+# Test manual connection
+docker exec -it satisfactory-postgres-test psql -U app -d satisfactory_test
+
+# Check port availability
+lsof -i :5433
+
+# Verify test database URL
+node -e "console.log(process.env.TEST_DATABASE_URL || 'Not set')"
 ```
 
-### Environment Issues
+### 🚀 Performance Issues
 ```bash
-# Verify environment variables
-echo $TEST_DATABASE_URL
-echo $DATABASE_URL
+# Monitor database during tests
+docker stats satisfactory-postgres-test
+
+# Check if tmpfs is being used
+docker inspect satisfactory-postgres-test | grep -i tmpfs
+```
+
+### 🧹 Cleanup Issues
+```bash
+# Clean up everything
+docker compose down postgres-test
+docker system prune -f
+
+# Reset npm scripts
+npm run test:docker:down
+npm run test:docker:setup
+```
+
+### 💾 Migration Issues
+```bash
+# Check migration status inside container
+docker exec -it satisfactory-postgres-test psql -U app -d satisfactory_test -c "SELECT * FROM __drizzle_migrations;"
+
+# Manual migration (if needed)
+npm run generate && npm run db:push
 ```

@@ -164,7 +164,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			}
 		}
 
-		return json(results);
+		return json(results, { status: 201 });
 	} catch (error) {
 		console.error('Error importing buildings:', error);
 		return json({ error: 'Failed to import buildings' }, { status: 500 });

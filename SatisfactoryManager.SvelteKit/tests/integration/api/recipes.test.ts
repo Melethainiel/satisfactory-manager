@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { GET, POST } from '../../../src/routes/api/recipes/+server';
-import { GET as GETById, PUT, DELETE } from '../../../src/routes/api/recipes/[id]/+server';
+import { GET as GETById, PATCH, DELETE } from '../../../src/routes/api/recipes/[id]/+server';
 import { POST as POSTImport } from '../../../src/routes/api/recipes/import/+server';
 import { testImportRecipeData } from '../../setup/fixtures';
 import { getTestDb } from '../../setup/test-db';
@@ -185,19 +185,19 @@ describe('/api/recipes', () => {
 		});
 	});
 
-	describe('PUT /api/recipes/[id]', () => {
+	describe('PATCH /api/recipes/[id]', () => {
 		it('should update recipe with valid data', async () => {
 			const updateData = {
 				displayName: 'Updated Recipe Name'
 			};
 
 			const request = new Request(`http://localhost/api/recipes/${testRecipeId}`, {
-				method: 'PUT',
+				method: 'PATCH',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(updateData)
 			});
 
-			const response = await PUT({ 
+			const response = await PATCH({ 
 				request, 
 				params: { id: testRecipeId }
 			} as any);
@@ -216,12 +216,12 @@ describe('/api/recipes', () => {
 			};
 
 			const request = new Request(`http://localhost/api/recipes/${fakeId}`, {
-				method: 'PUT',
+				method: 'PATCH',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(updateData)
 			});
 
-			const response = await PUT({ 
+			const response = await PATCH({ 
 				request, 
 				params: { id: fakeId }
 			} as any);
@@ -241,7 +241,9 @@ describe('/api/recipes', () => {
 				params: { id: testRecipeId }
 			} as any);
 
-			expect(response.status).toBe(204);
+			expect(response.status).toBe(200);
+			const data = await response.json();
+			expect(data.success).toBe(true);
 
 			// Verify recipe is deleted
 			const getRequest = new Request(`http://localhost/api/recipes/${testRecipeId}`);

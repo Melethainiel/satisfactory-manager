@@ -33,12 +33,15 @@ export const POST: RequestHandler = async ({ request }) => {
 			return json({ error: 'Invalid URL format' }, { status: 400 });
 		}
 
-		// Validate GitHub repo URL if provided
+		// Validate GitHub repo if provided (can be owner/repo format or full URL)
 		if (githubRepo && typeof githubRepo === 'string' && githubRepo.trim()) {
-			try {
-				new URL(githubRepo.trim());
-			} catch {
-				return json({ error: 'Invalid GitHub repository URL format' }, { status: 400 });
+			const repoPattern = /^[\w.-]+\/[\w.-]+$/; // owner/repo pattern
+			if (!repoPattern.test(githubRepo.trim())) {
+				try {
+					new URL(githubRepo.trim());
+				} catch {
+					return json({ error: 'Invalid GitHub repository format (expected owner/repo or full URL)' }, { status: 400 });
+				}
 			}
 		}
 
@@ -46,6 +49,12 @@ export const POST: RequestHandler = async ({ request }) => {
 		const existingModule = await moduleService.getByName(name.trim());
 		if (existingModule) {
 			return json({ error: 'A module with this name already exists' }, { status: 409 });
+		}
+
+		// Check if module with same URL already exists
+		const existingUrlModule = await moduleService.getByUrl(url.trim());
+		if (existingUrlModule) {
+			return json({ error: 'A module with this URL already exists' }, { status: 409 });
 		}
 
 		const module = await moduleService.create({

@@ -14,12 +14,23 @@ async function sleep(ms: number) {
 }
 
 export async function setupTestDb() {
+	// Environment variable validation and diagnostics
+	console.log('🔍 Environment diagnostics:');
+	console.log(`   NODE_ENV: ${process.env.NODE_ENV || 'undefined'}`);
+	console.log(`   TEST_DATABASE_URL: ${process.env.TEST_DATABASE_URL ? 'defined' : 'undefined'}`);
+	console.log(`   DATABASE_URL: ${process.env.DATABASE_URL ? 'defined' : 'undefined'}`);
+	
 	// Use test database URL with Docker-friendly defaults
 	const testDbUrl = process.env.TEST_DATABASE_URL || 
 		process.env.DATABASE_URL?.replace('/satisfactory', '/satisfactory_test') ||
 		'postgres://app:app@localhost:5433/satisfactory_test';
 
 	console.log(`🔌 Connecting to test database: ${testDbUrl.replace(/\/\/[^@]+@/, '//***:***@')}`);
+
+	// Validate database URL format
+	if (!testDbUrl.startsWith('postgres://')) {
+		throw new Error(`Invalid database URL format: ${testDbUrl}`);
+	}
 
 	// Retry connection logic for Docker containers that might be starting
 	let retries = 0;
@@ -29,7 +40,9 @@ export async function setupTestDb() {
 				max: 1,
 				connect_timeout: 10,
 				idle_timeout: 5,
-				max_lifetime: 60 * 10
+				max_lifetime: 60 * 10,
+				// Disable prepared statements for better compatibility with Docker
+				prepare: false
 			});
 			
 			// Test the connection
@@ -38,16 +51,27 @@ export async function setupTestDb() {
 			
 			console.log('✅ Test database connection established');
 			break;
-		} catch (error) {
+		} catch (error: any) {
 			retries++;
 			if (retries >= MAX_RETRIES) {
 				console.error(`❌ Failed to connect to test database after ${MAX_RETRIES} attempts`);
 				console.error(`💡 Make sure the test database is running: docker compose up -d postgres-test`);
 				console.error(`🔍 Or run: npm run test:docker:setup`);
+				console.error(`📋 Connection details: ${testDbUrl.replace(/\/\/[^@]+@/, '//***:***@')}`);
+				console.error(`⚠️  Error: ${error.code || error.message || error}`);
+				
+				// Provide specific help based on error type
+				if (error.code === 'ECONNREFUSED') {
+					console.error(`   → Database server is not running or not accessible`);
+				} else if (error.code === '3D000') {
+					console.error(`   → Database 'satisfactory_test' does not exist`);
+				}
+				
 				throw error;
 			}
 			
-			console.log(`⏳ Database connection failed (attempt ${retries}/${MAX_RETRIES}), retrying in ${RETRY_DELAY}ms...`);
+			console.log(`⏳ Database connection failed (attempt ${retries}/${MAX_RETRIES}), retrying in ${RETRY_DELAY * retries}ms...`);
+			console.log(`   Error: ${error.code || error.message}`);
 			await sleep(RETRY_DELAY * retries); // Exponential backoff
 		}
 	}
@@ -82,26 +106,39 @@ export async function cleanupTestDb() {
 export async function clearTestData() {
 	if (!testDb) return;
 
-	// Clear all tables in reverse dependency order
-	await testDb.delete(schema.recipeVersionBuildings);
-	await testDb.delete(schema.recipeVersionProducts);
-	await testDb.delete(schema.recipeVersionIngredients);
-	await testDb.delete(schema.recipeVersions);
-	await testDb.delete(schema.recipes);
-	
-	await testDb.delete(schema.buildingVersions);
-	await testDb.delete(schema.buildings);
-	
-	await testDb.delete(schema.itemVersions);
-	await testDb.delete(schema.items);
-	
-	await testDb.delete(schema.gameModules);
-	await testDb.delete(schema.moduleVersions);
-	await testDb.delete(schema.modules);
-	
-	await testDb.delete(schema.userGames);
-	await testDb.delete(schema.games);
-	await testDb.delete(schema.users);
+	try {
+		// Clear all tables in reverse dependency order to respect foreign key constraints
+		console.log('🧹 Clearing test data...');
+		
+		// Recipe-related tables (most dependent first)
+		await testDb.delete(schema.recipeBuildings);
+		await testDb.delete(schema.recipeProducts);
+		await testDb.delete(schema.recipeIngredients);
+		await testDb.delete(schema.recipeVersions);
+		await testDb.delete(schema.recipes);
+		
+		// Building-related tables
+		await testDb.delete(schema.buildingVersions);
+		await testDb.delete(schema.buildings);
+		
+		// Item-related tables
+		await testDb.delete(schema.itemVersions);
+		await testDb.delete(schema.items);
+		
+		// Module-related tables
+		await testDb.delete(schema.moduleVersions);
+		await testDb.delete(schema.modules);
+		
+		// User/Game relationship tables
+		await testDb.delete(schema.userGames);
+		await testDb.delete(schema.games);
+		await testDb.delete(schema.users);
+		
+		console.log('✅ Test data cleared successfully');
+	} catch (error: any) {
+		console.warn('⚠️  Warning during test data cleanup:', error.message || error);
+		// Don't throw - cleanup issues shouldn't fail tests
+	}
 }
 
 export function getTestDb() {

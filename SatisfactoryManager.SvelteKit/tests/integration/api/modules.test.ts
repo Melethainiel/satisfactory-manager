@@ -4,6 +4,7 @@ import { GET as GETGithubPreview } from '../../../src/routes/api/modules/github-
 import { testModules } from '../../setup/fixtures';
 import { getTestDb } from '../../setup/test-db';
 import { modules, moduleVersions } from '../../../src/lib/server/db/schema';
+import { eq } from 'drizzle-orm';
 
 describe('/api/modules', () => {
 	let testModuleId: string;
@@ -62,7 +63,6 @@ describe('/api/modules', () => {
 			const moduleData = {
 				name: 'New Test Module',
 				url: 'https://example.com/newmodule',
-				currentVersion: '2.0.0',
 				githubRepo: 'test/newmodule'
 			};
 
@@ -80,8 +80,9 @@ describe('/api/modules', () => {
 			expect(data).toHaveProperty('id');
 			expect(data.name).toBe(moduleData.name);
 			expect(data.url).toBe(moduleData.url);
-			expect(data.currentVersion).toBe(moduleData.currentVersion);
 			expect(data.githubRepo).toBe(moduleData.githubRepo);
+			// currentVersion is null initially until versions are synced
+			expect(data.currentVersion).toBe(null);
 		});
 
 		it('should return 400 when name is missing', async () => {
@@ -173,8 +174,7 @@ describe('/api/modules', () => {
 		it('should return 409 when url already exists', async () => {
 			const moduleData = {
 				name: 'Different Module Name',
-				url: testModules[0].url, // Already exists from beforeEach
-				currentVersion: '2.0.0'
+				url: testModules[0].url // Already exists from beforeEach
 			};
 
 			const request = new Request('http://localhost/api/modules', {
@@ -261,7 +261,7 @@ describe('/api/modules', () => {
 			
 			// Verify module version was created in beforeEach
 			const versions = await db.select().from(moduleVersions).where(
-				db => db.eq(moduleVersions.moduleId, testModuleId)
+				eq(moduleVersions.moduleId, testModuleId)
 			);
 			
 			expect(versions.length).toBeGreaterThan(0);

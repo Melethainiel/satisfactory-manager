@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { GET, POST } from '../../../src/routes/api/items/+server';
-import { GET as GETById, PUT, DELETE } from '../../../src/routes/api/items/[id]/+server';
+import { GET as GETById, PATCH, DELETE } from '../../../src/routes/api/items/[id]/+server';
 import { POST as POSTImport } from '../../../src/routes/api/items/import/+server';
 import { testImportItemData } from '../../setup/fixtures';
 import { getTestDb } from '../../setup/test-db';
@@ -231,7 +231,7 @@ describe('/api/items', () => {
 		});
 	});
 
-	describe('PUT /api/items/[id]', () => {
+	describe('PATCH /api/items/[id]', () => {
 		it('should update item with valid data', async () => {
 			const updateData = {
 				displayName: 'Updated Item Name',
@@ -239,12 +239,12 @@ describe('/api/items', () => {
 			};
 
 			const request = new Request(`http://localhost/api/items/${testItemId}`, {
-				method: 'PUT',
+				method: 'PATCH',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(updateData)
 			});
 
-			const response = await PUT({ 
+			const response = await PATCH({ 
 				request, 
 				params: { id: testItemId }
 			} as any);
@@ -264,12 +264,12 @@ describe('/api/items', () => {
 			};
 
 			const request = new Request(`http://localhost/api/items/${fakeId}`, {
-				method: 'PUT',
+				method: 'PATCH',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(updateData)
 			});
 
-			const response = await PUT({ 
+			const response = await PATCH({ 
 				request, 
 				params: { id: fakeId }
 			} as any);
@@ -289,7 +289,9 @@ describe('/api/items', () => {
 				params: { id: testItemId }
 			} as any);
 
-			expect(response.status).toBe(204);
+			expect(response.status).toBe(200);
+			const data = await response.json();
+			expect(data.success).toBe(true);
 
 			// Verify item is deleted
 			const getRequest = new Request(`http://localhost/api/items/${testItemId}`);

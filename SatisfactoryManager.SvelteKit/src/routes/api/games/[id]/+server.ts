@@ -2,6 +2,24 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { gameService } from '$lib/server/services/gameService';
 
+// GET /api/games/[id] - Get game by ID
+export const GET: RequestHandler = async ({ params }) => {
+	try {
+		const id = params.id;
+		if (!id) {
+			return json({ error: 'Game ID is required' }, { status: 400 });
+		}
+		const game = await gameService.getById(id);
+		if (!game) {
+			return json({ error: 'Game not found' }, { status: 404 });
+		}
+		return json(game);
+	} catch (error) {
+		console.error('Error fetching game:', error);
+		return json({ error: 'Failed to fetch game' }, { status: 500 });
+	}
+};
+
 // PATCH /api/games/[id]  body: { name?: string }
 export const PATCH: RequestHandler = async ({ params, request }) => {
 	try {

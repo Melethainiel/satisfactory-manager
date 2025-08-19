@@ -26,7 +26,7 @@ export interface IGameService {
 	getUsersDetailed(
 		gameId: string
 	): Promise<{ id: string; displayName: string; email: string; role: GameUserRole }[]>; // Joined user details
-	getForUserEmail(email: string): Promise<Game[]>; // All games a user (by email) can access
+	getForUserEmail(email: string): Promise<(Game & { role: GameUserRole })[]>; // All games a user (by email) can access
 }
 
 class GameService implements IGameService {
@@ -98,15 +98,18 @@ class GameService implements IGameService {
 			.where(eq(userGames.gameId, gameId));
 		return rows;
 	}
-	async getForUserEmail(email: string): Promise<Game[]> {
+	async getForUserEmail(email: string): Promise<(Game & { role: GameUserRole })[]> {
 		// Join users -> userGames -> games filtering by user email
 		const rows = await db
-			.select({ game: games })
+			.select({ 
+				...games,
+				role: userGames.role 
+			})
 			.from(games)
 			.innerJoin(userGames, eq(userGames.gameId, games.id))
 			.innerJoin(users, eq(users.id, userGames.userId))
 			.where(eq(users.email, email));
-		return rows.map((r) => r.game);
+		return rows;
 	}
 }
 

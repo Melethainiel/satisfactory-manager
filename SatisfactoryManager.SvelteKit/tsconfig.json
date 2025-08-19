@@ -12,7 +12,7 @@
 		"moduleResolution": "bundler",
 		"types": ["node"]
 	},
-	"include": ["./*.ts", "./src", "./scripts"],
+	"include": ["./*.ts", "./src", "./scripts", "./tests"],
 	"exclude": ["node_modules"]
 	// Path aliases are handled by https://svelte.dev/docs/kit/configuration#alias
 	// except $lib which is handled by https://svelte.dev/docs/kit/configuration#files

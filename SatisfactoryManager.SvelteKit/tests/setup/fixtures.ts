@@ -66,14 +66,10 @@ export const testImportItemData = {
 	]
 };
 
-export const testImportBuildingData = {
-	buildings: [
-		{
-			className: 'Build_ConstructorMk1_C',
-			displayName: 'Constructor',
-			description: 'Basic building for crafting',
-			powerConsumption: 4.0,
-			powerConsumptionExponent: 1.6
-		}
-	]
-};
+export const testImportBuildingData = [
+	{
+		className: 'Build_ConstructorMk1_C',
+		name: 'Constructor',
+		type: 'Constructor'
+	}
+];

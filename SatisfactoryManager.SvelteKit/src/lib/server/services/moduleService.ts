@@ -14,6 +14,7 @@ export interface IModuleService {
 	getAll(): Promise<Module[]>;
 	getById(id: string): Promise<Module | undefined>; // UUID
 	getByName(name: string): Promise<Module | undefined>;
+	getByUrl(url: string): Promise<Module | undefined>;
 	create(data: Omit<NewModule, 'id' | 'createdAt' | 'updatedAt'>): Promise<Module>;
 	update(
 		id: string,
@@ -42,6 +43,10 @@ class ModuleService implements IModuleService {
 	}
 	async getByName(name: string): Promise<Module | undefined> {
 		const [row] = await db.select().from(modules).where(eq(modules.name, name));
+		return row;
+	}
+	async getByUrl(url: string): Promise<Module | undefined> {
+		const [row] = await db.select().from(modules).where(eq(modules.url, url));
 		return row;
 	}
 	async create(data: Omit<NewModule, 'id' | 'createdAt' | 'updatedAt'>): Promise<Module> {

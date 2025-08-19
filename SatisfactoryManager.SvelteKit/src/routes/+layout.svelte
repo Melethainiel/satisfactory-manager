@@ -6,6 +6,7 @@
 	import { setGameState } from '$lib/states/gameState.svelte';
 	import Header from '$lib/components/Header.svelte';
 	import SideNav from '$lib/components/SideNav.svelte';
+	import ToastContainer from '$lib/components/ToastContainer.svelte';
 
 	let navOpen = $state(false);
 	function toggleNav() {
@@ -39,17 +40,20 @@
 	});
 </script>
 
-<div class="bg-base-200 flex min-h-screen">
+<div class="flex min-h-screen bg-base-200">
 	<SideNav open={navOpen} onClose={() => (navOpen = false)} />
 
 	<div class="flex flex-1 flex-col">
 		<Header {toggleNav} />
-		<main class="lg:ml-64 flex-1 px-4 py-6">
+		<main class="flex-1 px-4 py-6 lg:ml-64">
 			<div class="container mx-auto">
 				{@render children()}
 			</div>
 		</main>
 	</div>
 </div>
+
+<!-- Global toast notifications -->
+<ToastContainer />
 
 <!-- No component styles needed -->

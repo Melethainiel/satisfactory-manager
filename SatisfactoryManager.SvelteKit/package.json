@@ -15,7 +15,7 @@
 		"db:push": "drizzle-kit push",
 		"db:migrate": "drizzle-kit migrate",
 		"db:studio": "drizzle-kit studio",
-		"generate": "drizzle-kit generate --out src/lib/db/migrations"
+		"generate": "drizzle-kit generate --out drizzle"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^1.2.5",
@@ -47,7 +47,8 @@
 		"@azure/msal-browser": "^4.19.0",
 		"daisyui": "^5.0.50",
 		"drizzle-orm": "^0.40.0",
+		"jose": "^5.9.3",
 		"postgres": "^3.4.5",
-		"jose": "^5.9.3"
+		"svelte-i18n": "^4.0.1"
 	}
 }

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import AuthComponent from '$lib/components/AuthComponent.svelte';
 	import { getAuthState } from '$lib/states/authState.svelte';
+	import { t } from '$lib/i18n';
 
 	// Get the auth state from context
 	const authState = getAuthState();
@@ -29,11 +30,11 @@
 			// Example API call - replace with your actual API endpoint
 			const response = await fetch('/api/test', {
 				headers: {
-					'Authorization': `Bearer ${token}`,
+					Authorization: `Bearer ${token}`,
 					'Content-Type': 'application/json'
 				}
 			});
-			
+
 			if (response.ok) {
 				const data = await response.json();
 				apiResponse = `API Success: ${JSON.stringify(data, null, 2)}`;
@@ -49,42 +50,42 @@
 </script>
 
 <svelte:head>
-	<title>Azure B2C Authentication Demo</title>
+	<title>{$t('demo.title')}</title>
 </svelte:head>
 
 <div class="container mx-auto p-4">
-	<h1 class="text-3xl font-bold mb-8">Azure AD B2C Authentication Demo</h1>
-	
+	<h1 class="mb-8 text-3xl font-bold">{$t('demo.title')}</h1>
+
 	<!-- Authentication Component -->
 	<div class="mb-8">
-		<h2 class="text-2xl font-semibold mb-4">Authentication Status</h2>
+		<h2 class="mb-4 text-2xl font-semibold">{$t('demo.auth_status')}</h2>
 		<AuthComponent />
 	</div>
 
 	<!-- API Testing Section -->
 	{#if authState.isAuthenticated}
 		<div class="mb-8">
-			<h2 class="text-2xl font-semibold mb-4">API Testing</h2>
+			<h2 class="mb-4 text-2xl font-semibold">{$t('demo.api_testing')}</h2>
 			<div class="card bg-base-100 shadow-xl">
 				<div class="card-body">
-					<h3 class="card-title">Test Authenticated API Call</h3>
-					<p>This demonstrates making an API call with the access token automatically attached.</p>
-					
+					<h3 class="card-title">{$t('demo.test_api_call')}</h3>
+					<p>{$t('demo.test_api_description')}</p>
+
 					<div class="card-actions">
-						<button 
-							class="btn btn-secondary" 
+						<button
+							class="btn btn-secondary"
 							class:loading={isLoadingApi}
 							disabled={isLoadingApi}
 							onclick={testApiCall}
 						>
-							{isLoadingApi ? 'Testing...' : 'Test API Call'}
+							{isLoadingApi ? $t('demo.testing') : $t('demo.test_api')}
 						</button>
 					</div>
 
 					{#if apiResponse}
 						<div class="mt-4">
-							<h4 class="font-semibold">API Response:</h4>
-							<pre class="bg-base-200 p-4 rounded mt-2 overflow-x-auto text-sm">{apiResponse}</pre>
+							<h4 class="font-semibold">{$t('demo.api_response')}</h4>
+							<pre class="mt-2 overflow-x-auto rounded bg-base-200 p-4 text-sm">{apiResponse}</pre>
 						</div>
 					{/if}
 				</div>
@@ -95,16 +96,19 @@
 	<!-- Debug Information -->
 	{#if authState.isAuthenticated}
 		<div class="mb-8">
-			<h2 class="text-2xl font-semibold mb-4">Debug Information</h2>
+			<h2 class="mb-4 text-2xl font-semibold">{$t('demo.debug_info')}</h2>
 			<div class="card bg-base-100 shadow-xl">
 				<div class="card-body">
-					<h3 class="card-title">Current Auth State</h3>
-					<pre class="bg-base-200 p-4 rounded overflow-x-auto text-sm">{JSON.stringify({
-						isAuthenticated: authState.isAuthenticated,
-						isLoading: authState.isLoading,
-						user: authState.user,
-						error: authState.error
-					}, null, 2)}</pre>
+					<h3 class="card-title">{$t('demo.current_auth_state')}</h3>
+					<pre class="overflow-x-auto rounded bg-base-200 p-4 text-sm">{JSON.stringify(
+							{
+								isAuthenticated: authState.isAuthenticated,
+								isLoading: authState.isLoading,
+								user: authState.user
+							},
+							null,
+							2
+						)}</pre>
 				</div>
 			</div>
 		</div>
@@ -112,21 +116,31 @@
 
 	<!-- Setup Instructions -->
 	<div class="mb-8">
-		<h2 class="text-2xl font-semibold mb-4">Setup Instructions</h2>
+		<h2 class="mb-4 text-2xl font-semibold">{$t('demo.setup_instructions')}</h2>
 		<div class="alert alert-info">
-			<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
-				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				fill="none"
+				viewBox="0 0 24 24"
+				class="h-6 w-6 shrink-0 stroke-current"
+			>
+				<path
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					stroke-width="2"
+					d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+				></path>
 			</svg>
 			<div>
-				<h3 class="font-bold">Configuration Required</h3>
-				<p>To use this authentication demo, you need to:</p>
-				<ol class="list-decimal list-inside mt-2">
-					<li>Set up an Azure AD B2C tenant</li>
-					<li>Register your application</li>
-					<li>Update the configuration in <code>src/lib/auth/config.ts</code></li>
-					<li>Set environment variables in <code>.env.local</code></li>
+				<h3 class="font-bold">{$t('demo.config_required')}</h3>
+				<p>{$t('demo.config_steps')}</p>
+				<ol class="mt-2 list-inside list-decimal">
+					<li>{$t('demo.config_step_1')}</li>
+					<li>{$t('demo.config_step_2')}</li>
+					<li>{$t('demo.config_step_3')}</li>
+					<li>{$t('demo.config_step_4')}</li>
 				</ol>
-				<p class="mt-2">See <code>src/lib/auth/README.md</code> for detailed instructions.</p>
+				<p class="mt-2">{$t('demo.config_note')}</p>
 			</div>
 		</div>
 	</div>

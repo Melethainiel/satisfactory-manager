@@ -1,5 +1,6 @@
 import { getContext, setContext } from 'svelte';
-import { API_USER_ACCESS_SCOPE } from '$lib/auth/config';
+import { API_USER_ACCESS_SCOPE, azureB2CConfig } from '$lib/auth/config';
+import { notificationService } from '$lib/services/notificationService.svelte';
 import {
 	PublicClientApplication,
 	type Configuration,
@@ -35,25 +36,19 @@ export interface AuthState {
 	isLoading: boolean;
 	user: UserInfo | null;
 	accessToken: string | null;
-	error: string | null;
 	initializeMsal: (config?: Partial<AzureB2CConfig>) => Promise<void>;
 	signIn: () => Promise<void>;
 	signOut: () => Promise<void>;
 	getAccessToken: (scopes?: string[]) => Promise<string | null>;
 	getApiAccessToken: () => Promise<string | null>;
-	apiFetch: <T = any>(input: string | URL | Request, init?: RequestInit & { autoJson?: boolean }) => Promise<T | Response>;
-	clearError: () => void;
+	apiFetch: <T = any>(
+		input: string | URL | Request,
+		init?: RequestInit & { autoJson?: boolean }
+	) => Promise<T | Response>;
 }
 
-// Default configuration - replace with your actual Azure AD B2C values
-const defaultConfig: AzureB2CConfig = {
-	clientId: 'YOUR_CLIENT_ID', // Replace with your Application (client) ID
-	authority: 'https://YOUR_TENANT.b2clogin.com/YOUR_TENANT.onmicrosoft.com/B2C_1_SIGNIN_SIGNUP', // Replace with your authority
-	knownAuthorities: ['YOUR_TENANT.b2clogin.com'], // Replace with your tenant
-	redirectUri: typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173',
-	postLogoutRedirectUri: typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173',
-	scopes: ['openid', 'profile', 'email']
-};
+// Use the configuration from config.ts instead of hardcoded values
+const defaultConfig: AzureB2CConfig = azureB2CConfig;
 
 class AuthStateClass implements AuthState {
 	// Reactive state using Svelte 5 $state rune
@@ -61,7 +56,6 @@ class AuthStateClass implements AuthState {
 	isLoading = $state(true);
 	user = $state<UserInfo | null>(null);
 	accessToken = $state<string | null>(null);
-	error = $state<string | null>(null);
 
 	// MSAL instance
 	private msalInstance: PublicClientApplication | null = null;
@@ -78,7 +72,7 @@ class AuthStateClass implements AuthState {
 				postLogoutRedirectUri: defaultConfig.postLogoutRedirectUri
 			},
 			cache: {
-				cacheLocation: 'localStorage', // Use sessionStorage for better security
+				cacheLocation: 'sessionStorage', // Use sessionStorage for better security
 				storeAuthStateInCookie: false // Set to true if you have issues on IE11 or Edge
 			},
 			system: {
@@ -137,7 +131,9 @@ class AuthStateClass implements AuthState {
 		} catch (error) {
 			console.error('Failed to initialize MSAL:', error);
 			this.isLoading = false;
-			this.error = error instanceof Error ? error.message : 'Failed to initialize authentication';
+			notificationService.error(
+				error instanceof Error ? error.message : 'Failed to initialize authentication'
+			);
 		}
 	};
 
@@ -155,7 +151,7 @@ class AuthStateClass implements AuthState {
 			}
 		} catch (error) {
 			console.error('Error handling redirect response:', error);
-			this.error = error instanceof Error ? error.message : 'Authentication failed';
+			notificationService.error(error instanceof Error ? error.message : 'Authentication failed');
 		}
 	};
 
@@ -192,14 +188,16 @@ class AuthStateClass implements AuthState {
 		const userInfo: UserInfo = {
 			id: authResult.account?.localAccountId,
 			displayName: authResult.account?.name,
-			email: authResult.account?.idTokenClaims?.emails !== undefined ? authResult.account?.idTokenClaims?.emails[0] : undefined,
+			email:
+				authResult.account?.idTokenClaims?.emails !== undefined
+					? authResult.account?.idTokenClaims?.emails[0]
+					: undefined
 		};
 
 		this.isAuthenticated = true;
 		this.isLoading = false;
 		this.user = userInfo;
 		this.accessToken = authResult.accessToken || null; // May be empty string if only ID token was returned
-		this.error = null;
 
 		// Fire and forget ensure user exists in backend
 		if (userInfo.email) {
@@ -227,7 +225,6 @@ class AuthStateClass implements AuthState {
 
 		try {
 			this.isLoading = true;
-			this.error = null;
 
 			const loginRequest: RedirectRequest = {
 				// Ensure API scope included; if already in defaultConfig.scopes that's fine.
@@ -241,7 +238,7 @@ class AuthStateClass implements AuthState {
 		} catch (error) {
 			console.error('Sign in failed:', error);
 			this.isLoading = false;
-			this.error = error instanceof Error ? error.message : 'Sign in failed';
+			notificationService.error(error instanceof Error ? error.message : 'Sign in failed');
 		}
 	};
 
@@ -267,10 +264,9 @@ class AuthStateClass implements AuthState {
 			this.isLoading = false;
 			this.user = null;
 			this.accessToken = null;
-			this.error = null;
 		} catch (error) {
 			console.error('Sign out failed:', error);
-			this.error = error instanceof Error ? error.message : 'Sign out failed';
+			notificationService.error(error instanceof Error ? error.message : 'Sign out failed');
 		}
 	};
 
@@ -287,7 +283,7 @@ class AuthStateClass implements AuthState {
 			}
 
 			const silentRequest: SilentRequest = {
-				scopes: scopes && scopes.length > 0 ? scopes : (defaultConfig.scopes || ['openid']),
+				scopes: scopes && scopes.length > 0 ? scopes : defaultConfig.scopes || ['openid'],
 				account: accounts[0]
 			};
 
@@ -318,7 +314,10 @@ class AuthStateClass implements AuthState {
 	};
 
 	// Unified authenticated fetch helper (retries once on 401). If autoJson flag true, returns parsed JSON.
-	apiFetch = async <T = any>(input: string | URL | Request, init?: RequestInit & { autoJson?: boolean }): Promise<T | Response> => {
+	apiFetch = async <T = any>(
+		input: string | URL | Request,
+		init?: RequestInit & { autoJson?: boolean }
+	): Promise<T | Response> => {
 		const res = await this._apiFetchInternal(input, init);
 		if (init?.['autoJson']) {
 			return (await res.json()) as T;
@@ -326,7 +325,10 @@ class AuthStateClass implements AuthState {
 		return res;
 	};
 
-	private _apiFetchInternal = async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+	private _apiFetchInternal = async (
+		input: string | URL | Request,
+		init?: RequestInit
+	): Promise<Response> => {
 		let token = await this.getApiAccessToken();
 		const withAuth = async (): Promise<Response> => {
 			return fetch(input as any, {
@@ -345,11 +347,6 @@ class AuthStateClass implements AuthState {
 			res = await withAuth();
 		}
 		return res;
-	};
-
-	// Clear error state
-	clearError = (): void => {
-		this.error = null;
 	};
 }
 

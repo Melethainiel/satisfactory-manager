@@ -21,36 +21,20 @@
 			console.error('Sign out failed:', error);
 		}
 	}
-
-	// Handle clear error
-	function handleClearError() {
-		authState.clearError();
-	}
 </script>
 
 <div class="auth-container">
 	{#if authState.isLoading}
 		<div class="loading-container">
-			<div class="loading loading-spinner loading-lg"></div>
+			<div class="loading loading-lg loading-spinner"></div>
 			<p>Initializing authentication...</p>
-		</div>
-	{:else if authState.error}
-		<div class="alert alert-error">
-			<svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-			</svg>
-			<div>
-				<h3>Authentication Error</h3>
-				<p>{authState.error}</p>
-			</div>
-			<button class="btn btn-sm" onclick={handleClearError}>Dismiss</button>
 		</div>
 	{:else if authState.isAuthenticated && authState.user}
 		<div class="user-info-container">
 			<div class="card w-96 bg-base-100 shadow-xl">
 				<div class="card-body">
 					<h2 class="card-title">Welcome, {authState.user.displayName || authState.user.email}!</h2>
-					
+
 					<div class="user-details">
 						{#if authState.user.email}
 							<p><strong>Email:</strong> {authState.user.email}</p>
@@ -62,7 +46,7 @@
 							<p><strong>User ID:</strong> {authState.user.id}</p>
 						{/if}
 					</div>
-					
+
 					<div class="card-actions justify-end">
 						<button class="btn btn-primary" onclick={handleSignOut}>Sign Out</button>
 					</div>

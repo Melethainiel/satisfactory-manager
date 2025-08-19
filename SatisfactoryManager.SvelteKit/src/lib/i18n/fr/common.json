@@ -1,0 +1,159 @@
+{
+	"app": {
+		"name": "Gestionnaire Satisfactory",
+		"logo_alt": "Logo du Gestionnaire Satisfactory"
+	},
+	"nav": {
+		"game": "Parties",
+		"settings": "Paramètres",
+		"menu": "Menu",
+		"navigation": "Navigation",
+		"toggle_nav": "Basculer la navigation",
+		"close_nav": "Fermer la navigation"
+	},
+	"auth": {
+		"login": "Connexion",
+		"logout": "Déconnexion",
+		"profile": "Profil",
+		"settings": "Paramètres",
+		"welcome": "Bienvenue, {name} !",
+		"sign_in_required": "Connexion requise",
+		"no_email": "Aucun email",
+		"user": "Utilisateur"
+	},
+	"game": {
+		"select_server": "Sélectionner un serveur...",
+		"create_new": "Créer une nouvelle partie",
+		"create_game": "Créer une partie",
+		"game_name": "Nom de la partie",
+		"game_name_placeholder": "Nom de la partie",
+		"game_name_validation": "Doit contenir de 3 à 30 caractères avec uniquement des lettres, chiffres ou tirets"
+	},
+	"settings": {
+		"title": "Paramètres",
+		"sign_in_prompt": "Connectez-vous pour voir les paramètres de la partie.",
+		"no_game_selected": "Aucune partie sélectionnée. Commencez par créer ou sélectionner une partie",
+		"create_new_game": "Créer une partie",
+		"game_info": "Informations de la partie",
+		"name": "Nom",
+		"saved": "Sauvegardé",
+		"danger_zone": "Zone de danger",
+		"delete_warning": "La suppression d'une partie est permanente et ne peut pas être annulée. Toutes les données seront perdues.",
+		"delete_game": "Supprimer la partie"
+	},
+	"users": {
+		"title": "Utilisateurs autorisés",
+		"no_users": "Aucun utilisateur trouvé.",
+		"add_users": "Ajouter des utilisateurs",
+		"remove_user": "Supprimer l'utilisateur",
+		"remove_user_confirm": "Êtes-vous sûr de vouloir supprimer {email} de cette partie ?"
+	},
+	"modules": {
+		"title": "Modules",
+		"no_modules": "Aucun module attaché à cette partie.",
+		"add_module": "Ajouter un module",
+		"remove_module": "Supprimer le module",
+		"remove_module_confirm": "Êtes-vous sûr de vouloir supprimer le module \"{name}\" de cette partie ?"
+	},
+	"dialogs": {
+		"add_users": {
+			"title": "Ajouter des utilisateurs",
+			"placeholder": "Entrez une ou plusieurs adresses email séparées par des virgules, espaces ou nouvelles lignes",
+			"example": "Exemple : utilisateur1@exemple.com, utilisateur2@exemple.com",
+			"error_no_emails": "Entrez au moins une adresse email valide",
+			"error_failed": "Échec de l'ajout des utilisateurs",
+			"add": "Ajouter",
+			"close_label": "Fermer la boîte de dialogue d'ajout d'utilisateurs"
+		},
+		"add_module": {
+			"title": "Ajouter un module",
+			"loading_modules": "Chargement des modules disponibles...",
+			"no_modules_available": "Aucun module disponible à ajouter.",
+			"create_new_module": "Créer un nouveau module",
+			"select_module": "Sélectionner un module",
+			"choose_module": "Choisir un module...",
+			"or_create_new": "Ou créer un nouveau module",
+			"add": "Ajouter le module",
+			"error_failed": "Échec de l'ajout du module",
+			"error_load_failed": "Échec du chargement des modules disponibles"
+		},
+		"select_auth_level": {
+			"title": "Définir le niveau d'autorisation",
+			"user": "Utilisateur",
+			"role": "Rôle",
+			"role_description": "Contrôle ce que l'utilisateur peut faire dans cette partie.",
+			"reader": "Lecteur",
+			"reader_desc": "Lecture seule",
+			"contributor": "Contributeur",
+			"contributor_desc": "Lecture + contribution de données standard",
+			"administrator": "Administrateur",
+			"administrator_desc": "Gérer les utilisateurs et paramètres",
+			"owner": "Propriétaire",
+			"owner_desc": "Contrôle total",
+			"error_no_user": "Aucun utilisateur sélectionné",
+			"error_no_game": "Aucune partie sélectionnée",
+			"error_failed": "Échec de la mise à jour du rôle",
+			"close_label": "Fermer la boîte de dialogue de sélection du niveau d'autorisation"
+		},
+		"delete_game": {
+			"title": "Confirmer la suppression",
+			"message": "Êtes-vous sûr de vouloir supprimer cette partie ? Cette action ne peut pas être annulée.",
+			"yes_delete": "Oui, supprimer",
+			"error_failed": "Échec de la suppression de la partie",
+			"close_label": "Fermer la boîte de dialogue de suppression de la partie"
+		},
+		"confirm": {
+			"confirm": "Confirmer",
+			"error_occurred": "Une erreur est survenue"
+		},
+		"module_version": {
+			"title": "Gestion des versions - {name}",
+			"module_url": "URL du module",
+			"github_repo": "Dépôt GitHub",
+			"close_label": "Fermer la boîte de dialogue des versions de module",
+			"version_management": "Gestion des versions",
+			"refresh": "Actualiser",
+			"sync_from_github": "Synchroniser depuis GitHub",
+			"current_version": "Version actuelle",
+			"no_versions": "Aucune version disponible",
+			"sync_github_hint": "Essayez de synchroniser depuis GitHub pour récupérer les versions disponibles",
+			"current_badge": "Actuelle",
+			"published": "Publiée",
+			"view_release": "Voir la version",
+			"use_this_version": "Utiliser cette version"
+		}
+	},
+	"common": {
+		"cancel": "Annuler",
+		"create": "Créer",
+		"save": "Sauvegarder",
+		"delete": "Supprimer",
+		"edit": "Modifier",
+		"close": "Fermer",
+		"loading": "Chargement...",
+		"error": "Erreur",
+		"success": "Succès",
+		"clear": "Effacer",
+		"dismiss": "Fermer"
+	},
+	"demo": {
+		"title": "Démo d'authentification Azure AD B2C",
+		"auth_status": "Statut d'authentification",
+		"api_testing": "Test de l'API",
+		"test_api_call": "Test d'appel API authentifié",
+		"test_api_description": "Ceci démontre un appel API avec le token d'accès automatiquement attaché.",
+		"testing": "Test en cours...",
+		"test_api": "Tester l'API",
+		"api_response": "Réponse de l'API :",
+		"debug_info": "Informations de débogage",
+		"current_auth_state": "État d'authentification actuel",
+		"setup_instructions": "Instructions de configuration",
+		"config_required": "Configuration requise",
+		"config_steps": "Pour utiliser cette démo d'authentification, vous devez :",
+		"config_step_1": "Configurer un tenant Azure AD B2C",
+		"config_step_2": "Enregistrer votre application",
+		"config_step_3": "Mettre à jour la configuration dans src/lib/auth/config.ts",
+		"config_step_4": "Définir les variables d'environnement dans .env.local",
+		"config_note": "Voir src/lib/auth/README.md pour des instructions détaillées."
+	}
+}

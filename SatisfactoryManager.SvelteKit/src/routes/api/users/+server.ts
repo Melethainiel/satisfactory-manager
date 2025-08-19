@@ -1,16 +1,32 @@
-import type { RequestHandler } from '@sveltejs/kit';
+import { json } from '@sveltejs/kit';
+import type { RequestHandler } from './$types';
 import { userService } from '$lib/server/services/userService';
 
+// GET /api/users - List all users
 export const GET: RequestHandler = async () => {
-	const users = await userService.getAll();
-	return new Response(JSON.stringify(users), { status: 200, headers: { 'content-type': 'application/json' } });
+	try {
+		const users = await userService.getAll();
+		return json(users);
+	} catch (error) {
+		console.error('Error fetching users:', error);
+		return json({ error: 'Failed to fetch users' }, { status: 500 });
+	}
 };
 
+// POST /api/users - Create a new user
 export const POST: RequestHandler = async ({ request }) => {
-	const body = (await request.json()) as { displayName?: string; email?: string };
-	if (!body.displayName || !body.email) {
-		return new Response(JSON.stringify({ error: 'displayName and email required' }), { status: 400 });
+	try {
+		const body = (await request.json()) as { displayName?: string; email?: string };
+		if (!body.displayName || !body.email) {
+			return json({ error: 'Display name and email are required' }, { status: 400 });
+		}
+		const created = await userService.create({ displayName: body.displayName, email: body.email });
+		return json(created, {
+			status: 201,
+			headers: { Location: `/api/users/${created.id}` }
+		});
+	} catch (error) {
+		console.error('Error creating user:', error);
+		return json({ error: 'Failed to create user' }, { status: 500 });
 	}
-	const created = await userService.create({ displayName: body.displayName, email: body.email });
-	return new Response(JSON.stringify(created), { status: 201, headers: { Location: `/api/users/${created.id}` } });
 };

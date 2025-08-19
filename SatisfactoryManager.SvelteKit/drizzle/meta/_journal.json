@@ -22,6 +22,41 @@
       "when": 1754772503986,
       "tag": "0002_greedy_exodus",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1754888406762,
+      "tag": "0003_addModules",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1755111282758,
+      "tag": "0004_light_mystique",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1755147761991,
+      "tag": "0005_add_buildings_system",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1755183769364,
+      "tag": "0006_add_items_system",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1755184716428,
+      "tag": "0007_add_recipes_system",
+      "breakpoints": true
     }
   ]
 }

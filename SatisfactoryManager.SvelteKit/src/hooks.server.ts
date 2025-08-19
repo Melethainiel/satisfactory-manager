@@ -1,6 +1,7 @@
 import type { Handle } from '@sveltejs/kit';
 import { warn } from 'console';
 import { createRemoteJWKSet, jwtVerify, type JWTPayload } from 'jose';
+import { locale } from 'svelte-i18n';
 
 // Environment / configuration
 // These could be moved to a dedicated config file if needed.
@@ -22,71 +23,83 @@ const jwks = createRemoteJWKSet(new URL(jwksUrl));
 
 // Extend locals with auth info
 interface AuthUserLocals {
-  sub: string;
-  name?: string;
-  email?: string;
-  scopes?: string[];
-  raw: JWTPayload;
+	sub: string;
+	name?: string;
+	email?: string;
+	scopes?: string[];
+	raw: JWTPayload;
 }
 
 declare module '@sveltejs/kit' {
-  interface Locals {
-    user?: AuthUserLocals;
-  }
+	interface Locals {
+		user?: AuthUserLocals;
+	}
 }
 
 async function verifyBearer(token: string): Promise<AuthUserLocals | null> {
-  try {
-    const issuerEndpointUrl = `https://${TENANT_DOMAIN}/${TENANT_DOMAIN_ID}/v2.0/`;
-    const { payload } = await jwtVerify(token, jwks, {
-      issuer: [
-        issuerEndpointUrl
-      ],
-      audience: CLIENT_ID
-    });
+	try {
+		const issuerEndpointUrl = `https://${TENANT_DOMAIN}/${TENANT_DOMAIN_ID}/v2.0/`;
+		const { payload } = await jwtVerify(token, jwks, {
+			issuer: [issuerEndpointUrl],
+			audience: CLIENT_ID
+		});
 
-    // Scope check
-    const scpRaw = payload['scp'];
-    const scopes = typeof scpRaw === 'string' ? scpRaw.split(' ') : [];
-    if (!scopes.includes(REQUIRED_SCOPE)) return null;
+		// Scope check
+		const scpRaw = payload['scp'];
+		const scopes = typeof scpRaw === 'string' ? scpRaw.split(' ') : [];
+		if (!scopes.includes(REQUIRED_SCOPE)) return null;
 
-    return {
-      sub: String(payload.sub),
-      name: typeof payload.name === 'string' ? payload.name : undefined,
-      email: Array.isArray((payload as any).emails) ? (payload as any).emails[0] : (payload as any).email,
-      scopes,
-      raw: payload
-    };
-  } catch (e) {
-    // Silently ignore invalid tokens; downstream route can decide if auth required
-    warn('Failed to verify token:', e);
-    return null;
-  }
+		return {
+			sub: String(payload.sub),
+			name: typeof payload.name === 'string' ? payload.name : undefined,
+			email: Array.isArray((payload as any).emails)
+				? (payload as any).emails[0]
+				: (payload as any).email,
+			scopes,
+			raw: payload
+		};
+	} catch (e) {
+		// Silently ignore invalid tokens; downstream route can decide if auth required
+		warn('Failed to verify token:', e);
+		return null;
+	}
 }
 
 export const handle: Handle = async ({ event, resolve }) => {
-  const urlPath = event.url.pathname;
-  const authHeader = event.request.headers.get('authorization') || event.request.headers.get('Authorization');
+	const urlPath = event.url.pathname;
 
-  if (authHeader?.startsWith('Bearer ')) {
-    const token = authHeader.substring('Bearer '.length).trim();
-    const user = await verifyBearer(token);
-    if (user) event.locals.user = user;
-  }
+	// Handle i18n locale detection from Accept-Language header
+	const lang = event.request.headers.get('accept-language')?.split(',')[0];
+	if (lang) {
+		const supportedLocales = ['en', 'fr'];
+		const detectedLocale = lang.slice(0, 2);
+		if (supportedLocales.includes(detectedLocale)) {
+			locale.set(detectedLocale);
+		}
+	}
 
-  // Enforce authentication for all API routes
-  if (urlPath.startsWith('/api')) {
-    // Allow CORS preflight or similar OPTIONS without auth enforcement
-    if (event.request.method === 'OPTIONS') {
-      return new Response(null, { status: 204 });
-    }
-    if (!event.locals.user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { 'content-type': 'application/json' }
-      });
-    }
-  }
+	const authHeader =
+		event.request.headers.get('authorization') || event.request.headers.get('Authorization');
 
-  return resolve(event);
+	if (authHeader?.startsWith('Bearer ')) {
+		const token = authHeader.substring('Bearer '.length).trim();
+		const user = await verifyBearer(token);
+		if (user) event.locals.user = user;
+	}
+
+	// Enforce authentication for all API routes
+	if (urlPath.startsWith('/api')) {
+		// Allow CORS preflight or similar OPTIONS without auth enforcement
+		if (event.request.method === 'OPTIONS') {
+			return new Response(null, { status: 204 });
+		}
+		if (!event.locals.user) {
+			return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+				status: 401,
+				headers: { 'content-type': 'application/json' }
+			});
+		}
+	}
+
+	return resolve(event);
 };

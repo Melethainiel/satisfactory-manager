@@ -21,7 +21,8 @@ export const POST: RequestHandler = async ({ request }) => {
 	try {
 		// Check content length to prevent DoS attacks
 		const contentLength = request.headers.get('content-length');
-		if (contentLength && parseInt(contentLength) > 10 * 1024 * 1024) { // 10MB limit
+		if (contentLength && parseInt(contentLength) > 10 * 1024 * 1024) {
+			// 10MB limit
 			return json({ error: 'Request payload too large (max 10MB)' }, { status: 413 });
 		}
 
@@ -164,7 +165,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			}
 		}
 
-		return json(results);
+		return json(results, { status: 201 });
 	} catch (error) {
 		console.error('Error importing buildings:', error);
 		return json({ error: 'Failed to import buildings' }, { status: 500 });

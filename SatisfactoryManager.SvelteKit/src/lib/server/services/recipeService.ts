@@ -5,6 +5,8 @@ import {
 	recipeIngredients,
 	recipeProducts,
 	recipeBuildings,
+	items,
+	buildings,
 	type Recipe,
 	type NewRecipe,
 	type RecipeVersion,
@@ -16,7 +18,7 @@ import {
 	type RecipeBuilding,
 	type NewRecipeBuilding
 } from '../db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, ilike, inArray, and } from 'drizzle-orm';
 
 export interface RecipeVersionWithDetails extends RecipeVersion {
 	ingredients: RecipeIngredient[];
@@ -47,6 +49,13 @@ export interface IRecipeService {
 		products: Omit<NewRecipeProduct, 'id' | 'recipeVersionId' | 'createdAt'>[],
 		buildings: Omit<NewRecipeBuilding, 'id' | 'recipeVersionId' | 'createdAt'>[]
 	): Promise<RecipeVersionWithDetails>;
+	createRecipeVersionFromClassNames(
+		recipeId: string,
+		versionData: Omit<NewRecipeVersion, 'id' | 'recipeId' | 'createdAt'>,
+		ingredients: { itemClassName: string; count: string }[],
+		products: { itemClassName: string; count: string }[],
+		buildingClassNames: { buildingClassName: string }[]
+	): Promise<RecipeVersionWithDetails>;
 	getRecipeVersionByModuleAndRecipe(
 		recipeId: string,
 		moduleVersionId: string
@@ -58,6 +67,7 @@ export interface IRecipeService {
 	): Promise<Recipe[]>;
 
 	// Query helpers
+	searchRecipesByName(searchTerm: string): Promise<Recipe[]>;
 	getRecipesByIngredient(itemClassName: string): Promise<Recipe[]>;
 	getRecipesByProduct(itemClassName: string): Promise<Recipe[]>;
 	getRecipesByBuilding(buildingClassName: string): Promise<Recipe[]>;
@@ -213,6 +223,51 @@ class RecipeService implements IRecipeService {
 		};
 	}
 
+	async createRecipeVersionFromClassNames(
+		recipeId: string,
+		versionData: Omit<NewRecipeVersion, 'id' | 'recipeId' | 'createdAt'>,
+		ingredients: { itemClassName: string; count: string }[],
+		products: { itemClassName: string; count: string }[],
+		buildingClassNames: { buildingClassName: string }[]
+	): Promise<RecipeVersionWithDetails> {
+		// Resolve item classNames to IDs
+		const resolvedIngredients = [];
+		for (const ing of ingredients) {
+			const [item] = await db.select().from(items).where(eq(items.className, ing.itemClassName));
+			if (item) {
+				resolvedIngredients.push({ itemId: item.id, count: ing.count });
+			}
+		}
+
+		const resolvedProducts = [];
+		for (const prod of products) {
+			const [item] = await db.select().from(items).where(eq(items.className, prod.itemClassName));
+			if (item) {
+				resolvedProducts.push({ itemId: item.id, count: prod.count });
+			}
+		}
+
+		// Resolve building classNames to IDs
+		const resolvedBuildings = [];
+		for (const build of buildingClassNames) {
+			const [building] = await db
+				.select()
+				.from(buildings)
+				.where(eq(buildings.className, build.buildingClassName));
+			if (building) {
+				resolvedBuildings.push({ buildingId: building.id });
+			}
+		}
+
+		return this.createRecipeVersion(
+			recipeId,
+			versionData,
+			resolvedIngredients,
+			resolvedProducts,
+			resolvedBuildings
+		);
+	}
+
 	async getRecipeVersionByModuleAndRecipe(
 		recipeId: string,
 		moduleVersionId: string
@@ -221,7 +276,10 @@ class RecipeService implements IRecipeService {
 			.select()
 			.from(recipeVersions)
 			.where(
-				eq(recipeVersions.recipeId, recipeId) && eq(recipeVersions.moduleVersionId, moduleVersionId)
+				and(
+					eq(recipeVersions.recipeId, recipeId),
+					eq(recipeVersions.moduleVersionId, moduleVersionId)
+				)
 			);
 
 		if (!version) return undefined;
@@ -236,19 +294,29 @@ class RecipeService implements IRecipeService {
 		return await db.insert(recipes).values(recipesData).returning();
 	}
 
+	async searchRecipesByName(searchTerm: string): Promise<Recipe[]> {
+		return await db
+			.select()
+			.from(recipes)
+			.where(ilike(recipes.displayName, `%${searchTerm}%`))
+			.orderBy(recipes.displayName);
+	}
+
 	async getRecipesByIngredient(itemClassName: string): Promise<Recipe[]> {
 		const recipeIds = await db
 			.selectDistinct({ recipeId: recipeVersions.recipeId })
 			.from(recipeVersions)
 			.innerJoin(recipeIngredients, eq(recipeIngredients.recipeVersionId, recipeVersions.id))
-			.where(eq(recipeIngredients.itemClassName, itemClassName));
+			.innerJoin(items, eq(recipeIngredients.itemId, items.id))
+			.where(eq(items.className, itemClassName));
 
 		if (recipeIds.length === 0) return [];
 
+		const recipeIdsList = recipeIds.map((r) => r.recipeId);
 		return await db
 			.select()
 			.from(recipes)
-			.where(eq(recipes.id, recipeIds[0].recipeId))
+			.where(inArray(recipes.id, recipeIdsList))
 			.orderBy(recipes.displayName);
 	}
 
@@ -257,14 +325,16 @@ class RecipeService implements IRecipeService {
 			.selectDistinct({ recipeId: recipeVersions.recipeId })
 			.from(recipeVersions)
 			.innerJoin(recipeProducts, eq(recipeProducts.recipeVersionId, recipeVersions.id))
-			.where(eq(recipeProducts.itemClassName, itemClassName));
+			.innerJoin(items, eq(recipeProducts.itemId, items.id))
+			.where(eq(items.className, itemClassName));
 
 		if (recipeIds.length === 0) return [];
 
+		const recipeIdsList = recipeIds.map((r) => r.recipeId);
 		return await db
 			.select()
 			.from(recipes)
-			.where(eq(recipes.id, recipeIds[0].recipeId))
+			.where(inArray(recipes.id, recipeIdsList))
 			.orderBy(recipes.displayName);
 	}
 
@@ -273,14 +343,16 @@ class RecipeService implements IRecipeService {
 			.selectDistinct({ recipeId: recipeVersions.recipeId })
 			.from(recipeVersions)
 			.innerJoin(recipeBuildings, eq(recipeBuildings.recipeVersionId, recipeVersions.id))
-			.where(eq(recipeBuildings.buildingClassName, buildingClassName));
+			.innerJoin(buildings, eq(recipeBuildings.buildingId, buildings.id))
+			.where(eq(buildings.className, buildingClassName));
 
 		if (recipeIds.length === 0) return [];
 
+		const recipeIdsList = recipeIds.map((r) => r.recipeId);
 		return await db
 			.select()
 			.from(recipes)
-			.where(eq(recipes.id, recipeIds[0].recipeId))
+			.where(inArray(recipes.id, recipeIdsList))
 			.orderBy(recipes.displayName);
 	}
 }

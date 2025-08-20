@@ -9,6 +9,6 @@ export default defineConfig({
 	server: {
 		host: true,
 		port: parseInt(process.env.PORT ?? '5173'),
-		allowedHosts: ['code.melenet.ovh']
+		allowedHosts: ['5173.code.melenet.ovh']
 	}
 });

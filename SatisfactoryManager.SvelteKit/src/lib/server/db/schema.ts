@@ -6,7 +6,8 @@ import {
 	pgEnum,
 	timestamp,
 	numeric,
-	index
+	index,
+	unique
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
@@ -43,17 +44,24 @@ export type Module = typeof modules.$inferSelect;
 export type NewModule = typeof modules.$inferInsert;
 
 // Module versions table to track available versions
-export const moduleVersions = pgTable('module_versions', {
-	id: uuid('id').defaultRandom().primaryKey(),
-	moduleId: uuid('module_id')
-		.notNull()
-		.references(() => modules.id, { onDelete: 'cascade' }),
-	version: varchar('version', { length: 100 }).notNull(),
-	releaseUrl: varchar('release_url', { length: 2048 }),
-	releaseNotes: varchar('release_notes', { length: 5000 }),
-	publishedAt: timestamp('published_at'),
-	createdAt: timestamp('created_at').defaultNow().notNull()
-});
+export const moduleVersions = pgTable(
+	'module_versions',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		moduleId: uuid('module_id')
+			.notNull()
+			.references(() => modules.id, { onDelete: 'cascade' }),
+		version: varchar('version', { length: 100 }).notNull(),
+		releaseUrl: varchar('release_url', { length: 2048 }),
+		releaseNotes: varchar('release_notes', { length: 5000 }),
+		publishedAt: timestamp('published_at'),
+		createdAt: timestamp('created_at').defaultNow().notNull()
+	},
+	(table) => ({
+		// Ensure unique combination of moduleId and version
+		moduleIdVersionUnique: unique().on(table.moduleId, table.version)
+	})
+);
 
 export type ModuleVersion = typeof moduleVersions.$inferSelect;
 export type NewModuleVersion = typeof moduleVersions.$inferInsert;
@@ -92,17 +100,21 @@ export const buildingTypeEnum = pgEnum('building_type', ['Generator', 'Construct
 export const itemFormEnum = pgEnum('item_form', ['RF_SOLID', 'RF_LIQUID', 'RF_GAS']);
 
 // Items table - base item definitions
-export const items = pgTable('items', {
-	id: uuid('id').defaultRandom().primaryKey(),
-	className: varchar('class_name', { length: 100 }).notNull().unique(),
-	displayName: varchar('display_name', { length: 200 }).notNull(),
-	description: varchar('description', { length: 1000 }),
-	form: itemFormEnum('form').notNull(),
-	createdAt: timestamp('created_at').defaultNow().notNull(),
-	updatedAt: timestamp('updated_at').defaultNow().notNull()
-}, (table) => ({
-	classNameIdx: index('items_class_name_idx').on(table.className)
-}));
+export const items = pgTable(
+	'items',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		className: varchar('class_name', { length: 100 }).notNull().unique(),
+		displayName: varchar('display_name', { length: 200 }).notNull(),
+		description: varchar('description', { length: 1000 }),
+		form: itemFormEnum('form').notNull(),
+		createdAt: timestamp('created_at').defaultNow().notNull(),
+		updatedAt: timestamp('updated_at').defaultNow().notNull()
+	},
+	(table) => ({
+		classNameIdx: index('items_class_name_idx').on(table.className)
+	})
+);
 
 export type Item = typeof items.$inferSelect;
 export type NewItem = typeof items.$inferInsert;
@@ -125,15 +137,19 @@ export type ItemVersion = typeof itemVersions.$inferSelect;
 export type NewItemVersion = typeof itemVersions.$inferInsert;
 
 // Recipes table - base recipe definitions
-export const recipes = pgTable('recipes', {
-	id: uuid('id').defaultRandom().primaryKey(),
-	className: varchar('class_name', { length: 100 }).notNull().unique(),
-	displayName: varchar('display_name', { length: 200 }).notNull(),
-	createdAt: timestamp('created_at').defaultNow().notNull(),
-	updatedAt: timestamp('updated_at').defaultNow().notNull()
-}, (table) => ({
-	classNameIdx: index('recipes_class_name_idx').on(table.className)
-}));
+export const recipes = pgTable(
+	'recipes',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		className: varchar('class_name', { length: 100 }).notNull().unique(),
+		displayName: varchar('display_name', { length: 200 }).notNull(),
+		createdAt: timestamp('created_at').defaultNow().notNull(),
+		updatedAt: timestamp('updated_at').defaultNow().notNull()
+	},
+	(table) => ({
+		classNameIdx: index('recipes_class_name_idx').on(table.className)
+	})
+);
 
 export type Recipe = typeof recipes.$inferSelect;
 export type NewRecipe = typeof recipes.$inferInsert;
@@ -202,16 +218,20 @@ export type RecipeBuilding = typeof recipeBuildings.$inferSelect;
 export type NewRecipeBuilding = typeof recipeBuildings.$inferInsert;
 
 // Buildings table - base building definitions
-export const buildings = pgTable('buildings', {
-	id: uuid('id').defaultRandom().primaryKey(),
-	className: varchar('class_name', { length: 100 }).notNull().unique(),
-	name: varchar('name', { length: 200 }).notNull(),
-	type: buildingTypeEnum('type').notNull(),
-	createdAt: timestamp('created_at').defaultNow().notNull(),
-	updatedAt: timestamp('updated_at').defaultNow().notNull()
-}, (table) => ({
-	classNameIdx: index('buildings_class_name_idx').on(table.className)
-}));
+export const buildings = pgTable(
+	'buildings',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		className: varchar('class_name', { length: 100 }).notNull().unique(),
+		name: varchar('name', { length: 200 }).notNull(),
+		type: buildingTypeEnum('type').notNull(),
+		createdAt: timestamp('created_at').defaultNow().notNull(),
+		updatedAt: timestamp('updated_at').defaultNow().notNull()
+	},
+	(table) => ({
+		classNameIdx: index('buildings_class_name_idx').on(table.className)
+	})
+);
 
 export type Building = typeof buildings.$inferSelect;
 export type NewBuilding = typeof buildings.$inferInsert;

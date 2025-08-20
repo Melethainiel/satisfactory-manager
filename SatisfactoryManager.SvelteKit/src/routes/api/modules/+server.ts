@@ -2,10 +2,13 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { moduleService } from '$lib/server/services/moduleService';
 
-// GET /api/modules - List all modules
-export const GET: RequestHandler = async () => {
+// GET /api/modules - List all modules with optional search
+export const GET: RequestHandler = async ({ url }) => {
 	try {
-		const modules = await moduleService.getAll();
+		const search = url.searchParams.get('search');
+
+		const options = search ? { search } : undefined;
+		const modules = await moduleService.getAll(options);
 		return json(modules);
 	} catch (error) {
 		console.error('Error loading modules:', error);
@@ -22,23 +25,44 @@ export const POST: RequestHandler = async ({ request }) => {
 			return json({ error: 'Module name is required' }, { status: 400 });
 		}
 
+		// Validate module name length (matches database constraint)
+		if (name.trim().length > 200) {
+			return json({ error: 'Module name cannot exceed 200 characters' }, { status: 400 });
+		}
+
 		if (!url || typeof url !== 'string' || !url.trim()) {
 			return json({ error: 'Module URL is required' }, { status: 400 });
 		}
 
-		// Validate URL format
+		// Validate URL format - must be a valid URL with http/https protocol
 		try {
-			new URL(url.trim());
+			const parsedUrl = new URL(url.trim());
+			if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+				return json(
+					{ error: 'Invalid URL format - URL must use http or https protocol' },
+					{ status: 400 }
+				);
+			}
+			// Additional validation: ensure hostname exists and is not just a dot
+			if (!parsedUrl.hostname || parsedUrl.hostname === '.' || parsedUrl.hostname === '') {
+				return json({ error: 'Invalid URL format' }, { status: 400 });
+			}
 		} catch {
 			return json({ error: 'Invalid URL format' }, { status: 400 });
 		}
 
-		// Validate GitHub repo URL if provided
+		// Validate GitHub repo if provided (can be owner/repo format or full URL)
 		if (githubRepo && typeof githubRepo === 'string' && githubRepo.trim()) {
-			try {
-				new URL(githubRepo.trim());
-			} catch {
-				return json({ error: 'Invalid GitHub repository URL format' }, { status: 400 });
+			const repoPattern = /^[\w.-]+\/[\w.-]+$/; // owner/repo pattern
+			if (!repoPattern.test(githubRepo.trim())) {
+				try {
+					new URL(githubRepo.trim());
+				} catch {
+					return json(
+						{ error: 'Invalid GitHub repository format (expected owner/repo or full URL)' },
+						{ status: 400 }
+					);
+				}
 			}
 		}
 
@@ -46,6 +70,12 @@ export const POST: RequestHandler = async ({ request }) => {
 		const existingModule = await moduleService.getByName(name.trim());
 		if (existingModule) {
 			return json({ error: 'A module with this name already exists' }, { status: 409 });
+		}
+
+		// Check if module with same URL already exists
+		const existingUrlModule = await moduleService.getByUrl(url.trim());
+		if (existingUrlModule) {
+			return json({ error: 'A module with this URL already exists' }, { status: 409 });
 		}
 
 		const module = await moduleService.create({

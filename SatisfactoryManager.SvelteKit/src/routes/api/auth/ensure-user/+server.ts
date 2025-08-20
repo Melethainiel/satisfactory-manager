@@ -6,18 +6,38 @@ import { userService } from '$lib/server/services/userService';
 export const POST: RequestHandler = async ({ request }) => {
 	try {
 		const body = (await request.json()) as { displayName?: string; email?: string };
-		if (!body.email) {
-			return json({ error: 'Email is required' }, { status: 400 });
+		
+		// Trim input values
+		const email = body.email?.trim();
+		const displayName = body.displayName?.trim();
+		
+		// Validate required fields
+		if (!email || email === '') {
+			return json({ error: 'Display name and email are required' }, { status: 400 });
 		}
-		let existing = await userService.getByEmail(body.email);
+		
+		if (!displayName || displayName === '') {
+			return json({ error: 'Display name and email are required' }, { status: 400 });
+		}
+		
+		// Check if user already exists
+		let existing = await userService.getByEmail(email);
 		if (existing) {
-			return json(existing);
+			// Update display name if different
+			if (existing.displayName !== displayName) {
+				const updated = await userService.update(existing.id, { displayName });
+				return json({ ...updated, created: false });
+			}
+			return json({ ...existing, created: false });
 		}
+		
+		// Create new user
 		const created = await userService.create({
-			displayName: body.displayName ?? body.email.split('@')[0],
-			email: body.email
+			displayName,
+			email
 		});
-		return json(created, { status: 201 });
+		
+		return json({ ...created, created: true }, { status: 201 });
 	} catch (error) {
 		console.error('Error ensuring user:', error);
 		return json({ error: 'Failed to ensure user' }, { status: 500 });

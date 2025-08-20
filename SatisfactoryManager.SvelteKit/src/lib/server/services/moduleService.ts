@@ -7,13 +7,14 @@ import {
 	type ModuleVersion,
 	type NewModuleVersion
 } from '../db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, like, ilike } from 'drizzle-orm';
 import { githubService, type IModuleVersion } from './githubService';
 
 export interface IModuleService {
-	getAll(): Promise<Module[]>;
+	getAll(options?: { search?: string }): Promise<Module[]>;
 	getById(id: string): Promise<Module | undefined>; // UUID
 	getByName(name: string): Promise<Module | undefined>;
+	getByUrl(url: string): Promise<Module | undefined>;
 	create(data: Omit<NewModule, 'id' | 'createdAt' | 'updatedAt'>): Promise<Module>;
 	update(
 		id: string,
@@ -33,8 +34,15 @@ export interface IModuleService {
 }
 
 class ModuleService implements IModuleService {
-	async getAll(): Promise<Module[]> {
-		return await db.select().from(modules).orderBy(modules.id);
+	async getAll(options?: { search?: string }): Promise<Module[]> {
+		let query = db.select().from(modules);
+
+		// Add search filter if provided (case-insensitive)
+		if (options?.search) {
+			query = query.where(ilike(modules.name, `%${options.search}%`));
+		}
+
+		return await query.orderBy(modules.name);
 	}
 	async getById(id: string): Promise<Module | undefined> {
 		const [row] = await db.select().from(modules).where(eq(modules.id, id));
@@ -42,6 +50,10 @@ class ModuleService implements IModuleService {
 	}
 	async getByName(name: string): Promise<Module | undefined> {
 		const [row] = await db.select().from(modules).where(eq(modules.name, name));
+		return row;
+	}
+	async getByUrl(url: string): Promise<Module | undefined> {
+		const [row] = await db.select().from(modules).where(eq(modules.url, url));
 		return row;
 	}
 	async create(data: Omit<NewModule, 'id' | 'createdAt' | 'updatedAt'>): Promise<Module> {
@@ -79,6 +91,13 @@ class ModuleService implements IModuleService {
 		moduleId: string,
 		versionData: Omit<NewModuleVersion, 'id' | 'moduleId' | 'createdAt'>
 	): Promise<ModuleVersion> {
+		// Check if version already exists for this module
+		const existingVersions = await this.getVersions(moduleId);
+		const existingVersion = existingVersions.find((v) => v.version === versionData.version);
+		if (existingVersion) {
+			throw new Error(`Version ${versionData.version} already exists for this module`);
+		}
+
 		const [version] = await db
 			.insert(moduleVersions)
 			.values({

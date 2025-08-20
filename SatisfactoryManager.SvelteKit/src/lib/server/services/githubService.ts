@@ -58,18 +58,18 @@ class GitHubService implements IGitHubService {
 	private async rateLimitDelay(): Promise<void> {
 		const now = Date.now();
 		const timeSinceLastRequest = now - this.lastRequestTime;
-		
+
 		if (timeSinceLastRequest < this.minDelay) {
 			const delay = this.minDelay - timeSinceLastRequest;
-			await new Promise(resolve => setTimeout(resolve, delay));
+			await new Promise((resolve) => setTimeout(resolve, delay));
 		}
-		
+
 		this.lastRequestTime = Date.now();
 	}
 
 	async fetchReleases(owner: string, repo: string): Promise<GitHubRelease[]> {
 		await this.rateLimitDelay();
-		
+
 		const url = `${this.baseUrl}/repos/${owner}/${repo}/releases`;
 
 		try {

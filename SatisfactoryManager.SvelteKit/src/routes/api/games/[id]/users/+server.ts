@@ -51,6 +51,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 			try {
 				let user = await userService.getByEmail(email);
 				if (!user) {
+					added.push({ email, error: 'User not found' });
 					continue;
 				}
 				await gameService.addUser(id, user.id, (body.role as any) || 'Reader');

@@ -3,6 +3,7 @@ import { POST } from '../../../src/routes/api/auth/ensure-user/+server';
 import { testUsers } from '../../setup/fixtures';
 import { getTestDb } from '../../setup/test-db';
 import { users } from '../../../src/lib/server/db/schema';
+import { eq } from 'drizzle-orm';
 
 describe('/api/auth', () => {
 	beforeEach(async () => {
@@ -39,7 +40,7 @@ describe('/api/auth', () => {
 			const createdUsers = await db
 				.select()
 				.from(users)
-				.where((db) => db.eq(users.email, userData.email));
+				.where(eq(users.email, userData.email));
 			expect(createdUsers.length).toBe(1);
 			expect(createdUsers[0].displayName).toBe(userData.displayName);
 		});
@@ -101,7 +102,7 @@ describe('/api/auth', () => {
 			const updatedUsers = await db
 				.select()
 				.from(users)
-				.where((db) => db.eq(users.email, testUsers[0].email));
+				.where(eq(users.email, testUsers[0].email));
 			expect(updatedUsers.length).toBe(1);
 			expect(updatedUsers[0].displayName).toBe(updatedUserData.displayName);
 		});
@@ -270,7 +271,7 @@ describe('/api/auth', () => {
 			const createdUsers = await db
 				.select()
 				.from(users)
-				.where((db) => db.eq(users.email, 'test@example.com'));
+				.where(eq(users.email, 'test@example.com'));
 			expect(createdUsers.length).toBe(1);
 			expect(createdUsers[0].displayName).toBe('Test User');
 		});

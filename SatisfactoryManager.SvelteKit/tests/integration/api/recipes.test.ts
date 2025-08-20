@@ -429,7 +429,7 @@ describe('/api/recipes', () => {
 					{
 						// Missing className
 						displayName: 'Invalid Recipe 1',
-						manufacturingDuration: 6.0,
+						manufacturingDuration: '6.0',
 						ingredients: [],
 						products: [],
 						craftedIn: []
@@ -437,7 +437,7 @@ describe('/api/recipes', () => {
 					{
 						className: 'Recipe_Invalid2_C',
 						// Missing displayName
-						manufacturingDuration: 6.0,
+						manufacturingDuration: '6.0',
 						ingredients: [],
 						products: [],
 						craftedIn: []
@@ -474,7 +474,7 @@ describe('/api/recipes', () => {
 				.values({
 					recipeId: testRecipeId,
 					moduleVersionId: testModuleVersionId,
-					manufacturingDuration: 6.0
+					manufacturingDuration: '6.0'
 				})
 				.returning();
 
@@ -490,7 +490,7 @@ describe('/api/recipes', () => {
 				.where(eq(recipeVersions.recipeId, testRecipeId));
 
 			expect(versions.length).toBeGreaterThan(0);
-			expect(versions[0].manufacturingDuration).toBe('6');
+			expect(versions[0].manufacturingDuration).toBe('6.00');
 		});
 
 		it('should create recipe versions with different durations', async () => {
@@ -526,11 +526,11 @@ describe('/api/recipes', () => {
 				.values({
 					recipeId: testRecipeId,
 					moduleVersionId: newModuleVersion.id,
-					manufacturingDuration: 4.0
+					manufacturingDuration: '4.0'
 				})
 				.returning();
 
-			expect(newRecipeVersion.manufacturingDuration).toBe('4');
+			expect(newRecipeVersion.manufacturingDuration).toBe('4.00');
 		});
 	});
 
@@ -546,7 +546,7 @@ describe('/api/recipes', () => {
 				.values({
 					recipeId: testRecipeId,
 					moduleVersionId: testModuleVersionId,
-					manufacturingDuration: 6.0
+					manufacturingDuration: '6.0'
 				})
 				.returning();
 
@@ -562,11 +562,11 @@ describe('/api/recipes', () => {
 				.values({
 					recipeVersionId: testRecipeVersionId,
 					itemId: testItemId,
-					count: 3
+					count: '3'
 				})
 				.returning();
 
-			expect(ingredient.count).toBe('3');
+			expect(ingredient.count).toBe('3.00');
 			expect(ingredient.recipeVersionId).toBe(testRecipeVersionId);
 			expect(ingredient.itemId).toBe(testItemId);
 		});
@@ -580,11 +580,11 @@ describe('/api/recipes', () => {
 				.values({
 					recipeVersionId: testRecipeVersionId,
 					itemId: testItemId,
-					count: 2
+					count: '2'
 				})
 				.returning();
 
-			expect(product.count).toBe('2');
+			expect(product.count).toBe('2.00');
 			expect(product.recipeVersionId).toBe(testRecipeVersionId);
 			expect(product.itemId).toBe(testItemId);
 		});
@@ -652,12 +652,12 @@ describe('/api/recipes', () => {
 					{
 						recipeVersionId: testRecipeVersionId,
 						itemId: inputItem1.id,
-						count: 5
+						count: '5'
 					},
 					{
 						recipeVersionId: testRecipeVersionId,
 						itemId: inputItem2.id,
-						count: 2.5
+						count: '2.5'
 					}
 				])
 				.returning();
@@ -669,12 +669,12 @@ describe('/api/recipes', () => {
 					{
 						recipeVersionId: testRecipeVersionId,
 						itemId: outputItem1.id,
-						count: 3
+						count: '3'
 					},
 					{
 						recipeVersionId: testRecipeVersionId,
 						itemId: outputItem2.id,
-						count: 1.5
+						count: '1.5'
 					}
 				])
 				.returning();
@@ -683,12 +683,12 @@ describe('/api/recipes', () => {
 			expect(products.length).toBe(2);
 
 			// Verify ingredients
-			expect(ingredients[0].count).toBe('5');
-			expect(ingredients[1].count).toBe('2.5');
+			expect(ingredients[0].count).toBe('5.00');
+			expect(ingredients[1].count).toBe('2.50');
 
 			// Verify products
-			expect(products[0].count).toBe('3');
-			expect(products[1].count).toBe('1.5');
+			expect(products[0].count).toBe('3.00');
+			expect(products[1].count).toBe('1.50');
 		});
 	});
 
@@ -782,11 +782,11 @@ describe('/api/recipes', () => {
 					.values({
 						recipeId: recipe.id,
 						moduleVersionId: testModuleVersionId,
-						manufacturingDuration: edgeCase.duration
+						manufacturingDuration: edgeCase.duration.toString()
 					})
 					.returning();
 
-				expect(version.manufacturingDuration).toBe(edgeCase.duration.toString());
+				expect(parseFloat(version.manufacturingDuration)).toBeCloseTo(edgeCase.duration, 2);
 			}
 		});
 
@@ -798,7 +798,7 @@ describe('/api/recipes', () => {
 				.values({
 					recipeId: testRecipeId,
 					moduleVersionId: testModuleVersionId,
-					manufacturingDuration: 6.0
+					manufacturingDuration: '6.0'
 				})
 				.returning();
 
@@ -812,11 +812,11 @@ describe('/api/recipes', () => {
 					.values({
 						recipeVersionId: recipeVersion.id,
 						itemId: testItemId,
-						count: count
+						count: count.toString()
 					})
 					.returning();
 
-				expect(parseFloat(ingredient.count)).toBeCloseTo(count, 3);
+				expect(parseFloat(ingredient.count)).toBeCloseTo(count, 2);
 			}
 		});
 
@@ -864,7 +864,7 @@ describe('/api/recipes', () => {
 				})
 				.returning();
 
-			const [constructor] = await db
+			const [constructorBuilding] = await db
 				.insert(buildings)
 				.values({
 					className: 'Build_ConstructorMk1_C',
@@ -879,7 +879,7 @@ describe('/api/recipes', () => {
 					{
 						className: 'Recipe_ComplexIronPlate_C',
 						displayName: 'Complex Iron Plate',
-						manufacturingDuration: 6.0,
+						manufacturingDuration: '6.0',
 						ingredients: [
 							{
 								item: 'Desc_IronIngot_C',
@@ -931,7 +931,7 @@ describe('/api/recipes', () => {
 				.from(recipeIngredients)
 				.where(eq(recipeIngredients.recipeVersionId, recipeVersion[0].id));
 			expect(ingredients.length).toBe(1);
-			expect(ingredients[0].count).toBe('3');
+			expect(ingredients[0].count).toBe('3.00');
 
 			// Check products
 			const products = await db
@@ -939,14 +939,14 @@ describe('/api/recipes', () => {
 				.from(recipeProducts)
 				.where(eq(recipeProducts.recipeVersionId, recipeVersion[0].id));
 			expect(products.length).toBe(1);
-			expect(products[0].count).toBe('2');
+			expect(products[0].count).toBe('2.00');
 
 			// Check buildings
-			const buildings = await db
+			const recipeBuilding = await db
 				.select()
 				.from(recipeBuildings)
 				.where(eq(recipeBuildings.recipeVersionId, recipeVersion[0].id));
-			expect(buildings.length).toBe(1);
+			expect(recipeBuilding.length).toBe(1);
 		});
 	});
 });

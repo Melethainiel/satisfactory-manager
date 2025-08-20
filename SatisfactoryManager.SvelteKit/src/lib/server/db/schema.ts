@@ -6,7 +6,8 @@ import {
 	pgEnum,
 	timestamp,
 	numeric,
-	index
+	index,
+	unique
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
@@ -53,7 +54,10 @@ export const moduleVersions = pgTable('module_versions', {
 	releaseNotes: varchar('release_notes', { length: 5000 }),
 	publishedAt: timestamp('published_at'),
 	createdAt: timestamp('created_at').defaultNow().notNull()
-});
+}, (table) => ({
+	// Ensure unique combination of moduleId and version
+	moduleIdVersionUnique: unique().on(table.moduleId, table.version)
+}));
 
 export type ModuleVersion = typeof moduleVersions.$inferSelect;
 export type NewModuleVersion = typeof moduleVersions.$inferInsert;

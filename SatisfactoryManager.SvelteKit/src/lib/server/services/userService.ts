@@ -1,9 +1,9 @@
 import { db } from '../db';
 import { users, type User, type NewUser } from '../db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, or, like } from 'drizzle-orm';
 
 export interface IUserService {
-	getAll(): Promise<User[]>;
+	getAll(search?: string): Promise<User[]>;
 	getById(id: string): Promise<User | undefined>; // UUID
 	getByEmail(email: string): Promise<User | undefined>;
 	create(data: Omit<NewUser, 'id'>): Promise<User>;
@@ -12,8 +12,20 @@ export interface IUserService {
 }
 
 class UserService implements IUserService {
-	async getAll(): Promise<User[]> {
-		return await db.select().from(users).orderBy(users.id);
+	async getAll(search?: string): Promise<User[]> {
+		let query = db.select().from(users);
+		
+		if (search) {
+			const searchTerm = `%${search.toLowerCase()}%`;
+			query = query.where(
+				or(
+					like(users.displayName, searchTerm),
+					like(users.email, searchTerm)
+				)
+			) as typeof query;
+		}
+		
+		return await query.orderBy(users.id);
 	}
 	async getById(id: string): Promise<User | undefined> {
 		const [row] = await db.select().from(users).where(eq(users.id, id));

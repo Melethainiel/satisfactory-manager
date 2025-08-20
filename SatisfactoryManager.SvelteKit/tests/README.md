@@ -9,7 +9,7 @@ tests/
 ├── integration/
 │   ├── api/
 │   │   ├── users.test.ts        # Users API tests
-│   │   ├── games.test.ts        # Games API tests  
+│   │   ├── games.test.ts        # Games API tests
 │   │   ├── items.test.ts        # Items API tests
 │   │   ├── recipes.test.ts      # Recipes API tests
 │   │   ├── buildings.test.ts    # Buildings API tests
@@ -39,6 +39,7 @@ npm run test:docker:cleanup # Stop test database
 ```
 
 **Docker Commands:**
+
 ```bash
 # Start test database only
 docker compose up -d postgres-test
@@ -61,10 +62,11 @@ npm run test:docker:down
 If you prefer manual database setup:
 
 1. **Test Database**: Set up a separate PostgreSQL database:
+
    ```bash
    # Create test database manually
    createdb satisfactory_test
-   
+
    # Or set custom test database URL
    export TEST_DATABASE_URL="postgres://user:pass@localhost:5432/your_test_db"
    ```
@@ -98,6 +100,7 @@ npm run test --watch
 The test suite covers **24+ API endpoints** across 7 main resources:
 
 ### Users API (`/api/users`)
+
 - ✅ GET - List all users
 - ✅ POST - Create new user
 - ✅ GET /:id - Get user by ID
@@ -105,6 +108,7 @@ The test suite covers **24+ API endpoints** across 7 main resources:
 - ✅ DELETE /:id - Delete user
 
 ### Games API (`/api/games`)
+
 - ✅ GET - List games by user email
 - ✅ POST - Create new game
 - ✅ GET /:id - Get game by ID
@@ -115,6 +119,7 @@ The test suite covers **24+ API endpoints** across 7 main resources:
 - ✅ DELETE /:id/users - Remove user from game
 
 ### Items API (`/api/items`)
+
 - ✅ GET - List items (with form filtering)
 - ✅ POST - Create new item
 - ✅ GET /:id - Get item by ID
@@ -123,6 +128,7 @@ The test suite covers **24+ API endpoints** across 7 main resources:
 - ✅ POST /import - Bulk import items
 
 ### Recipes API (`/api/recipes`)
+
 - ✅ GET - List recipes (with search)
 - ✅ POST - Create new recipe
 - ✅ GET /:id - Get recipe by ID
@@ -131,6 +137,7 @@ The test suite covers **24+ API endpoints** across 7 main resources:
 - ✅ POST /import - Bulk import recipes
 
 ### Buildings API (`/api/buildings`)
+
 - ✅ GET - List buildings (with search)
 - ✅ POST - Create new building
 - ✅ GET /:id - Get building by ID
@@ -139,34 +146,40 @@ The test suite covers **24+ API endpoints** across 7 main resources:
 - ✅ POST /import - Bulk import buildings
 
 ### Modules API (`/api/modules`)
+
 - ✅ GET - List modules (with search)
 - ✅ POST - Create new module
 - ✅ GET /github-preview - Preview GitHub repo
 
 ### Auth API (`/api/auth`)
+
 - ✅ POST /ensure-user - Create or update user
 
 ## Test Features
 
 ### Database Isolation
+
 - Each test runs with a clean database state
 - Automatic setup and teardown
 - Transaction-based isolation (planned)
 
 ### Comprehensive Coverage
+
 - **Happy path scenarios** (200/201 responses)
-- **Validation errors** (400 responses)  
+- **Validation errors** (400 responses)
 - **Not found scenarios** (404 responses)
 - **Conflict scenarios** (409 responses)
 - **Server error handling** (500 responses)
 
 ### Import Testing
+
 - Bulk data import validation
 - Payload size limits
 - Data validation and error reporting
 - Module version dependencies
 
 ### Fixtures and Utilities
+
 - Reusable test data
 - Database seeding utilities
 - Helper functions for common operations
@@ -174,6 +187,7 @@ The test suite covers **24+ API endpoints** across 7 main resources:
 ## Test Database Configuration
 
 ### 🐳 Docker Database (postgres-test)
+
 - **Port**: 5433 (different from main database on 5432)
 - **Database**: `satisfactory_test`
 - **User/Password**: `app/app`
@@ -182,6 +196,7 @@ The test suite covers **24+ API endpoints** across 7 main resources:
 - **Memory**: Limited to 256MB for efficiency
 
 ### ⚙️ Automatic Configuration
+
 1. **Schema migrations** - Automatically applies latest schema on startup
 2. **Data cleanup** - Clears all data between tests for isolation
 3. **Connection retry** - Handles Docker container startup delays
@@ -190,6 +205,7 @@ The test suite covers **24+ API endpoints** across 7 main resources:
 ## Error Handling
 
 Tests verify proper error handling for:
+
 - Missing required fields
 - Invalid data formats
 - Database constraint violations
@@ -216,6 +232,7 @@ When adding new API endpoints:
 ## 🧰 Helper Scripts
 
 ### Database Management Script
+
 Use the comprehensive database management script for advanced operations:
 
 ```bash
@@ -224,7 +241,7 @@ chmod +x scripts/test-db.sh
 
 # Available commands
 ./scripts/test-db.sh start     # Start test database
-./scripts/test-db.sh stop      # Stop test database  
+./scripts/test-db.sh stop      # Stop test database
 ./scripts/test-db.sh reset     # Reset database (fresh start)
 ./scripts/test-db.sh status    # Check database status
 ./scripts/test-db.sh logs      # View database logs
@@ -234,6 +251,7 @@ chmod +x scripts/test-db.sh
 ```
 
 ### Advanced Usage
+
 ```bash
 # Run tests but keep database running for debugging
 TEST_CLEANUP=false ./scripts/test-db.sh test
@@ -241,7 +259,7 @@ TEST_CLEANUP=false ./scripts/test-db.sh test
 # Open database shell for inspection
 ./scripts/test-db.sh shell
 # Inside psql:
-# \dt                          # List tables  
+# \dt                          # List tables
 # SELECT * FROM users;         # Query users table
 # \q                          # Exit psql
 ```
@@ -249,6 +267,7 @@ TEST_CLEANUP=false ./scripts/test-db.sh test
 ## Troubleshooting
 
 ### 🐳 Docker Issues
+
 ```bash
 # Check if Docker is running
 docker info
@@ -267,6 +286,7 @@ docker compose down postgres-test && docker compose up -d postgres-test
 ```
 
 ### 🔌 Connection Issues
+
 ```bash
 # Test manual connection
 docker exec -it satisfactory-postgres-test psql -U app -d satisfactory_test
@@ -279,6 +299,7 @@ node -e "console.log(process.env.TEST_DATABASE_URL || 'Not set')"
 ```
 
 ### 🚀 Performance Issues
+
 ```bash
 # Monitor database during tests
 docker stats satisfactory-postgres-test
@@ -288,6 +309,7 @@ docker inspect satisfactory-postgres-test | grep -i tmpfs
 ```
 
 ### 🧹 Cleanup Issues
+
 ```bash
 # Clean up everything
 docker compose down postgres-test
@@ -299,6 +321,7 @@ npm run test:docker:setup
 ```
 
 ### 💾 Migration Issues
+
 ```bash
 # Check migration status inside container
 docker exec -it satisfactory-postgres-test psql -U app -d satisfactory_test -c "SELECT * FROM __drizzle_migrations;"

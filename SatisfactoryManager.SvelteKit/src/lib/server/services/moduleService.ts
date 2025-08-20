@@ -93,7 +93,7 @@ class ModuleService implements IModuleService {
 	): Promise<ModuleVersion> {
 		// Check if version already exists for this module
 		const existingVersions = await this.getVersions(moduleId);
-		const existingVersion = existingVersions.find(v => v.version === versionData.version);
+		const existingVersion = existingVersions.find((v) => v.version === versionData.version);
 		if (existingVersion) {
 			throw new Error(`Version ${versionData.version} already exists for this module`);
 		}

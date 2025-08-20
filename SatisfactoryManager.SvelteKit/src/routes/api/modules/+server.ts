@@ -6,7 +6,7 @@ import { moduleService } from '$lib/server/services/moduleService';
 export const GET: RequestHandler = async ({ url }) => {
 	try {
 		const search = url.searchParams.get('search');
-		
+
 		const options = search ? { search } : undefined;
 		const modules = await moduleService.getAll(options);
 		return json(modules);
@@ -38,7 +38,10 @@ export const POST: RequestHandler = async ({ request }) => {
 		try {
 			const parsedUrl = new URL(url.trim());
 			if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-				return json({ error: 'Invalid URL format - URL must use http or https protocol' }, { status: 400 });
+				return json(
+					{ error: 'Invalid URL format - URL must use http or https protocol' },
+					{ status: 400 }
+				);
 			}
 			// Additional validation: ensure hostname exists and is not just a dot
 			if (!parsedUrl.hostname || parsedUrl.hostname === '.' || parsedUrl.hostname === '') {
@@ -55,7 +58,10 @@ export const POST: RequestHandler = async ({ request }) => {
 				try {
 					new URL(githubRepo.trim());
 				} catch {
-					return json({ error: 'Invalid GitHub repository format (expected owner/repo or full URL)' }, { status: 400 });
+					return json(
+						{ error: 'Invalid GitHub repository format (expected owner/repo or full URL)' },
+						{ status: 400 }
+					);
 				}
 			}
 		}

@@ -1,4 +1,12 @@
-import type { NewUser, NewGame, NewModule, NewModuleVersion, NewItem, NewBuilding, NewRecipe } from '../../src/lib/server/db/schema';
+import type {
+	NewUser,
+	NewGame,
+	NewModule,
+	NewModuleVersion,
+	NewItem,
+	NewBuilding,
+	NewRecipe
+} from '../../src/lib/server/db/schema';
 
 export const testUsers: NewUser[] = [
 	{
@@ -6,7 +14,7 @@ export const testUsers: NewUser[] = [
 		email: 'testuser1@example.com'
 	},
 	{
-		displayName: 'Test User 2', 
+		displayName: 'Test User 2',
 		email: 'testuser2@example.com'
 	},
 	{
@@ -326,15 +334,15 @@ export const mockGitHubReleases = [
 
 // Complex versioned data for relationship testing
 export const createVersionedTestData = (moduleVersionId: string) => ({
-	items: testImportItemData.items.map(item => ({
+	items: testImportItemData.items.map((item) => ({
 		...item,
 		moduleVersionId
 	})),
-	buildings: testImportBuildingData.map(building => ({
+	buildings: testImportBuildingData.map((building) => ({
 		...building,
 		moduleVersionId
 	})),
-	recipes: testImportRecipeData.recipes.map(recipe => ({
+	recipes: testImportRecipeData.recipes.map((recipe) => ({
 		...recipe,
 		moduleVersionId
 	}))

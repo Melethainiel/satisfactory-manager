@@ -12,28 +12,37 @@ describe('/api/buildings', () => {
 
 	beforeEach(async () => {
 		const db = getTestDb();
-		
-		// Create test module and version for import tests
-		const [module] = await db.insert(modules).values({
-			name: 'Test Module',
-			url: 'https://example.com/module',
-			currentVersion: '1.0.0'
-		}).returning();
 
-		const [moduleVersion] = await db.insert(moduleVersions).values({
-			moduleId: module.id,
-			version: '1.0.0',
-			url: 'https://example.com/module/1.0.0'
-		}).returning();
+		// Create test module and version for import tests
+		const [module] = await db
+			.insert(modules)
+			.values({
+				name: 'Test Module',
+				url: 'https://example.com/module',
+				currentVersion: '1.0.0'
+			})
+			.returning();
+
+		const [moduleVersion] = await db
+			.insert(moduleVersions)
+			.values({
+				moduleId: module.id,
+				version: '1.0.0',
+				url: 'https://example.com/module/1.0.0'
+			})
+			.returning();
 
 		testModuleVersionId = moduleVersion.id;
 
 		// Create test building
-		const [building] = await db.insert(buildings).values({
-			className: 'Build_TestBuilding_C',
-			name: 'Test Building',
-			type: 'Constructor'
-		}).returning();
+		const [building] = await db
+			.insert(buildings)
+			.values({
+				className: 'Build_TestBuilding_C',
+				name: 'Test Building',
+				type: 'Constructor'
+			})
+			.returning();
 
 		testBuildingId = building.id;
 	});
@@ -45,7 +54,7 @@ describe('/api/buildings', () => {
 			const response = await GET({ request, url } as any);
 
 			expect(response.status).toBe(200);
-			
+
 			const data = await response.json();
 			expect(Array.isArray(data)).toBe(true);
 			expect(data.length).toBeGreaterThan(0);
@@ -57,12 +66,12 @@ describe('/api/buildings', () => {
 		it('should filter buildings by type', async () => {
 			const url = new URL('http://localhost/api/buildings');
 			url.searchParams.set('type', 'Constructor');
-			
+
 			const request = new Request(url.toString());
 			const response = await GET({ request, url } as any);
 
 			expect(response.status).toBe(200);
-			
+
 			const data = await response.json();
 			expect(Array.isArray(data)).toBe(true);
 			data.forEach((building: any) => {
@@ -88,7 +97,7 @@ describe('/api/buildings', () => {
 			const response = await POST({ request } as any);
 
 			expect(response.status).toBe(201);
-			
+
 			const data = await response.json();
 			expect(data).toHaveProperty('id');
 			expect(data.className).toBe(buildingData.className);
@@ -111,7 +120,7 @@ describe('/api/buildings', () => {
 			const response = await POST({ request } as any);
 
 			expect(response.status).toBe(400);
-			
+
 			const data = await response.json();
 			expect(data).toHaveProperty('error');
 			expect(data.error).toContain('Building className is required');
@@ -132,7 +141,7 @@ describe('/api/buildings', () => {
 			const response = await POST({ request } as any);
 
 			expect(response.status).toBe(400);
-			
+
 			const data = await response.json();
 			expect(data).toHaveProperty('error');
 			expect(data.error).toContain('Building name is required');
@@ -154,7 +163,7 @@ describe('/api/buildings', () => {
 			const response = await POST({ request } as any);
 
 			expect(response.status).toBe(409);
-			
+
 			const data = await response.json();
 			expect(data).toHaveProperty('error');
 			expect(data.error).toContain('A building with this className already exists');
@@ -164,14 +173,14 @@ describe('/api/buildings', () => {
 	describe('GET /api/buildings/[id]', () => {
 		it('should return building by id', async () => {
 			const request = new Request(`http://localhost/api/buildings/${testBuildingId}`);
-			const response = await GETById({ 
-				request, 
+			const response = await GETById({
+				request,
 				params: { id: testBuildingId },
 				url: new URL(request.url)
 			} as any);
 
 			expect(response.status).toBe(200);
-			
+
 			const data = await response.json();
 			expect(data.id).toBe(testBuildingId);
 			expect(data.className).toBe('Build_TestBuilding_C');
@@ -181,8 +190,8 @@ describe('/api/buildings', () => {
 		it('should return 404 for non-existent building', async () => {
 			const fakeId = '00000000-0000-0000-0000-000000000000';
 			const request = new Request(`http://localhost/api/buildings/${fakeId}`);
-			const response = await GETById({ 
-				request, 
+			const response = await GETById({
+				request,
 				params: { id: fakeId },
 				url: new URL(request.url)
 			} as any);
@@ -204,13 +213,13 @@ describe('/api/buildings', () => {
 				body: JSON.stringify(updateData)
 			});
 
-			const response = await PATCH({ 
-				request, 
+			const response = await PATCH({
+				request,
 				params: { id: testBuildingId }
 			} as any);
 
 			expect(response.status).toBe(200);
-			
+
 			const data = await response.json();
 			expect(data.name).toBe(updateData.name);
 			expect(data.type).toBe(updateData.type);
@@ -228,8 +237,8 @@ describe('/api/buildings', () => {
 				body: JSON.stringify(updateData)
 			});
 
-			const response = await PATCH({ 
-				request, 
+			const response = await PATCH({
+				request,
 				params: { id: fakeId }
 			} as any);
 
@@ -284,7 +293,7 @@ describe('/api/buildings', () => {
 			const response = await POSTImport({ request } as any);
 
 			expect(response.status).toBe(201);
-			
+
 			const data = await response.json();
 			expect(data).toHaveProperty('created');
 			expect(data).toHaveProperty('updated');
@@ -311,7 +320,7 @@ describe('/api/buildings', () => {
 			const response = await POSTImport({ request } as any);
 
 			expect(response.status).toBe(400);
-			
+
 			const data = await response.json();
 			expect(data).toHaveProperty('error');
 		});
@@ -330,7 +339,7 @@ describe('/api/buildings', () => {
 			const response = await POSTImport({ request } as any);
 
 			expect(response.status).toBe(400);
-			
+
 			const data = await response.json();
 			expect(data).toHaveProperty('error');
 		});
@@ -351,7 +360,7 @@ describe('/api/buildings', () => {
 			const response = await POSTImport({ request } as any);
 
 			expect(response.status).toBe(400);
-			
+
 			const data = await response.json();
 			expect(data).toHaveProperty('error');
 		});
@@ -372,7 +381,7 @@ describe('/api/buildings', () => {
 			const response = await POSTImport({ request } as any);
 
 			expect(response.status).toBe(400);
-			
+
 			const data = await response.json();
 			expect(data).toHaveProperty('error');
 		});

@@ -12,29 +12,38 @@ describe('/api/items', () => {
 
 	beforeEach(async () => {
 		const db = getTestDb();
-		
-		// Create test module and version for import tests
-		const [module] = await db.insert(modules).values({
-			name: 'Test Module',
-			url: 'https://example.com/module',
-			currentVersion: '1.0.0'
-		}).returning();
 
-		const [moduleVersion] = await db.insert(moduleVersions).values({
-			moduleId: module.id,
-			version: '1.0.0',
-			url: 'https://example.com/module/1.0.0'
-		}).returning();
+		// Create test module and version for import tests
+		const [module] = await db
+			.insert(modules)
+			.values({
+				name: 'Test Module',
+				url: 'https://example.com/module',
+				currentVersion: '1.0.0'
+			})
+			.returning();
+
+		const [moduleVersion] = await db
+			.insert(moduleVersions)
+			.values({
+				moduleId: module.id,
+				version: '1.0.0',
+				url: 'https://example.com/module/1.0.0'
+			})
+			.returning();
 
 		testModuleVersionId = moduleVersion.id;
 
 		// Create test item
-		const [item] = await db.insert(items).values({
-			className: 'Desc_TestItem_C',
-			displayName: 'Test Item',
-			description: 'A test item',
-			form: 'RF_SOLID'
-		}).returning();
+		const [item] = await db
+			.insert(items)
+			.values({
+				className: 'Desc_TestItem_C',
+				displayName: 'Test Item',
+				description: 'A test item',
+				form: 'RF_SOLID'
+			})
+			.returning();
 
 		testItemId = item.id;
 	});
@@ -46,7 +55,7 @@ describe('/api/items', () => {
 			const response = await GET({ request, url } as any);
 
 			expect(response.status).toBe(200);
-			
+
 			const data = await response.json();
 			expect(Array.isArray(data)).toBe(true);
 			expect(data.length).toBeGreaterThan(0);
@@ -59,12 +68,12 @@ describe('/api/items', () => {
 		it('should filter items by form', async () => {
 			const url = new URL('http://localhost/api/items');
 			url.searchParams.set('form', 'RF_SOLID');
-			
+
 			const request = new Request(url.toString());
 			const response = await GET({ request, url } as any);
 
 			expect(response.status).toBe(200);
-			
+
 			const data = await response.json();
 			expect(Array.isArray(data)).toBe(true);
 			data.forEach((item: any) => {
@@ -75,12 +84,12 @@ describe('/api/items', () => {
 		it('should return 400 for invalid form filter', async () => {
 			const url = new URL('http://localhost/api/items');
 			url.searchParams.set('form', 'INVALID_FORM');
-			
+
 			const request = new Request(url.toString());
 			const response = await GET({ request, url } as any);
 
 			expect(response.status).toBe(400);
-			
+
 			const data = await response.json();
 			expect(data).toHaveProperty('error');
 			expect(data.error).toContain('Invalid item form');
@@ -105,7 +114,7 @@ describe('/api/items', () => {
 			const response = await POST({ request } as any);
 
 			expect(response.status).toBe(201);
-			
+
 			const data = await response.json();
 			expect(data).toHaveProperty('id');
 			expect(data.className).toBe(itemData.className);
@@ -129,7 +138,7 @@ describe('/api/items', () => {
 			const response = await POST({ request } as any);
 
 			expect(response.status).toBe(400);
-			
+
 			const data = await response.json();
 			expect(data).toHaveProperty('error');
 			expect(data.error).toContain('Item className is required');
@@ -150,7 +159,7 @@ describe('/api/items', () => {
 			const response = await POST({ request } as any);
 
 			expect(response.status).toBe(400);
-			
+
 			const data = await response.json();
 			expect(data).toHaveProperty('error');
 			expect(data.error).toContain('Item displayName is required');
@@ -172,7 +181,7 @@ describe('/api/items', () => {
 			const response = await POST({ request } as any);
 
 			expect(response.status).toBe(400);
-			
+
 			const data = await response.json();
 			expect(data).toHaveProperty('error');
 			expect(data.error).toContain('Valid item form is required');
@@ -194,7 +203,7 @@ describe('/api/items', () => {
 			const response = await POST({ request } as any);
 
 			expect(response.status).toBe(409);
-			
+
 			const data = await response.json();
 			expect(data).toHaveProperty('error');
 			expect(data.error).toContain('An item with this className already exists');
@@ -204,14 +213,14 @@ describe('/api/items', () => {
 	describe('GET /api/items/[id]', () => {
 		it('should return item by id', async () => {
 			const request = new Request(`http://localhost/api/items/${testItemId}`);
-			const response = await GETById({ 
-				request, 
+			const response = await GETById({
+				request,
 				params: { id: testItemId },
 				url: new URL(request.url)
 			} as any);
 
 			expect(response.status).toBe(200);
-			
+
 			const data = await response.json();
 			expect(data.id).toBe(testItemId);
 			expect(data.className).toBe('Desc_TestItem_C');
@@ -221,8 +230,8 @@ describe('/api/items', () => {
 		it('should return 404 for non-existent item', async () => {
 			const fakeId = '00000000-0000-0000-0000-000000000000';
 			const request = new Request(`http://localhost/api/items/${fakeId}`);
-			const response = await GETById({ 
-				request, 
+			const response = await GETById({
+				request,
 				params: { id: fakeId },
 				url: new URL(request.url)
 			} as any);
@@ -244,13 +253,13 @@ describe('/api/items', () => {
 				body: JSON.stringify(updateData)
 			});
 
-			const response = await PATCH({ 
-				request, 
+			const response = await PATCH({
+				request,
 				params: { id: testItemId }
 			} as any);
 
 			expect(response.status).toBe(200);
-			
+
 			const data = await response.json();
 			expect(data.id).toBe(testItemId);
 			expect(data.displayName).toBe(updateData.displayName);
@@ -269,8 +278,8 @@ describe('/api/items', () => {
 				body: JSON.stringify(updateData)
 			});
 
-			const response = await PATCH({ 
-				request, 
+			const response = await PATCH({
+				request,
 				params: { id: fakeId }
 			} as any);
 
@@ -284,8 +293,8 @@ describe('/api/items', () => {
 				method: 'DELETE'
 			});
 
-			const response = await DELETE({ 
-				request, 
+			const response = await DELETE({
+				request,
 				params: { id: testItemId }
 			} as any);
 
@@ -295,8 +304,8 @@ describe('/api/items', () => {
 
 			// Verify item is deleted
 			const getRequest = new Request(`http://localhost/api/items/${testItemId}`);
-			const getResponse = await GETById({ 
-				request: getRequest, 
+			const getResponse = await GETById({
+				request: getRequest,
 				params: { id: testItemId },
 				url: new URL(getRequest.url)
 			} as any);
@@ -310,8 +319,8 @@ describe('/api/items', () => {
 				method: 'DELETE'
 			});
 
-			const response = await DELETE({ 
-				request, 
+			const response = await DELETE({
+				request,
 				params: { id: fakeId }
 			} as any);
 
@@ -335,7 +344,7 @@ describe('/api/items', () => {
 			const response = await POSTImport({ request } as any);
 
 			expect(response.status).toBe(200);
-			
+
 			const data = await response.json();
 			expect(data).toHaveProperty('created');
 			expect(data).toHaveProperty('updated');
@@ -359,7 +368,7 @@ describe('/api/items', () => {
 			const response = await POSTImport({ request } as any);
 
 			expect(response.status).toBe(400);
-			
+
 			const data = await response.json();
 			expect(data).toHaveProperty('error');
 			expect(data.error).toContain('items array is required');
@@ -379,7 +388,7 @@ describe('/api/items', () => {
 			const response = await POSTImport({ request } as any);
 
 			expect(response.status).toBe(400);
-			
+
 			const data = await response.json();
 			expect(data).toHaveProperty('error');
 			expect(data.error).toContain('moduleVersionId is required');
@@ -400,7 +409,7 @@ describe('/api/items', () => {
 			const response = await POSTImport({ request } as any);
 
 			expect(response.status).toBe(400);
-			
+
 			const data = await response.json();
 			expect(data).toHaveProperty('error');
 			expect(data.error).toContain('Invalid moduleVersionId');
@@ -421,7 +430,7 @@ describe('/api/items', () => {
 			const response = await POSTImport({ request } as any);
 
 			expect(response.status).toBe(400);
-			
+
 			const data = await response.json();
 			expect(data).toHaveProperty('error');
 			expect(data.error).toContain('Maximum 1000 items can be imported at once');

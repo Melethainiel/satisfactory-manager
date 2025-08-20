@@ -38,7 +38,10 @@ export interface IGameService {
 		}
 	): Promise<(Game & { role: GameUserRole })[]>; // All games a user (by email) can access
 	getGameModules(gameId: string): Promise<{ id: string; name: string; url: string }[]>;
-	addModuleToGame(gameId: string, moduleId: string): Promise<{ id: string; name: string; url: string }[]>;
+	addModuleToGame(
+		gameId: string,
+		moduleId: string
+	): Promise<{ id: string; name: string; url: string }[]>;
 	removeModuleFromGame(gameId: string, moduleId: string): Promise<boolean>;
 }
 
@@ -122,11 +125,11 @@ class GameService implements IGameService {
 	): Promise<(Game & { role: GameUserRole })[]> {
 		// Build conditions array
 		const conditions = [eq(users.email, email)];
-		
+
 		if (options?.role) {
 			conditions.push(eq(userGames.role, options.role));
 		}
-		
+
 		if (options?.search) {
 			conditions.push(like(games.name, `%${options.search}%`));
 		}
@@ -137,10 +140,10 @@ class GameService implements IGameService {
 
 		// Join users -> userGames -> games filtering by user email
 		const query = db
-			.select({ 
+			.select({
 				id: games.id,
 				name: games.name,
-				role: userGames.role 
+				role: userGames.role
 			})
 			.from(games)
 			.innerJoin(userGames, eq(userGames.gameId, games.id))
@@ -166,7 +169,10 @@ class GameService implements IGameService {
 		return gameModules;
 	}
 
-	async addModuleToGame(gameId: string, moduleId: string): Promise<{ id: string; name: string; url: string }[]> {
+	async addModuleToGame(
+		gameId: string,
+		moduleId: string
+	): Promise<{ id: string; name: string; url: string }[]> {
 		await db
 			.insert(moduleGames)
 			.values({

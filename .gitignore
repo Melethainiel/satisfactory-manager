@@ -84,3 +84,6 @@ build
 dist
 .github/*
 .copilot/*
+
+#DevDB
+.devdbrc

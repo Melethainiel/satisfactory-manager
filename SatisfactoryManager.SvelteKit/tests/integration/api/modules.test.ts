@@ -12,7 +12,7 @@ describe('/api/modules', () => {
 
 	beforeEach(async () => {
 		const db = getTestDb();
-		
+
 		// Create test module
 		const [module] = await db.insert(modules).values(testModules[0]).returning();
 		testModuleId = module.id;
@@ -32,7 +32,7 @@ describe('/api/modules', () => {
 			const response = await GET({ request, url } as any);
 
 			expect(response.status).toBe(200);
-			
+
 			const data = await response.json();
 			expect(Array.isArray(data)).toBe(true);
 			expect(data.length).toBeGreaterThan(0);
@@ -45,12 +45,12 @@ describe('/api/modules', () => {
 		it('should filter modules by name search', async () => {
 			const url = new URL('http://localhost/api/modules');
 			url.searchParams.set('search', 'Test');
-			
+
 			const request = new Request(url.toString());
 			const response = await GET({ request, url } as any);
 
 			expect(response.status).toBe(200);
-			
+
 			const data = await response.json();
 			expect(Array.isArray(data)).toBe(true);
 			data.forEach((module: any) => {
@@ -76,7 +76,7 @@ describe('/api/modules', () => {
 			const response = await POST({ request } as any);
 
 			expect(response.status).toBe(201);
-			
+
 			const data = await response.json();
 			expect(data).toHaveProperty('id');
 			expect(data.name).toBe(moduleData.name);
@@ -101,7 +101,7 @@ describe('/api/modules', () => {
 			const response = await POST({ request } as any);
 
 			expect(response.status).toBe(400);
-			
+
 			const data = await response.json();
 			expect(data).toHaveProperty('error');
 			expect(data.error).toContain('Module name is required');
@@ -122,7 +122,7 @@ describe('/api/modules', () => {
 			const response = await POST({ request } as any);
 
 			expect(response.status).toBe(400);
-			
+
 			const data = await response.json();
 			expect(data).toHaveProperty('error');
 			expect(data.error).toContain('Module URL is required');
@@ -144,7 +144,7 @@ describe('/api/modules', () => {
 			const response = await POST({ request } as any);
 
 			expect(response.status).toBe(400);
-			
+
 			const data = await response.json();
 			expect(data).toHaveProperty('error');
 			expect(data.error).toContain('Invalid URL format');
@@ -166,7 +166,7 @@ describe('/api/modules', () => {
 			const response = await POST({ request } as any);
 
 			expect(response.status).toBe(409);
-			
+
 			const data = await response.json();
 			expect(data).toHaveProperty('error');
 			expect(data.error).toContain('A module with this name already exists');
@@ -187,7 +187,7 @@ describe('/api/modules', () => {
 			const response = await POST({ request } as any);
 
 			expect(response.status).toBe(409);
-			
+
 			const data = await response.json();
 			expect(data).toHaveProperty('error');
 			expect(data.error).toContain('A module with this URL already exists');
@@ -201,7 +201,7 @@ describe('/api/modules', () => {
 			const response = await GETGithubPreview({ request, url } as any);
 
 			expect(response.status).toBe(400);
-			
+
 			const data = await response.json();
 			expect(data).toHaveProperty('error');
 			expect(data.error).toContain('githubRepo query parameter is required');
@@ -210,12 +210,12 @@ describe('/api/modules', () => {
 		it('should return 400 when githubRepo format is invalid', async () => {
 			const url = new URL('http://localhost/api/modules/github-preview');
 			url.searchParams.set('githubRepo', 'invalid-format');
-			
+
 			const request = new Request(url.toString());
 			const response = await GETGithubPreview({ request, url } as any);
 
 			expect(response.status).toBe(400);
-			
+
 			const data = await response.json();
 			expect(data).toHaveProperty('error');
 			expect(data.error).toContain('Invalid GitHub repository format');
@@ -225,7 +225,7 @@ describe('/api/modules', () => {
 		it('should handle valid githubRepo parameter', async () => {
 			const url = new URL('http://localhost/api/modules/github-preview');
 			url.searchParams.set('githubRepo', 'owner/repo');
-			
+
 			const request = new Request(url.toString());
 			const response = await GETGithubPreview({ request, url } as any);
 
@@ -238,35 +238,29 @@ describe('/api/modules', () => {
 	describe('Module Individual Operations', () => {
 		it('should get module by ID', async () => {
 			const db = getTestDb();
-			
+
 			// Since we don't have the individual module endpoint implemented,
 			// let's verify via database query for now
-			const moduleResult = await db.select().from(modules).where(
-				eq(modules.id, testModuleId)
-			);
-			
+			const moduleResult = await db.select().from(modules).where(eq(modules.id, testModuleId));
+
 			expect(moduleResult.length).toBe(1);
 			expect(moduleResult[0].id).toBe(testModuleId);
 			expect(moduleResult[0].name).toBe(testModules[0].name);
 		});
-		
+
 		it('should update module successfully', async () => {
 			const db = getTestDb();
-			
+
 			const updateData = {
 				name: 'Updated Test Module',
 				url: 'https://example.com/updated-module',
 				githubRepo: 'test/updated-module'
 			};
-			
-			await db.update(modules)
-				.set(updateData)
-				.where(eq(modules.id, testModuleId));
-			
-			const [updatedModule] = await db.select().from(modules).where(
-				eq(modules.id, testModuleId)
-			);
-			
+
+			await db.update(modules).set(updateData).where(eq(modules.id, testModuleId));
+
+			const [updatedModule] = await db.select().from(modules).where(eq(modules.id, testModuleId));
+
 			expect(updatedModule.name).toBe(updateData.name);
 			expect(updatedModule.url).toBe(updateData.url);
 			expect(updatedModule.githubRepo).toBe(updateData.githubRepo);
@@ -276,7 +270,7 @@ describe('/api/modules', () => {
 	describe('Module Version Management', () => {
 		it('should get all versions for a module', async () => {
 			const db = getTestDb();
-			
+
 			// Add additional versions for testing
 			await db.insert(moduleVersions).values([
 				{
@@ -294,20 +288,21 @@ describe('/api/modules', () => {
 					publishedAt: new Date('2024-03-01')
 				}
 			]);
-			
-			const versions = await db.select().from(moduleVersions).where(
-				eq(moduleVersions.moduleId, testModuleId)
-			);
-			
+
+			const versions = await db
+				.select()
+				.from(moduleVersions)
+				.where(eq(moduleVersions.moduleId, testModuleId));
+
 			expect(versions.length).toBe(3); // Initial + 2 additional
-			expect(versions.map(v => v.version)).toContain('1.0.0');
-			expect(versions.map(v => v.version)).toContain('1.1.0');
-			expect(versions.map(v => v.version)).toContain('2.0.0');
+			expect(versions.map((v) => v.version)).toContain('1.0.0');
+			expect(versions.map((v) => v.version)).toContain('1.1.0');
+			expect(versions.map((v) => v.version)).toContain('2.0.0');
 		});
-		
+
 		it('should handle version creation with validation', async () => {
 			const db = getTestDb();
-			
+
 			// Test creating a valid version
 			const validVersion = {
 				moduleId: testModuleId,
@@ -316,47 +311,41 @@ describe('/api/modules', () => {
 				releaseNotes: 'Minor improvements',
 				publishedAt: new Date()
 			};
-			
+
 			const [createdVersion] = await db.insert(moduleVersions).values(validVersion).returning();
-			
+
 			expect(createdVersion.version).toBe(validVersion.version);
 			expect(createdVersion.moduleId).toBe(testModuleId);
 			expect(createdVersion.releaseUrl).toBe(validVersion.releaseUrl);
 		});
-		
+
 		it('should handle duplicate version prevention', async () => {
 			const duplicateVersionData = {
 				version: '1.0.0', // Duplicate of existing version
 				releaseUrl: 'https://example.com/module1/1.0.0-duplicate'
 			};
-			
+
 			// This should fail due to service-level validation for duplicate versions
-			await expect(
-				moduleService.addVersion(testModuleId, duplicateVersionData)
-			).rejects.toThrow('Version 1.0.0 already exists for this module');
+			await expect(moduleService.addVersion(testModuleId, duplicateVersionData)).rejects.toThrow(
+				'Version 1.0.0 already exists for this module'
+			);
 		});
-		
+
 		it('should support semantic versioning patterns', async () => {
 			const db = getTestDb();
-			
-			const semanticVersions = [
-				'2.1.0-alpha.1',
-				'2.1.0-beta',
-				'2.1.0-rc.1',
-				'2.1.0',
-				'2.1.1'
-			];
-			
-			const versionData = semanticVersions.map(version => ({
+
+			const semanticVersions = ['2.1.0-alpha.1', '2.1.0-beta', '2.1.0-rc.1', '2.1.0', '2.1.1'];
+
+			const versionData = semanticVersions.map((version) => ({
 				moduleId: testModuleId,
 				version,
 				releaseUrl: `https://example.com/module1/${version}`
 			}));
-			
+
 			const createdVersions = await db.insert(moduleVersions).values(versionData).returning();
-			
+
 			expect(createdVersions.length).toBe(semanticVersions.length);
-			createdVersions.forEach(version => {
+			createdVersions.forEach((version) => {
 				expect(semanticVersions).toContain(version.version);
 			});
 		});
@@ -364,41 +353,34 @@ describe('/api/modules', () => {
 
 	describe('GitHub Integration', () => {
 		it('should validate GitHub repository format', async () => {
-			const validRepos = [
-				'owner/repo',
-				'organization/project-name',
-				'user/my-awesome-repo'
-			];
-			
-			const invalidRepos = [
-				'invalid-format',
-				'owner/',
-				'/repo',
-				'owner/repo/extra',
-				''
-			];
-			
+			const validRepos = ['owner/repo', 'organization/project-name', 'user/my-awesome-repo'];
+
+			const invalidRepos = ['invalid-format', 'owner/', '/repo', 'owner/repo/extra', ''];
+
 			for (const repo of validRepos) {
 				// Simple regex validation that would be used in the API
 				expect(repo).toMatch(/^[\w\-\.]+\/[\w\-\.]+$/);
 			}
-			
+
 			for (const repo of invalidRepos) {
 				expect(repo).not.toMatch(/^[\w\-\.]+\/[\w\-\.]+$/);
 			}
 		});
-		
+
 		it('should handle GitHub sync operations', async () => {
 			const db = getTestDb();
-			
+
 			// Create a module with GitHub repo
-			const [githubModule] = await db.insert(modules).values({
-				name: 'GitHub Test Module',
-				url: 'https://github.com/test/github-module',
-				githubRepo: 'test/github-module',
-				currentVersion: null
-			}).returning();
-			
+			const [githubModule] = await db
+				.insert(modules)
+				.values({
+					name: 'GitHub Test Module',
+					url: 'https://github.com/test/github-module',
+					githubRepo: 'test/github-module',
+					currentVersion: null
+				})
+				.returning();
+
 			// Simulate GitHub releases being synced
 			const githubVersions = [
 				{
@@ -416,32 +398,38 @@ describe('/api/modules', () => {
 					publishedAt: new Date('2024-02-15')
 				}
 			];
-			
+
 			const syncedVersions = await db.insert(moduleVersions).values(githubVersions).returning();
-			
+
 			expect(syncedVersions.length).toBe(2);
 			expect(syncedVersions[0].releaseUrl).toContain('github.com');
 			expect(syncedVersions[1].releaseUrl).toContain('github.com');
 		});
-		
+
 		it('should handle modules without GitHub integration', async () => {
 			const db = getTestDb();
-			
-			const [nonGitHubModule] = await db.insert(modules).values({
-				name: 'Non-GitHub Module',
-				url: 'https://example.com/standalone-module',
-				githubRepo: null,
-				currentVersion: '1.0.0'
-			}).returning();
-			
+
+			const [nonGitHubModule] = await db
+				.insert(modules)
+				.values({
+					name: 'Non-GitHub Module',
+					url: 'https://example.com/standalone-module',
+					githubRepo: null,
+					currentVersion: '1.0.0'
+				})
+				.returning();
+
 			// Should be able to add versions manually even without GitHub
-			const [manualVersion] = await db.insert(moduleVersions).values({
-				moduleId: nonGitHubModule.id,
-				version: '1.0.0',
-				releaseUrl: 'https://example.com/standalone-module/v1.0.0',
-				releaseNotes: 'Manual version entry'
-			}).returning();
-			
+			const [manualVersion] = await db
+				.insert(moduleVersions)
+				.values({
+					moduleId: nonGitHubModule.id,
+					version: '1.0.0',
+					releaseUrl: 'https://example.com/standalone-module/v1.0.0',
+					releaseNotes: 'Manual version entry'
+				})
+				.returning();
+
 			expect(manualVersion.version).toBe('1.0.0');
 			expect(manualVersion.releaseUrl).not.toContain('github.com');
 		});
@@ -450,7 +438,7 @@ describe('/api/modules', () => {
 	describe('Module Search and Filtering', () => {
 		beforeEach(async () => {
 			const db = getTestDb();
-			
+
 			// Add more modules for search testing
 			await db.insert(modules).values([
 				{
@@ -473,52 +461,52 @@ describe('/api/modules', () => {
 				}
 			]);
 		});
-		
+
 		it('should search modules by name', async () => {
 			const url = new URL('http://localhost/api/modules');
 			url.searchParams.set('search', 'Constructor');
-			
+
 			const request = new Request(url.toString());
 			const response = await GET({ request, url } as any);
-			
+
 			expect(response.status).toBe(200);
-			
+
 			const data = await response.json();
 			expect(Array.isArray(data)).toBe(true);
-			
+
 			// Should find modules with "Constructor" in the name
-			const constructorModules = data.filter((module: any) => 
+			const constructorModules = data.filter((module: any) =>
 				module.name.toLowerCase().includes('constructor')
 			);
 			expect(constructorModules.length).toBeGreaterThan(0);
 		});
-		
+
 		it('should filter modules with GitHub integration', async () => {
 			const db = getTestDb();
-			
+
 			const allModules = await db.select().from(modules);
-			const githubModules = allModules.filter(module => module.githubRepo !== null);
-			const nonGithubModules = allModules.filter(module => module.githubRepo === null);
-			
+			const githubModules = allModules.filter((module) => module.githubRepo !== null);
+			const nonGithubModules = allModules.filter((module) => module.githubRepo === null);
+
 			expect(githubModules.length).toBeGreaterThan(0);
 			expect(nonGithubModules.length).toBeGreaterThan(0);
 		});
-		
+
 		it('should handle case-insensitive search', async () => {
 			const searchTerms = ['CONSTRUCTOR', 'constructor', 'Constructor', 'cOnStRuCtOr'];
-			
+
 			for (const term of searchTerms) {
 				const url = new URL('http://localhost/api/modules');
 				url.searchParams.set('search', term);
-				
+
 				const request = new Request(url.toString());
 				const response = await GET({ request, url } as any);
-				
+
 				expect(response.status).toBe(200);
 				const data = await response.json();
-				
+
 				// All searches should return the same results
-				const foundModules = data.filter((module: any) => 
+				const foundModules = data.filter((module: any) =>
 					module.name.toLowerCase().includes('constructor')
 				);
 				expect(foundModules.length).toBeGreaterThan(0);
@@ -536,48 +524,48 @@ describe('/api/modules', () => {
 				'https://.',
 				'javascript:alert(1)'
 			];
-			
+
 			for (const invalidUrl of invalidUrls) {
 				const moduleData = {
 					name: 'Test Module',
 					url: invalidUrl,
 					currentVersion: '1.0.0'
 				};
-				
+
 				const request = new Request('http://localhost/api/modules', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify(moduleData)
 				});
-				
+
 				const response = await POST({ request } as any);
 				expect(response.status).toBe(400);
-				
+
 				const data = await response.json();
 				expect(data.error).toContain('Invalid URL format');
 			}
 		});
-		
+
 		it('should handle very long module names', async () => {
 			const longName = 'A'.repeat(300); // Exceeds typical varchar limits
-			
+
 			const moduleData = {
 				name: longName,
 				url: 'https://example.com/long-name-module',
 				currentVersion: '1.0.0'
 			};
-			
+
 			const request = new Request('http://localhost/api/modules', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(moduleData)
 			});
-			
+
 			const response = await POST({ request } as any);
 			// Should fail due to length constraints
 			expect([400, 500]).toContain(response.status);
 		});
-		
+
 		it('should handle special characters in module names', async () => {
 			const specialCharNames = [
 				'Module with émojis 🚀',
@@ -587,22 +575,22 @@ describe('/api/modules', () => {
 				'Module "with quotes"',
 				"Module 'with apostrophes'"
 			];
-			
+
 			for (const name of specialCharNames) {
 				const moduleData = {
 					name: name,
 					url: `https://example.com/${encodeURIComponent(name)}`,
 					currentVersion: '1.0.0'
 				};
-				
+
 				const request = new Request('http://localhost/api/modules', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify(moduleData)
 				});
-				
+
 				const response = await POST({ request } as any);
-				
+
 				// Should succeed or fail gracefully
 				if (response.status === 201) {
 					const data = await response.json();
@@ -617,7 +605,7 @@ describe('/api/modules', () => {
 	describe('Performance and Scalability', () => {
 		it('should handle large numbers of modules efficiently', async () => {
 			const db = getTestDb();
-			
+
 			// Create a large batch of modules
 			const batchSize = 100;
 			const moduleData = Array.from({ length: batchSize }, (_, i) => ({
@@ -626,19 +614,19 @@ describe('/api/modules', () => {
 				currentVersion: '1.0.0',
 				githubRepo: i % 3 === 0 ? `batch/module-${i}` : null // Some with GitHub, some without
 			}));
-			
+
 			const startTime = Date.now();
 			await db.insert(modules).values(moduleData);
 			const insertTime = Date.now() - startTime;
-			
+
 			// Should complete reasonably quickly (< 5 seconds)
 			expect(insertTime).toBeLessThan(5000);
-			
+
 			// Test querying the large dataset
 			const queryStartTime = Date.now();
 			const allModules = await db.select().from(modules);
 			const queryTime = Date.now() - queryStartTime;
-			
+
 			expect(allModules.length).toBeGreaterThanOrEqual(batchSize);
 			expect(queryTime).toBeLessThan(1000); // Should be very fast
 		});

@@ -27,7 +27,7 @@ describe('/api/auth', () => {
 			const response = await POST({ request } as any);
 
 			expect(response.status).toBe(201);
-			
+
 			const data = await response.json();
 			expect(data).toHaveProperty('id');
 			expect(data.displayName).toBe(userData.displayName);
@@ -36,9 +36,10 @@ describe('/api/auth', () => {
 
 			// Verify user was actually created in database
 			const db = getTestDb();
-			const createdUsers = await db.select().from(users).where(
-				db => db.eq(users.email, userData.email)
-			);
+			const createdUsers = await db
+				.select()
+				.from(users)
+				.where((db) => db.eq(users.email, userData.email));
 			expect(createdUsers.length).toBe(1);
 			expect(createdUsers[0].displayName).toBe(userData.displayName);
 		});
@@ -62,12 +63,12 @@ describe('/api/auth', () => {
 			const response = await POST({ request } as any);
 
 			expect(response.status).toBe(200);
-			
+
 			const data = await response.json();
 			expect(data.id).toBe(existingUser.id);
 			expect(data.email).toBe(testUsers[0].email);
 			expect(data).toHaveProperty('created', false);
-			
+
 			// The display name should be updated
 			expect(data.displayName).toBe(userData.displayName);
 		});
@@ -91,15 +92,16 @@ describe('/api/auth', () => {
 			const response = await POST({ request } as any);
 
 			expect(response.status).toBe(200);
-			
+
 			const data = await response.json();
 			expect(data.displayName).toBe(updatedUserData.displayName);
 			expect(data).toHaveProperty('created', false);
 
 			// Verify the displayName was actually updated in the database
-			const updatedUsers = await db.select().from(users).where(
-				db => db.eq(users.email, testUsers[0].email)
-			);
+			const updatedUsers = await db
+				.select()
+				.from(users)
+				.where((db) => db.eq(users.email, testUsers[0].email));
 			expect(updatedUsers.length).toBe(1);
 			expect(updatedUsers[0].displayName).toBe(updatedUserData.displayName);
 		});
@@ -118,7 +120,7 @@ describe('/api/auth', () => {
 			const response = await POST({ request } as any);
 
 			expect(response.status).toBe(400);
-			
+
 			const data = await response.json();
 			expect(data).toHaveProperty('error');
 			expect(data.error).toContain('Display name and email are required');
@@ -138,7 +140,7 @@ describe('/api/auth', () => {
 			const response = await POST({ request } as any);
 
 			expect(response.status).toBe(400);
-			
+
 			const data = await response.json();
 			expect(data).toHaveProperty('error');
 			expect(data.error).toContain('Display name and email are required');
@@ -159,7 +161,7 @@ describe('/api/auth', () => {
 			const response = await POST({ request } as any);
 
 			expect(response.status).toBe(400);
-			
+
 			const data = await response.json();
 			expect(data).toHaveProperty('error');
 			expect(data.error).toContain('Display name and email are required');
@@ -180,7 +182,7 @@ describe('/api/auth', () => {
 			const response = await POST({ request } as any);
 
 			expect(response.status).toBe(400);
-			
+
 			const data = await response.json();
 			expect(data).toHaveProperty('error');
 			expect(data.error).toContain('Display name and email are required');
@@ -201,7 +203,7 @@ describe('/api/auth', () => {
 			const response = await POST({ request } as any);
 
 			expect(response.status).toBe(400);
-			
+
 			const data = await response.json();
 			expect(data).toHaveProperty('error');
 			expect(data.error).toContain('Display name and email are required');
@@ -222,7 +224,7 @@ describe('/api/auth', () => {
 			const response = await POST({ request } as any);
 
 			expect(response.status).toBe(400);
-			
+
 			const data = await response.json();
 			expect(data).toHaveProperty('error');
 			expect(data.error).toContain('Display name and email are required');
@@ -238,7 +240,7 @@ describe('/api/auth', () => {
 			const response = await POST({ request } as any);
 
 			expect(response.status).toBe(500);
-			
+
 			const data = await response.json();
 			expect(data).toHaveProperty('error');
 		});
@@ -258,16 +260,17 @@ describe('/api/auth', () => {
 			const response = await POST({ request } as any);
 
 			expect(response.status).toBe(201);
-			
+
 			const data = await response.json();
 			expect(data.displayName).toBe('Test User');
 			expect(data.email).toBe('test@example.com');
 
 			// Verify trimmed values were stored in database
 			const db = getTestDb();
-			const createdUsers = await db.select().from(users).where(
-				db => db.eq(users.email, 'test@example.com')
-			);
+			const createdUsers = await db
+				.select()
+				.from(users)
+				.where((db) => db.eq(users.email, 'test@example.com'));
 			expect(createdUsers.length).toBe(1);
 			expect(createdUsers[0].displayName).toBe('Test User');
 		});

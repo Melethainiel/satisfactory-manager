@@ -25,7 +25,8 @@ export const POST: RequestHandler = async ({ request }) => {
 	try {
 		// Check content length to prevent DoS attacks
 		const contentLength = request.headers.get('content-length');
-		if (contentLength && parseInt(contentLength) > 10 * 1024 * 1024) { // 10MB limit
+		if (contentLength && parseInt(contentLength) > 10 * 1024 * 1024) {
+			// 10MB limit
 			return json({ error: 'Request payload too large (max 10MB)' }, { status: 413 });
 		}
 
@@ -192,12 +193,12 @@ export const POST: RequestHandler = async ({ request }) => {
 							count: prod.count.toString()
 						}));
 
-						const buildings = recipeData.craftedIn.map((buildingClassName) => ({
+						const buildingClassNames = recipeData.craftedIn.map((buildingClassName) => ({
 							buildingClassName
 						}));
 
 						// Create recipe version
-						await recipeService.createRecipeVersion(
+						await recipeService.createRecipeVersionFromClassNames(
 							recipe.id,
 							{
 								moduleVersionId,
@@ -205,7 +206,7 @@ export const POST: RequestHandler = async ({ request }) => {
 							},
 							ingredients,
 							products,
-							buildings
+							buildingClassNames
 						);
 						results.versionsCreated++;
 					}

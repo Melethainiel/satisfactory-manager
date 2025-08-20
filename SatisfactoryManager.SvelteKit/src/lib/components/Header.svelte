@@ -63,7 +63,7 @@
 		<a href="/" class="flex text-xl font-bold">
 			<!-- Logo -->
 			<img
-				src="/logo-256.png"
+				src="./logo-256.png"
 				alt={$t('app.logo_alt')}
 				class="mr-2 h-8 w-8 rounded-lg object-contain"
 				width="32"

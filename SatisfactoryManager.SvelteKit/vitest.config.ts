@@ -5,7 +5,7 @@ import { loadEnv } from 'vite';
 export default defineConfig(({ mode }) => {
 	// Load environment variables for tests
 	const env = loadEnv(mode, process.cwd(), '');
-	
+
 	return {
 		plugins: [sveltekit()],
 		test: {

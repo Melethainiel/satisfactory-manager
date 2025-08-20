@@ -5,12 +5,15 @@ import { recipeService } from '$lib/server/services/recipeService';
 // GET /api/recipes - List all recipes with optional filtering
 export const GET: RequestHandler = async ({ url }) => {
 	try {
+		const search = url.searchParams.get('search');
 		const ingredient = url.searchParams.get('ingredient');
 		const product = url.searchParams.get('product');
 		const building = url.searchParams.get('building');
 
 		let recipes;
-		if (ingredient) {
+		if (search) {
+			recipes = await recipeService.searchRecipesByName(search);
+		} else if (ingredient) {
 			recipes = await recipeService.getRecipesByIngredient(ingredient);
 		} else if (product) {
 			recipes = await recipeService.getRecipesByProduct(product);

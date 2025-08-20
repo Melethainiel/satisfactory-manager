@@ -13,7 +13,10 @@ export const GET: RequestHandler = async ({ url }) => {
 		// Validate GitHub repo format (owner/repo)
 		const repoPattern = /^[\w.-]+\/[\w.-]+$/;
 		if (!repoPattern.test(githubRepo.trim())) {
-			return json({ error: 'Invalid GitHub repository format (expected owner/repo)' }, { status: 400 });
+			return json(
+				{ error: 'Invalid GitHub repository format (expected owner/repo)' },
+				{ status: 400 }
+			);
 		}
 
 		const githubUrl = `https://github.com/${githubRepo.trim()}`;

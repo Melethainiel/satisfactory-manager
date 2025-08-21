@@ -143,6 +143,8 @@ class GameService implements IGameService {
 			.select({
 				id: games.id,
 				name: games.name,
+				createdAt: games.createdAt,
+				updatedAt: games.updatedAt,
 				role: userGames.role
 			})
 			.from(games)

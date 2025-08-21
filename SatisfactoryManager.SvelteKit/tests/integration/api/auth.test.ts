@@ -37,10 +37,7 @@ describe('/api/auth', () => {
 
 			// Verify user was actually created in database
 			const db = getTestDb();
-			const createdUsers = await db
-				.select()
-				.from(users)
-				.where(eq(users.email, userData.email));
+			const createdUsers = await db.select().from(users).where(eq(users.email, userData.email));
 			expect(createdUsers.length).toBe(1);
 			expect(createdUsers[0].displayName).toBe(userData.displayName);
 		});
@@ -99,10 +96,7 @@ describe('/api/auth', () => {
 			expect(data).toHaveProperty('created', false);
 
 			// Verify the displayName was actually updated in the database
-			const updatedUsers = await db
-				.select()
-				.from(users)
-				.where(eq(users.email, testUsers[0].email));
+			const updatedUsers = await db.select().from(users).where(eq(users.email, testUsers[0].email));
 			expect(updatedUsers.length).toBe(1);
 			expect(updatedUsers[0].displayName).toBe(updatedUserData.displayName);
 		});
@@ -268,10 +262,7 @@ describe('/api/auth', () => {
 
 			// Verify trimmed values were stored in database
 			const db = getTestDb();
-			const createdUsers = await db
-				.select()
-				.from(users)
-				.where(eq(users.email, 'test@example.com'));
+			const createdUsers = await db.select().from(users).where(eq(users.email, 'test@example.com'));
 			expect(createdUsers.length).toBe(1);
 			expect(createdUsers[0].displayName).toBe('Test User');
 		});

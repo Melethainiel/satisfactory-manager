@@ -3,9 +3,12 @@
 	import { afterNavigate } from '$app/navigation';
 	import { Icon, Map, WrenchScrewdriver } from 'svelte-hero-icons';
 	import { t } from '$lib/i18n';
+	import { getPermissionState } from '$lib/states/permissionState.svelte';
 
 	// Props
 	let { open, onClose } = $props<{ open: boolean; onClose?: () => void }>();
+
+	const permissionState = getPermissionState();
 
 	let currentPath = $state('');
 	onMount(() => {
@@ -40,15 +43,17 @@
 						{$t('nav.game')}
 					</a>
 				</li>
-				<li>
-					<a
-						href="/settings"
-						class={`rounded-lg transition-colors hover:text-primary ${isSettingsActive() ? 'font-semibold text-primary' : ''}`}
-					>
-						<Icon src={WrenchScrewdriver} class="inline-block size-5 stroke-1" />
-						{$t('nav.settings')}
-					</a>
-				</li>
+				{#if permissionState.canAccessSettings()}
+					<li>
+						<a
+							href="/settings"
+							class={`rounded-lg transition-colors hover:text-primary ${isSettingsActive() ? 'font-semibold text-primary' : ''}`}
+						>
+							<Icon src={WrenchScrewdriver} class="inline-block size-5 stroke-1" />
+							{$t('nav.settings')}
+						</a>
+					</li>
+				{/if}
 			</ul>
 		</li>
 	</ul>
@@ -95,16 +100,18 @@
 							{$t('nav.game')}
 						</a>
 					</li>
-					<li>
-						<a
-							href="/settings"
-							onclick={() => onClose?.()}
-							class={`rounded-lg transition-colors hover:text-primary ${isSettingsActive() ? 'font-semibold text-primary' : ''}`}
-						>
-							<Icon src={WrenchScrewdriver} class="inline-block size-4 stroke-1" />
-							{$t('nav.settings')}
-						</a>
-					</li>
+					{#if permissionState.canAccessSettings()}
+						<li>
+							<a
+								href="/settings"
+								onclick={() => onClose?.()}
+								class={`rounded-lg transition-colors hover:text-primary ${isSettingsActive() ? 'font-semibold text-primary' : ''}`}
+							>
+								<Icon src={WrenchScrewdriver} class="inline-block size-4 stroke-1" />
+								{$t('nav.settings')}
+							</a>
+						</li>
+					{/if}
 				</ul>
 			</li>
 		</ul>

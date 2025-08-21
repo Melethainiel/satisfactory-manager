@@ -57,7 +57,7 @@ async function waitForDatabase() {
 				// @ts-ignore
 				if (error.message.includes('ECONNREFUSED')) {
 					console.log('   Database container might still be starting...');
-				// @ts-ignore
+					// @ts-ignore
 				} else if (error.message.includes('database') && error.message.includes('does not exist')) {
 					console.log('   Database exists but might still be initializing...');
 				}

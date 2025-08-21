@@ -50,7 +50,9 @@
 		"saved": "Sauvegardé",
 		"danger_zone": "Zone de danger",
 		"delete_warning": "La suppression d'une partie est permanente et ne peut pas être annulée. Toutes les données seront perdues.",
-		"delete_game": "Supprimer la partie"
+		"delete_game": "Supprimer la partie",
+		"access_denied": "Accès refusé",
+		"access_denied_description": "Vous devez avoir les permissions Administrateur ou Propriétaire pour accéder aux paramètres de la partie."
 	},
 	"users": {
 		"title": "Utilisateurs autorisés",

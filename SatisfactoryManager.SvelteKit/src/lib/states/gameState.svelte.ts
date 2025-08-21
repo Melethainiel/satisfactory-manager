@@ -4,6 +4,7 @@ import { notificationService } from '$lib/services/notificationService.svelte';
 export interface GameSummary {
 	id: string;
 	name: string;
+	role?: string;
 }
 
 export interface GameUser {
@@ -57,6 +58,9 @@ export interface GameState {
 	selectedSiteId: string | null;
 	selectSite: (siteId: string | null) => void;
 	attachAuth: (apiFetch: AuthFetchFn) => void;
+	getUserRole: (userEmail: string) => string | null;
+	canManageSettings: (userEmail: string) => boolean;
+	canManageSites: (userEmail: string) => boolean;
 }
 
 // Narrow helper type so we don't import full AuthState here.
@@ -355,6 +359,23 @@ class GameStateClass implements GameState {
 		} catch (e: any) {
 			notificationService.error(e?.message ?? 'Failed to delete site');
 		}
+	}
+
+	getUserRole(userEmail: string): string | null {
+		const currentUser = this.gameUsers.find((u) => u.email === userEmail.toLowerCase());
+		return currentUser?.role || null;
+	}
+
+	canManageSettings(userEmail: string): boolean {
+		const currentUser = this.gameUsers.find((u) => u.email === userEmail.toLowerCase());
+		return currentUser ? ['Administrator', 'Owner'].includes(currentUser.role) : false;
+	}
+
+	canManageSites(userEmail: string): boolean {
+		const currentUser = this.gameUsers.find((u) => u.email === userEmail.toLowerCase());
+		return currentUser
+			? ['Contributor', 'Administrator', 'Owner'].includes(currentUser.role)
+			: false;
 	}
 }
 

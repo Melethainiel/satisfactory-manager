@@ -12,11 +12,7 @@ export interface ISiteService {
 
 class SiteService implements ISiteService {
 	async getAllForGame(gameId: string): Promise<Site[]> {
-		return await db
-			.select()
-			.from(sites)
-			.where(eq(sites.gameId, gameId))
-			.orderBy(asc(sites.name));
+		return await db.select().from(sites).where(eq(sites.gameId, gameId)).orderBy(asc(sites.name));
 	}
 
 	async getById(id: string): Promise<Site | undefined> {
@@ -29,11 +25,18 @@ class SiteService implements ISiteService {
 		return row;
 	}
 
-	async update(id: string, data: Partial<Omit<NewSite, 'id' | 'gameId'>>): Promise<Site | undefined> {
-		const [row] = await db.update(sites).set({
-			...data,
-			updatedAt: new Date()
-		}).where(eq(sites.id, id)).returning();
+	async update(
+		id: string,
+		data: Partial<Omit<NewSite, 'id' | 'gameId'>>
+	): Promise<Site | undefined> {
+		const [row] = await db
+			.update(sites)
+			.set({
+				...data,
+				updatedAt: new Date()
+			})
+			.where(eq(sites.id, id))
+			.returning();
 		return row;
 	}
 

@@ -15,26 +15,27 @@ export const GET: RequestHandler = async ({ url }) => {
 };
 
 // Email validation regex (strict)
-const EMAIL_REGEX = /^[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+)*@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+const EMAIL_REGEX =
+	/^[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+)*@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
 
 // POST /api/users - Create a new user
 export const POST: RequestHandler = async ({ request }) => {
 	try {
 		const body = (await request.json()) as { displayName?: string; email?: string };
-		
+
 		// Trim inputs
 		const displayName = body.displayName?.trim();
 		const email = body.email?.trim();
-		
+
 		if (!displayName || !email) {
 			return json({ error: 'Display name and email are required' }, { status: 400 });
 		}
-		
+
 		// Validate email format
 		if (!EMAIL_REGEX.test(email)) {
 			return json({ error: 'Invalid email format' }, { status: 400 });
 		}
-		
+
 		const created = await userService.create({ displayName, email });
 		return json(created, {
 			status: 201,

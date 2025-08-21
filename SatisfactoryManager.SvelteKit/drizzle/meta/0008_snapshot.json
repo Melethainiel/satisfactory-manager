@@ -1,5 +1,5 @@
 {
-  "id": "2bc47b7a-7b05-42a0-a0ad-f1be23d799ad",
+  "id": "9b6de6ef-21cd-4000-9495-7c475781b53c",
   "prevId": "643fc3db-ea7c-4a74-bf91-cbc09bd3a340",
   "version": "7",
   "dialect": "postgresql",
@@ -64,28 +64,28 @@
         "building_versions_building_id_buildings_id_fk": {
           "name": "building_versions_building_id_buildings_id_fk",
           "tableFrom": "building_versions",
+          "tableTo": "buildings",
           "columnsFrom": [
             "building_id"
           ],
-          "tableTo": "buildings",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         },
         "building_versions_module_version_id_module_versions_id_fk": {
           "name": "building_versions_module_version_id_module_versions_id_fk",
           "tableFrom": "building_versions",
+          "tableTo": "module_versions",
           "columnsFrom": [
             "module_version_id"
           ],
-          "tableTo": "module_versions",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -139,16 +139,32 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "buildings_class_name_idx": {
+          "name": "buildings_class_name_idx",
+          "columns": [
+            {
+              "expression": "class_name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "buildings_class_name_unique": {
           "name": "buildings_class_name_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "class_name"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {},
@@ -171,6 +187,20 @@
           "type": "varchar(200)",
           "primaryKey": false,
           "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         }
       },
       "indexes": {},
@@ -224,28 +254,28 @@
         "item_versions_item_id_items_id_fk": {
           "name": "item_versions_item_id_items_id_fk",
           "tableFrom": "item_versions",
+          "tableTo": "items",
           "columnsFrom": [
             "item_id"
           ],
-          "tableTo": "items",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         },
         "item_versions_module_version_id_module_versions_id_fk": {
           "name": "item_versions_module_version_id_module_versions_id_fk",
           "tableFrom": "item_versions",
+          "tableTo": "module_versions",
           "columnsFrom": [
             "module_version_id"
           ],
-          "tableTo": "module_versions",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -305,16 +335,32 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "items_class_name_idx": {
+          "name": "items_class_name_idx",
+          "columns": [
+            {
+              "expression": "class_name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "items_class_name_unique": {
           "name": "items_class_name_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "class_name"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {},
@@ -343,28 +389,28 @@
         "module_games_module_id_modules_id_fk": {
           "name": "module_games_module_id_modules_id_fk",
           "tableFrom": "module_games",
+          "tableTo": "modules",
           "columnsFrom": [
             "module_id"
           ],
-          "tableTo": "modules",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         },
         "module_games_game_id_games_id_fk": {
           "name": "module_games_game_id_games_id_fk",
           "tableFrom": "module_games",
+          "tableTo": "games",
           "columnsFrom": [
             "game_id"
           ],
-          "tableTo": "games",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
@@ -435,19 +481,28 @@
         "module_versions_module_id_modules_id_fk": {
           "name": "module_versions_module_id_modules_id_fk",
           "tableFrom": "module_versions",
+          "tableTo": "modules",
           "columnsFrom": [
             "module_id"
           ],
-          "tableTo": "modules",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "module_versions_module_id_version_unique": {
+          "name": "module_versions_module_id_version_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "module_id",
+            "version"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -527,9 +582,9 @@
           "primaryKey": false,
           "notNull": true
         },
-        "building_class_name": {
-          "name": "building_class_name",
-          "type": "varchar(100)",
+        "building_id": {
+          "name": "building_id",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -546,15 +601,28 @@
         "recipe_buildings_recipe_version_id_recipe_versions_id_fk": {
           "name": "recipe_buildings_recipe_version_id_recipe_versions_id_fk",
           "tableFrom": "recipe_buildings",
+          "tableTo": "recipe_versions",
           "columnsFrom": [
             "recipe_version_id"
           ],
-          "tableTo": "recipe_versions",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "recipe_buildings_building_id_buildings_id_fk": {
+          "name": "recipe_buildings_building_id_buildings_id_fk",
+          "tableFrom": "recipe_buildings",
+          "tableTo": "buildings",
+          "columnsFrom": [
+            "building_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -580,9 +648,9 @@
           "primaryKey": false,
           "notNull": true
         },
-        "item_class_name": {
-          "name": "item_class_name",
-          "type": "varchar(100)",
+        "item_id": {
+          "name": "item_id",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -605,15 +673,28 @@
         "recipe_ingredients_recipe_version_id_recipe_versions_id_fk": {
           "name": "recipe_ingredients_recipe_version_id_recipe_versions_id_fk",
           "tableFrom": "recipe_ingredients",
+          "tableTo": "recipe_versions",
           "columnsFrom": [
             "recipe_version_id"
           ],
-          "tableTo": "recipe_versions",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "recipe_ingredients_item_id_items_id_fk": {
+          "name": "recipe_ingredients_item_id_items_id_fk",
+          "tableFrom": "recipe_ingredients",
+          "tableTo": "items",
+          "columnsFrom": [
+            "item_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -639,9 +720,9 @@
           "primaryKey": false,
           "notNull": true
         },
-        "item_class_name": {
-          "name": "item_class_name",
-          "type": "varchar(100)",
+        "item_id": {
+          "name": "item_id",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -664,15 +745,28 @@
         "recipe_products_recipe_version_id_recipe_versions_id_fk": {
           "name": "recipe_products_recipe_version_id_recipe_versions_id_fk",
           "tableFrom": "recipe_products",
+          "tableTo": "recipe_versions",
           "columnsFrom": [
             "recipe_version_id"
           ],
-          "tableTo": "recipe_versions",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "recipe_products_item_id_items_id_fk": {
+          "name": "recipe_products_item_id_items_id_fk",
+          "tableFrom": "recipe_products",
+          "tableTo": "items",
+          "columnsFrom": [
+            "item_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -723,28 +817,28 @@
         "recipe_versions_recipe_id_recipes_id_fk": {
           "name": "recipe_versions_recipe_id_recipes_id_fk",
           "tableFrom": "recipe_versions",
+          "tableTo": "recipes",
           "columnsFrom": [
             "recipe_id"
           ],
-          "tableTo": "recipes",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         },
         "recipe_versions_module_version_id_module_versions_id_fk": {
           "name": "recipe_versions_module_version_id_module_versions_id_fk",
           "tableFrom": "recipe_versions",
+          "tableTo": "module_versions",
           "columnsFrom": [
             "module_version_id"
           ],
-          "tableTo": "module_versions",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -791,18 +885,94 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "recipes_class_name_idx": {
+          "name": "recipes_class_name_idx",
+          "columns": [
+            {
+              "expression": "class_name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "recipes_class_name_unique": {
           "name": "recipes_class_name_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "class_name"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.sites": {
+      "name": "sites",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(200)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "game_id": {
+          "name": "game_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "sites_game_id_games_id_fk": {
+          "name": "sites_game_id_games_id_fk",
+          "tableFrom": "sites",
+          "tableTo": "games",
+          "columnsFrom": [
+            "game_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -837,28 +1007,28 @@
         "user_games_user_id_users_id_fk": {
           "name": "user_games_user_id_users_id_fk",
           "tableFrom": "user_games",
+          "tableTo": "users",
           "columnsFrom": [
             "user_id"
           ],
-          "tableTo": "users",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         },
         "user_games_game_id_games_id_fk": {
           "name": "user_games_game_id_games_id_fk",
           "tableFrom": "user_games",
+          "tableTo": "games",
           "columnsFrom": [
             "game_id"
           ],
-          "tableTo": "games",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
@@ -905,10 +1075,10 @@
       "uniqueConstraints": {
         "users_email_unique": {
           "name": "users_email_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "email"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {},
@@ -947,10 +1117,10 @@
     }
   },
   "schemas": {},
-  "views": {},
   "sequences": {},
   "roles": {},
   "policies": {},
+  "views": {},
   "_meta": {
     "columns": {},
     "schemas": {},

@@ -16,7 +16,7 @@
 	});
 
 	function isHomeActive() {
-		return currentPath === '/' || currentPath.startsWith('/game');
+		return currentPath === '/' || currentPath.startsWith('/games');
 	}
 	function isSettingsActive() {
 		return currentPath.startsWith('/settings');

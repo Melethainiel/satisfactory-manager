@@ -1,7 +1,7 @@
 {
 	"app": {
-		"name": "Gestionnaire Satisfactory",
-		"logo_alt": "Logo du Gestionnaire Satisfactory"
+		"name": "Satisfactory Manager",
+		"logo_alt": "Logo de Satisfactory Manager"
 	},
 	"nav": {
 		"game": "Parties",
@@ -9,7 +9,8 @@
 		"menu": "Menu",
 		"navigation": "Navigation",
 		"toggle_nav": "Basculer la navigation",
-		"close_nav": "Fermer la navigation"
+		"close_nav": "Fermer la navigation",
+		"back_to_home": "Retour à l'accueil"
 	},
 	"auth": {
 		"login": "Connexion",
@@ -27,7 +28,17 @@
 		"create_game": "Créer une partie",
 		"game_name": "Nom de la partie",
 		"game_name_placeholder": "Nom de la partie",
-		"game_name_validation": "Doit contenir de 3 à 30 caractères avec uniquement des lettres, chiffres ou tirets"
+		"game_name_validation": "Doit contenir de 3 à 30 caractères avec uniquement des lettres, chiffres ou tirets",
+		"no_games": "Aucune partie trouvée",
+		"no_games_description": "Créez votre première partie pour commencer à gérer votre usine Satisfactory.",
+		"select_game": "Sélectionner une partie",
+		"click_to_open": "Cliquez pour ouvrir cette partie",
+		"open": "Ouvrir",
+		"loading": "Chargement de la partie...",
+		"not_found": "Partie introuvable",
+		"invalid_game_id": "ID de partie invalide",
+		"load_error": "Échec du chargement de la partie",
+		"manage_description": "Organisez votre usine par sites et gérez votre production efficacement."
 	},
 	"settings": {
 		"title": "Paramètres",
@@ -54,6 +65,19 @@
 		"add_module": "Ajouter un module",
 		"remove_module": "Supprimer le module",
 		"remove_module_confirm": "Êtes-vous sûr de vouloir supprimer le module \"{name}\" de cette partie ?"
+	},
+	"sites": {
+		"title": "Sites",
+		"no_sites": "Aucun site trouvé pour cette partie.",
+		"create_site": "Créer un site",
+		"create_first_site": "Créer le premier site",
+		"rename_site": "Renommer le site",
+		"delete_site": "Supprimer le site",
+		"delete_site_confirm": "Êtes-vous sûr de vouloir supprimer le site \"{name}\" ? Cette action ne peut pas être annulée.",
+		"site_name_placeholder": "Nom du site",
+		"site_name_validation": "Le nom du site est requis et ne peut pas dépasser 200 caractères",
+		"select_site": "Sélectionnez un site pour voir son contenu",
+		"content_placeholder": "C'est ici que le contenu spécifique au site sera affiché dans le futur."
 	},
 	"dialogs": {
 		"add_users": {
@@ -134,7 +158,8 @@
 		"error": "Erreur",
 		"success": "Succès",
 		"clear": "Effacer",
-		"dismiss": "Fermer"
+		"dismiss": "Fermer",
+		"created": "Créé"
 	},
 	"demo": {
 		"title": "Démo d'authentification Azure AD B2C",

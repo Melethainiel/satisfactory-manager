@@ -23,11 +23,27 @@ export type NewUser = typeof users.$inferInsert;
 // Games table
 export const games = pgTable('games', {
 	id: uuid('id').defaultRandom().primaryKey(),
-	name: varchar('name', { length: 200 }).notNull()
+	name: varchar('name', { length: 200 }).notNull(),
+	createdAt: timestamp('created_at').defaultNow().notNull(),
+	updatedAt: timestamp('updated_at').defaultNow().notNull()
 });
 
 export type Game = typeof games.$inferSelect;
 export type NewGame = typeof games.$inferInsert;
+
+// Sites table
+export const sites = pgTable('sites', {
+	id: uuid('id').defaultRandom().primaryKey(),
+	name: varchar('name', { length: 200 }).notNull(),
+	gameId: uuid('game_id')
+		.notNull()
+		.references(() => games.id, { onDelete: 'cascade' }),
+	createdAt: timestamp('created_at').defaultNow().notNull(),
+	updatedAt: timestamp('updated_at').defaultNow().notNull()
+});
+
+export type Site = typeof sites.$inferSelect;
+export type NewSite = typeof sites.$inferInsert;
 
 // Module table
 export const modules = pgTable('modules', {
@@ -257,7 +273,9 @@ export const usersRelations = relations(users, ({ many }) => ({
 }));
 
 export const gamesRelations = relations(games, ({ many }) => ({
-	userGames: many(userGames)
+	userGames: many(userGames),
+	moduleGames: many(moduleGames),
+	sites: many(sites)
 }));
 
 export const userGamesRelations = relations(userGames, ({ one }) => ({
@@ -274,6 +292,13 @@ export const userGamesRelations = relations(userGames, ({ one }) => ({
 export type UserGame = typeof userGames.$inferSelect;
 export type NewUserGame = typeof userGames.$inferInsert;
 export type GameUserRole = (typeof gameUserRoleEnum.enumValues)[number];
+
+export const sitesRelations = relations(sites, ({ one }) => ({
+	game: one(games, {
+		fields: [sites.gameId],
+		references: [games.id]
+	})
+}));
 
 // Relations (many-to-many) Game/Module
 export const moduleGames = pgTable(
@@ -385,9 +410,6 @@ export const recipeBuildingsRelations = relations(recipeBuildings, ({ one }) => 
 	})
 }));
 
-export const gamesRelation = relations(games, ({ many }) => ({
-	moduleGame: many(moduleGames)
-}));
 
 export const moduleGamesRelations = relations(moduleGames, ({ one }) => ({
 	user: one(modules, {

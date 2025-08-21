@@ -61,8 +61,8 @@
     {
       "idx": 8,
       "version": "7",
-      "when": 1755718880211,
-      "tag": "0008_fix_recipe_relationships",
+      "when": 1755765474885,
+      "tag": "0008_add_sites_table",
       "breakpoints": true
     }
   ]

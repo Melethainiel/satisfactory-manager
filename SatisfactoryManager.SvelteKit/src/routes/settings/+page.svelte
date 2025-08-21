@@ -7,7 +7,9 @@
 		AdjustmentsHorizontal,
 		Trash,
 		Plus,
-		Cog6Tooth
+		Cog6Tooth,
+		PencilSquare,
+		Map
 	} from 'svelte-hero-icons';
 	import { t } from '$lib/i18n';
 	import CreateGameDialog from '$lib/dialogs/CreateGameDialog.svelte';
@@ -24,6 +26,10 @@
 	import type { ModuleVersionDialogHandle } from '$lib/dialogs/ModuleVersionDialogHandle';
 	import ConfirmDialog from '$lib/dialogs/ConfirmDialog.svelte';
 	import type { ConfirmDialogHandle } from '$lib/dialogs/ConfirmDialogHandle';
+	import CreateSiteDialog from '$lib/dialogs/CreateSiteDialog.svelte';
+	import type { CreateSiteDialogHandle } from '$lib/dialogs/CreateSiteDialogHandle';
+	import RenameSiteDialog from '$lib/dialogs/RenameSiteDialog.svelte';
+	import type { RenameSiteDialogHandle } from '$lib/dialogs/RenameSiteDialogHandle';
 
 	const gameState = getGameState();
 	const authState = getAuthState();
@@ -36,6 +42,8 @@
 	let usersError = $state<string | null>(null);
 	let modulesLoading = $state(false);
 	let modulesError = $state<string | null>(null);
+	let sitesLoading = $state(false);
+	let sitesError = $state<string | null>(null);
 
 	// Delete dialog ref
 	let deleteDialogRef: DeleteGameDialogHandle | null = $state(null);
@@ -44,6 +52,8 @@
 	let addModuleDialogRef: AddModuleDialogHandle | null = $state(null);
 	let moduleVersionDialogRef: ModuleVersionDialogHandle | null = $state(null);
 	let confirmDialogRef: ConfirmDialogHandle | null = $state(null);
+	let createSiteDialogRef: CreateSiteDialogHandle | null = $state(null);
+	let renameSiteDialogRef: RenameSiteDialogHandle | null = $state(null);
 
 	$effect(() => {
 		const g = gameState.games.find((g) => g.id === gameState.selectedGameId);
@@ -82,6 +92,21 @@
 			modulesError = null;
 			await gameState.loadGameModules(id);
 			modulesLoading = false;
+		})();
+	});
+
+	$effect(() => {
+		// Load sites whenever selectedGameId changes
+		const id = gameState.selectedGameId;
+		if (!id) {
+			gameState.gameSites = [];
+			return;
+		}
+		(async () => {
+			sitesLoading = true;
+			sitesError = null;
+			await gameState.loadGameSites(id);
+			sitesLoading = false;
 		})();
 	});
 
@@ -136,6 +161,33 @@
 			}
 		});
 	}
+
+	function handleRenameSite(siteId: string, currentName: string) {
+		renameSiteDialogRef?.open(siteId, currentName);
+	}
+
+	async function removeSite(siteId: string, siteName: string) {
+		const gameId = gameState.selectedGameId;
+		if (!gameId) return;
+
+		confirmDialogRef?.open({
+			title: $t('sites.delete_site'),
+			message: $t('sites.delete_site_confirm', { values: { name: siteName } }),
+			confirmText: $t('sites.delete_site'),
+			type: 'danger',
+			onConfirm: async () => {
+				await gameState.deleteGameSite(gameId, siteId);
+				// refresh local sites list
+				await gameState.loadGameSites(gameId);
+			}
+		});
+	}
+
+	// Check if user has contributor+ role
+	let canManageSites = $derived(() => {
+		const currentUser = gameState.gameUsers.find(u => u.email === authState.user?.email?.toLowerCase());
+		return currentUser && ['Contributor', 'Administrator', 'Owner'].includes(currentUser.role);
+	});
 
 	let createDialogRef: CreateGameDialogHandle | null = $state(null);
 
@@ -319,10 +371,84 @@
 				{/if}
 			</div>
 		</div>
+		
+		<!-- Sites Section -->
+		<div class="card bg-base-100 shadow">
+			<div class="card-body">
+				<h2 class="card-title">
+					<Icon src={Map} class="size-6 stroke-1" />
+					{$t('sites.title')}
+					{#if canManageSites}
+						<button
+							class="btn ml-auto btn-circle btn-ghost btn-xs btn-primary"
+							onclick={() => createSiteDialogRef?.open()}
+							disabled={!gameState.selectedGameId}
+						>
+							<Icon src={Plus} class="size-4" />
+						</button>
+					{/if}
+				</h2>
+				{#if sitesLoading}
+					<span class="loading loading-sm loading-spinner"></span>
+				{:else if sitesError}
+					<div class="alert alert-error py-2 text-sm">
+						<span>{sitesError}</span>
+						<button class="btn btn-xs" onclick={() => (sitesError = null)}
+							>{$t('common.dismiss')}</button
+						>
+					</div>
+				{:else if gameState.gameSites.length === 0}
+					<div class="text-center py-4">
+						<p class="text-sm opacity-70 mb-4">{$t('sites.no_sites')}</p>
+						{#if canManageSites}
+							<button class="btn btn-primary btn-sm" onclick={() => createSiteDialogRef?.open()}>
+								{$t('sites.create_first_site')}
+							</button>
+						{/if}
+					</div>
+				{:else}
+					<ul class="divide-y divide-base-200">
+						{#each gameState.gameSites as site}
+							<li class="flex items-center gap-4 py-2">
+								<div class="flex-1">
+									<p class="leading-tight font-medium">{site.name}</p>
+									<p class="text-xs opacity-50">
+										{$t('common.created')}: {new Date(site.createdAt).toLocaleDateString()}
+									</p>
+								</div>
+								{#if canManageSites}
+									<div class="flex gap-1">
+										<button
+											class="btn btn-circle btn-ghost btn-xs"
+											onclick={() => handleRenameSite(site.id, site.name)}
+											title={$t('sites.rename_site')}
+										>
+											<Icon src={PencilSquare} class="size-4" />
+										</button>
+										{#if gameState.gameSites.length > 1}
+											<button
+												class="btn btn-circle btn-ghost btn-xs btn-error"
+												onclick={() => removeSite(site.id, site.name)}
+												title={$t('sites.delete_site')}
+											>
+												<Icon src={Trash} class="size-4" />
+											</button>
+										{/if}
+									</div>
+								{/if}
+							</li>
+						{/each}
+					</ul>
+				{/if}
+			</div>
+		</div>
+
 		<AddUserDialog bind:this={addUserDialogRef} />
 		<SelectAuthLevelDialog bind:this={selectAuthLevelDialogRef} />
 		<AddModuleDialog bind:this={addModuleDialogRef} />
 		<ModuleVersionDialog bind:this={moduleVersionDialogRef} />
+		<CreateSiteDialog bind:this={createSiteDialogRef} />
+		<RenameSiteDialog bind:this={renameSiteDialogRef} />
 		<ConfirmDialog bind:this={confirmDialogRef} />
 		<!-- Danger Card for Deleting Game -->
 		<div class="card border border-error bg-base-100 shadow">

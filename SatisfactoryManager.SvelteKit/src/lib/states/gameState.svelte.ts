@@ -23,6 +23,14 @@ export interface GameModule {
 	updatedAt: Date;
 }
 
+export interface GameSite {
+	id: string;
+	name: string;
+	gameId: string;
+	createdAt: Date;
+	updatedAt: Date;
+}
+
 export interface GameState {
 	games: GameSummary[];
 	selectedGameId: string | null;
@@ -41,6 +49,13 @@ export interface GameState {
 	addGameModule: (gameId: string, moduleId: string) => Promise<void>;
 	removeGameModule: (gameId: string, moduleId: string) => Promise<void>;
 	gameModules: GameModule[];
+	loadGameSites: (gameId: string) => Promise<void>;
+	createGameSite: (gameId: string, name: string) => Promise<void>;
+	updateGameSite: (gameId: string, siteId: string, name: string) => Promise<void>;
+	deleteGameSite: (gameId: string, siteId: string) => Promise<void>;
+	gameSites: GameSite[];
+	selectedSiteId: string | null;
+	selectSite: (siteId: string | null) => void;
 	attachAuth: (apiFetch: AuthFetchFn) => void;
 }
 
@@ -83,6 +98,8 @@ class GameStateClass implements GameState {
 	isLoading = $state<boolean>(false);
 	gameUsers = $state<GameUser[]>([]);
 	gameModules = $state<GameModule[]>([]);
+	gameSites = $state<GameSite[]>([]);
+	selectedSiteId = $state<string | null>(null);
 
 	async loadGames(userEmail: string) {
 		if (!userEmail) {
@@ -262,6 +279,81 @@ class GameStateClass implements GameState {
 			if (!res.ok) throw new Error(`Failed to remove module (${res.status})`);
 		} catch (e: any) {
 			notificationService.error(e?.message ?? 'Failed to remove game module');
+		}
+	}
+
+	selectSite(siteId: string | null) {
+		this.selectedSiteId = siteId;
+	}
+
+	async loadGameSites(gameId: string) {
+		if (!gameId || !this.apiFetch) return;
+		try {
+			const res = await this.apiFetch(`/api/games/${gameId}/sites`);
+			if (!res.ok) throw new Error(`Failed to load sites (${res.status})`);
+			const data = (await res.json()) as GameSite[];
+			this.gameSites = data.sort((a, b) => a.name.localeCompare(b.name));
+			// Auto-select first site if none selected
+			if (this.gameSites.length > 0 && !this.selectedSiteId) {
+				this.selectedSiteId = this.gameSites[0].id;
+			}
+		} catch (e: any) {
+			notificationService.error(e?.message ?? 'Failed to load game sites');
+		}
+	}
+
+	async createGameSite(gameId: string, name: string) {
+		if (!gameId || !name || !this.apiFetch) return;
+		try {
+			const res = await this.apiFetch(`/api/games/${gameId}/sites`, {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ name })
+			});
+			if (!res.ok) throw new Error(`Failed to create site (${res.status})`);
+			const created = (await res.json()) as GameSite;
+			this.gameSites = [...this.gameSites, created].sort((a, b) => a.name.localeCompare(b.name));
+			this.selectedSiteId = created.id;
+			notificationService.success(`Site "${name}" created successfully`);
+		} catch (e: any) {
+			notificationService.error(e?.message ?? 'Failed to create site');
+		}
+	}
+
+	async updateGameSite(gameId: string, siteId: string, name: string) {
+		if (!gameId || !siteId || !name || !this.apiFetch) return;
+		try {
+			const res = await this.apiFetch(`/api/games/${gameId}/sites/${siteId}`, {
+				method: 'PATCH',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ name })
+			});
+			if (!res.ok) throw new Error(`Failed to update site (${res.status})`);
+			const updated = (await res.json()) as GameSite;
+			this.gameSites = this.gameSites
+				.map((s) => (s.id === siteId ? updated : s))
+				.sort((a, b) => a.name.localeCompare(b.name));
+			notificationService.success(`Site renamed to "${name}"`);
+		} catch (e: any) {
+			notificationService.error(e?.message ?? 'Failed to update site');
+		}
+	}
+
+	async deleteGameSite(gameId: string, siteId: string) {
+		if (!gameId || !siteId || !this.apiFetch) return;
+		try {
+			const res = await this.apiFetch(`/api/games/${gameId}/sites/${siteId}`, {
+				method: 'DELETE'
+			});
+			if (!res.ok) throw new Error(`Failed to delete site (${res.status})`);
+			this.gameSites = this.gameSites.filter((s) => s.id !== siteId);
+			// Clear selection if deleted site was selected
+			if (this.selectedSiteId === siteId) {
+				this.selectedSiteId = this.gameSites.length > 0 ? this.gameSites[0].id : null;
+			}
+			notificationService.success('Site deleted successfully');
+		} catch (e: any) {
+			notificationService.error(e?.message ?? 'Failed to delete site');
 		}
 	}
 }

@@ -134,6 +134,9 @@ export async function clearTestData() {
 		await testDb.delete(schema.moduleVersions);
 		await testDb.delete(schema.modules);
 
+		// Site-related tables
+		await testDb.delete(schema.sites);
+
 		// User/Game relationship tables
 		await testDb.delete(schema.userGames);
 		await testDb.delete(schema.games);

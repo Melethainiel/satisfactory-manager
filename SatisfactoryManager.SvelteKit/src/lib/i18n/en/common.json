@@ -9,7 +9,8 @@
 		"menu": "Menu",
 		"navigation": "Navigation",
 		"toggle_nav": "Toggle navigation",
-		"close_nav": "Close navigation"
+		"close_nav": "Close navigation",
+		"back_to_home": "Back to Home"
 	},
 	"auth": {
 		"login": "Login",
@@ -27,7 +28,17 @@
 		"create_game": "Create Game",
 		"game_name": "Game name",
 		"game_name_placeholder": "Game name",
-		"game_name_validation": "Must be 3 to 30 characters containing only letters, numbers or dash"
+		"game_name_validation": "Must be 3 to 30 characters containing only letters, numbers or dash",
+		"no_games": "No Games Found",
+		"no_games_description": "Create your first game to start managing your Satisfactory factory.",
+		"select_game": "Select a Game",
+		"click_to_open": "Click to open this game",
+		"open": "Open",
+		"loading": "Loading game...",
+		"not_found": "Game not found",
+		"invalid_game_id": "Invalid game ID",
+		"load_error": "Failed to load game",
+		"manage_description": "Organize your factory by sites and manage your production efficiently."
 	},
 	"settings": {
 		"title": "Settings",
@@ -54,6 +65,19 @@
 		"add_module": "Add Module",
 		"remove_module": "Remove Module",
 		"remove_module_confirm": "Are you sure you want to remove the module \"{name}\" from this game?"
+	},
+	"sites": {
+		"title": "Sites",
+		"no_sites": "No sites found for this game.",
+		"create_site": "Create Site",
+		"create_first_site": "Create First Site",
+		"rename_site": "Rename Site",
+		"delete_site": "Delete Site",
+		"delete_site_confirm": "Are you sure you want to delete the site \"{name}\"? This action cannot be undone.",
+		"site_name_placeholder": "Site name",
+		"site_name_validation": "Site name is required and cannot exceed 200 characters",
+		"select_site": "Select a site to view its content",
+		"content_placeholder": "This is where site-specific content will be displayed in the future."
 	},
 	"dialogs": {
 		"add_users": {
@@ -134,7 +158,8 @@
 		"error": "Error",
 		"success": "Success",
 		"clear": "Clear",
-		"dismiss": "Dismiss"
+		"dismiss": "Dismiss",
+		"created": "Created"
 	},
 	"demo": {
 		"title": "Azure AD B2C Authentication Demo",

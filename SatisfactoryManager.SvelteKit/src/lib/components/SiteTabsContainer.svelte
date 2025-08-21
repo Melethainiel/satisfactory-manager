@@ -24,8 +24,8 @@
 
 	// Check if current user has contributor+ permissions
 	let canManageSites = $derived(() => {
-		const currentUser = gameState.gameUsers.find(u => u.email === authState.user?.email?.toLowerCase());
-		return currentUser && ['Contributor', 'Administrator', 'Owner'].includes(currentUser.role);
+		if (!authState.isAuthenticated || !authState.user?.email) return false;
+		return gameState.canManageSites(authState.user.email);
 	});
 
 	function handleSiteSelect(siteId: string) {
@@ -54,8 +54,8 @@
 <div class="flex flex-col gap-4">
 	<!-- Empty state when no sites -->
 	{#if gameState.gameSites.length === 0}
-		<div class="text-center py-8">
-			<p class="text-base-content/70 mb-4">{$t('sites.no_sites')}</p>
+		<div class="py-8 text-center">
+			<p class="mb-4 text-base-content/70">{$t('sites.no_sites')}</p>
 			{#if canManageSites()}
 				<button class="btn btn-primary" onclick={() => createSiteDialogRef?.open()}>
 					{$t('sites.create_first_site')}
@@ -69,7 +69,7 @@
 			{#if canManageSites()}
 				<!-- Add Site Button -->
 				<button
-					class="btn btn-ghost btn-sm btn-circle"
+					class="btn btn-circle btn-ghost btn-sm"
 					onclick={() => createSiteDialogRef?.open()}
 					title={$t('sites.create_site')}
 				>
@@ -81,10 +81,10 @@
 		<!-- Radio Tab Navigation -->
 		<div class="tabs tabs-box">
 			{#each gameState.gameSites as site (site.id)}
-				<input 
-					type="radio" 
+				<input
+					type="radio"
 					name={tabGroupName()}
-					class="tab transition-all duration-200 ease-in-out" 
+					class="tab transition-all duration-200 ease-in-out"
 					aria-label={site.name}
 					checked={gameState.selectedSiteId === site.id}
 					onchange={() => handleSiteSelect(site.id)}
@@ -95,31 +95,31 @@
 		<!-- Site Content Area -->
 		<div class="relative min-h-[200px]">
 			{#if gameState.selectedSiteId}
-				{@const selectedSite = gameState.gameSites.find(s => s.id === gameState.selectedSiteId)}
+				{@const selectedSite = gameState.gameSites.find((s) => s.id === gameState.selectedSiteId)}
 				{#if selectedSite}
 					{#key selectedSite.id}
-						<div 
-							class="bg-base-100 border border-base-300 rounded-lg p-6 relative"
+						<div
+							class="relative rounded-lg border border-base-300 bg-base-100 p-6"
 							in:fly={{ y: 20, duration: 300, easing: cubicOut, delay: 150 }}
 							out:fade={{ duration: 150 }}
 						>
 							<!-- Site Management Buttons -->
 							{#if canManageSites()}
-								<div 
+								<div
 									class="absolute top-2 right-2 flex gap-1"
 									in:fade={{ duration: 200, delay: 250 }}
 								>
 									<button
-										class="btn btn-ghost btn-xs btn-circle"
+										class="btn btn-circle btn-ghost btn-xs"
 										onclick={() => handleRenameSite(selectedSite.id, selectedSite.name)}
 										title={$t('sites.rename_site')}
 									>
 										<Icon src={PencilSquare} class="size-3" />
 									</button>
-									
+
 									{#if gameState.gameSites.length > 1}
 										<button
-											class="btn btn-ghost btn-xs btn-circle btn-error"
+											class="btn btn-circle btn-ghost btn-xs btn-error"
 											onclick={() => handleDeleteSite(selectedSite.id, selectedSite.name)}
 											title={$t('sites.delete_site')}
 										>
@@ -131,7 +131,7 @@
 
 							<!-- Site Content -->
 							<div in:fade={{ duration: 250, delay: 200 }}>
-								<h2 class="text-xl font-semibold mb-4 pr-16">{selectedSite.name}</h2>
+								<h2 class="mb-4 pr-16 text-xl font-semibold">{selectedSite.name}</h2>
 								<p class="text-base-content/70">{$t('sites.content_placeholder')}</p>
 							</div>
 						</div>

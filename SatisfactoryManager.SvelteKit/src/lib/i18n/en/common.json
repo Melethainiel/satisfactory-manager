@@ -50,7 +50,9 @@
 		"saved": "Saved",
 		"danger_zone": "Danger Zone",
 		"delete_warning": "Deleting a game is permanent and cannot be undone. All data will be lost.",
-		"delete_game": "Delete Game"
+		"delete_game": "Delete Game",
+		"access_denied": "Access Denied",
+		"access_denied_description": "You need Administrator or Owner permissions to access game settings."
 	},
 	"users": {
 		"title": "Authorized Users",

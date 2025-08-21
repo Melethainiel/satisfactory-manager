@@ -34,6 +34,13 @@
 	const gameState = getGameState();
 	const authState = getAuthState();
 
+	// Check if user can access settings (Administrator/Owner only)
+	let canAccessSettings = $derived(() => {
+		if (!authState.isAuthenticated || !authState.user?.email || !gameState.selectedGameId)
+			return false;
+		return gameState.canManageSettings(authState.user.email);
+	});
+
 	let editingName = $state('');
 	let isDirty = $state(false);
 	let saveError = $state<string | null>(null);
@@ -185,8 +192,8 @@
 
 	// Check if user has contributor+ role
 	let canManageSites = $derived(() => {
-		const currentUser = gameState.gameUsers.find(u => u.email === authState.user?.email?.toLowerCase());
-		return currentUser && ['Contributor', 'Administrator', 'Owner'].includes(currentUser.role);
+		if (!authState.isAuthenticated || !authState.user?.email) return false;
+		return gameState.canManageSites(authState.user.email);
 	});
 
 	let createDialogRef: CreateGameDialogHandle | null = $state(null);
@@ -211,6 +218,26 @@
 			>{$t('settings.create_new_game')}</button
 		>
 		<CreateGameDialog bind:this={createDialogRef} />
+	</div>
+{:else if !canAccessSettings}
+	<div class="mt-12 flex flex-col items-center gap-4">
+		<div class="alert max-w-md alert-warning">
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				class="h-6 w-6 shrink-0 stroke-current"
+				fill="none"
+				viewBox="0 0 24 24"
+			>
+				<path
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					stroke-width="2"
+					d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.728-.833-2.498 0L4.316 15.5c-.77.833.192 2.5 1.732 2.5z"
+				/>
+			</svg>
+			<span>{$t('settings.access_denied')}</span>
+		</div>
+		<p class="text-center opacity-70">{$t('settings.access_denied_description')}</p>
 	</div>
 {:else}
 	<div class="grid grid-cols-1 gap-6">
@@ -371,14 +398,14 @@
 				{/if}
 			</div>
 		</div>
-		
+
 		<!-- Sites Section -->
 		<div class="card bg-base-100 shadow">
 			<div class="card-body">
 				<h2 class="card-title">
 					<Icon src={Map} class="size-6 stroke-1" />
 					{$t('sites.title')}
-					{#if canManageSites}
+					{#if canManageSites()}
 						<button
 							class="btn ml-auto btn-circle btn-ghost btn-xs btn-primary"
 							onclick={() => createSiteDialogRef?.open()}
@@ -398,10 +425,10 @@
 						>
 					</div>
 				{:else if gameState.gameSites.length === 0}
-					<div class="text-center py-4">
-						<p class="text-sm opacity-70 mb-4">{$t('sites.no_sites')}</p>
-						{#if canManageSites}
-							<button class="btn btn-primary btn-sm" onclick={() => createSiteDialogRef?.open()}>
+					<div class="py-4 text-center">
+						<p class="mb-4 text-sm opacity-70">{$t('sites.no_sites')}</p>
+						{#if canManageSites()}
+							<button class="btn btn-sm btn-primary" onclick={() => createSiteDialogRef?.open()}>
 								{$t('sites.create_first_site')}
 							</button>
 						{/if}
@@ -416,7 +443,7 @@
 										{$t('common.created')}: {new Date(site.createdAt).toLocaleDateString()}
 									</p>
 								</div>
-								{#if canManageSites}
+								{#if canManageSites()}
 									<div class="flex gap-1">
 										<button
 											class="btn btn-circle btn-ghost btn-xs"

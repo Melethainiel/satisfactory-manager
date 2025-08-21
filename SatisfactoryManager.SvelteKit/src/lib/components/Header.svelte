@@ -32,6 +32,12 @@
 	async function handleLogin() {
 		await authState.signIn();
 	}
+
+	// Check if user can access settings (Administrator/Owner only)
+	let canAccessSettings = $derived(() => {
+		if (!authState.isAuthenticated || !authState.user?.email) return false;
+		return gameState.canManageSettings(authState.user.email);
+	});
 </script>
 
 <header
@@ -191,9 +197,11 @@
 					<li>
 						<a href="/profile" role="menuitem" onclick={hideUserMenu}>{$t('auth.profile')}</a>
 					</li>
-					<li>
-						<a href="/settings" role="menuitem" onclick={hideUserMenu}>{$t('auth.settings')}</a>
-					</li>
+					{#if canAccessSettings()}
+						<li>
+							<a href="/settings" role="menuitem" onclick={hideUserMenu}>{$t('auth.settings')}</a>
+						</li>
+					{/if}
 					<div class="divider my-1"></div>
 					<li>
 						<button role="menuitem" class="text-error" onclick={handleLogout}

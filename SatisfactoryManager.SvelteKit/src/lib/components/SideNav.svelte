@@ -3,9 +3,14 @@
 	import { afterNavigate } from '$app/navigation';
 	import { Icon, Map, WrenchScrewdriver } from 'svelte-hero-icons';
 	import { t } from '$lib/i18n';
+	import { getGameState } from '$lib/states/gameState.svelte';
+	import { getAuthState } from '$lib/states/authState.svelte';
 
 	// Props
 	let { open, onClose } = $props<{ open: boolean; onClose?: () => void }>();
+
+	const gameState = getGameState();
+	const authState = getAuthState();
 
 	let currentPath = $state('');
 	onMount(() => {
@@ -21,6 +26,12 @@
 	function isSettingsActive() {
 		return currentPath.startsWith('/settings');
 	}
+
+	// Check if user can access settings (Administrator/Owner only)
+	let canAccessSettings = $derived(() => {
+		if (!authState.isAuthenticated || !authState.user?.email) return false;
+		return gameState.canManageSettings(authState.user.email);
+	});
 </script>
 
 <!-- Desktop Sidebar (fixed scrollable) -->
@@ -40,15 +51,17 @@
 						{$t('nav.game')}
 					</a>
 				</li>
-				<li>
-					<a
-						href="/settings"
-						class={`rounded-lg transition-colors hover:text-primary ${isSettingsActive() ? 'font-semibold text-primary' : ''}`}
-					>
-						<Icon src={WrenchScrewdriver} class="inline-block size-5 stroke-1" />
-						{$t('nav.settings')}
-					</a>
-				</li>
+				{#if canAccessSettings()}
+					<li>
+						<a
+							href="/settings"
+							class={`rounded-lg transition-colors hover:text-primary ${isSettingsActive() ? 'font-semibold text-primary' : ''}`}
+						>
+							<Icon src={WrenchScrewdriver} class="inline-block size-5 stroke-1" />
+							{$t('nav.settings')}
+						</a>
+					</li>
+				{/if}
 			</ul>
 		</li>
 	</ul>
@@ -95,16 +108,18 @@
 							{$t('nav.game')}
 						</a>
 					</li>
-					<li>
-						<a
-							href="/settings"
-							onclick={() => onClose?.()}
-							class={`rounded-lg transition-colors hover:text-primary ${isSettingsActive() ? 'font-semibold text-primary' : ''}`}
-						>
-							<Icon src={WrenchScrewdriver} class="inline-block size-4 stroke-1" />
-							{$t('nav.settings')}
-						</a>
-					</li>
+					{#if canAccessSettings()}
+						<li>
+							<a
+								href="/settings"
+								onclick={() => onClose?.()}
+								class={`rounded-lg transition-colors hover:text-primary ${isSettingsActive() ? 'font-semibold text-primary' : ''}`}
+							>
+								<Icon src={WrenchScrewdriver} class="inline-block size-4 stroke-1" />
+								{$t('nav.settings')}
+							</a>
+						</li>
+					{/if}
 				</ul>
 			</li>
 		</ul>

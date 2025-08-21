@@ -8,6 +8,7 @@ import {
 import { testUsers, testGames } from '../../setup/fixtures';
 import { getTestDb } from '../../setup/test-db';
 import { users, games, userGames, sites } from '../../../src/lib/server/db/schema';
+import { eq} from 'drizzle-orm';
 
 describe('/api/games/[id]/sites', () => {
 	let testUserId: string;

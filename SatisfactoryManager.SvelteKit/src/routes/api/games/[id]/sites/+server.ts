@@ -46,6 +46,12 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 			return json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
+		// Verify game exists
+		const game = await gameService.getById(gameId);
+		if (!game) {
+			return json({ error: 'Game not found' }, { status: 404 });
+		}
+		
 		// Check user role in game (Contributor+ required for POST)
 		const userDetail = await gameService.getUserDetailed(gameId, caller.id);
 		if (!userDetail || 
@@ -53,12 +59,6 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 			 userDetail.role !== 'Administrator' && 
 			 userDetail.role !== 'Owner')) {
 			return json({ error: 'Forbidden - Contributor role or higher required' }, { status: 403 });
-		}
-
-		// Verify game exists
-		const game = await gameService.getById(gameId);
-		if (!game) {
-			return json({ error: 'Game not found' }, { status: 404 });
 		}
 
 		// Parse and validate request body

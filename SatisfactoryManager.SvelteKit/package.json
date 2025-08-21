@@ -21,8 +21,7 @@
 		"test:ui": "vitest --ui",
 		"test:coverage": "vitest --coverage",
 		"test:docker": "npm run test:docker:setup && npm run test:run; npm run test:docker:cleanup",
-		"test:docker:setup": "docker compose up -d postgres-test && npm run test:docker:wait",
-		"test:docker:wait": "node scripts/wait-for-db.js",
+		"test:docker:setup": "docker compose up -d postgres-test && node scripts/wait-for-db.js",
 		"test:docker:cleanup": "docker compose stop postgres-test",
 		"test:docker:down": "docker compose down postgres-test",
 		"test:docker:logs": "docker compose logs postgres-test"

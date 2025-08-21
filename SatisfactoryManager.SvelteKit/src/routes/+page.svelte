@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { getAuthState } from '$lib/states/authState.svelte';
-	import { getGameState } from '$lib/states/gameState.svelte';
+	import { getGameState, type GameSummary } from '$lib/states/gameState.svelte';
 	import { Icon, Play, WrenchScrewdriver } from 'svelte-hero-icons';
 	import { t } from '$lib/i18n';
 	import AuthComponent from '$lib/components/AuthComponent.svelte';
@@ -25,11 +25,9 @@
 		goto(`/games/${gameId}`);
 	}
 
-	// Check if user can access settings (Administrator/Owner only)
-	let canAccessSettings = $derived(() => {
-		if (!authState.isAuthenticated || !authState.user?.email) return false;
-		return gameState.canManageSettings(authState.user.email);
-	});
+	function canAccessSettingsForGame(game: GameSummary) {
+		return game.role && ['Administrator', 'Owner'].includes(game.role);
+	}
 </script>
 
 <svelte:head>
@@ -76,7 +74,7 @@
 									<Icon src={Play} class="size-4" />
 									{$t('game.open')}
 								</button>
-								{#if canAccessSettings()}
+								{#if canAccessSettingsForGame(game)}
 									<button
 										class="btn btn-ghost btn-sm"
 										onclick={() => {

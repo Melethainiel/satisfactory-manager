@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { getAuthState } from '$lib/states/authState.svelte';
 	import { getGameState } from '$lib/states/gameState.svelte';
+	import { getPermissionState } from '$lib/states/permissionState.svelte';
 	import CreateGameDialog from '$lib/dialogs/CreateGameDialog.svelte';
 	import type { CreateGameDialogHandle } from '$lib/dialogs/CreateGameDialogHandle';
 	import { t, locale, setLocale } from '$lib/i18n';
@@ -10,6 +11,7 @@
 	// Get auth & game state from context
 	const authState = getAuthState();
 	const gameState = getGameState();
+	const permissionState = getPermissionState();
 
 	let createDialogRef: CreateGameDialogHandle | null = null;
 
@@ -32,12 +34,6 @@
 	async function handleLogin() {
 		await authState.signIn();
 	}
-
-	// Check if user can access settings (Administrator/Owner only)
-	let canAccessSettings = $derived(() => {
-		if (!authState.isAuthenticated || !authState.user?.email) return false;
-		return gameState.canManageSettings(authState.user.email);
-	});
 </script>
 
 <header
@@ -197,7 +193,7 @@
 					<li>
 						<a href="/profile" role="menuitem" onclick={hideUserMenu}>{$t('auth.profile')}</a>
 					</li>
-					{#if canAccessSettings()}
+					{#if permissionState.canAccessSettings()}
 						<li>
 							<a href="/settings" role="menuitem" onclick={hideUserMenu}>{$t('auth.settings')}</a>
 						</li>

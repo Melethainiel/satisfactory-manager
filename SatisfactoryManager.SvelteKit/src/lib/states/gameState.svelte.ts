@@ -4,6 +4,7 @@ import { notificationService } from '$lib/services/notificationService.svelte';
 export interface GameSummary {
 	id: string;
 	name: string;
+	role?: string;
 }
 
 export interface GameUser {

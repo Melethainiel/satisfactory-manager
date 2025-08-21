@@ -3,14 +3,12 @@
 	import { afterNavigate } from '$app/navigation';
 	import { Icon, Map, WrenchScrewdriver } from 'svelte-hero-icons';
 	import { t } from '$lib/i18n';
-	import { getGameState } from '$lib/states/gameState.svelte';
-	import { getAuthState } from '$lib/states/authState.svelte';
+	import { getPermissionState } from '$lib/states/permissionState.svelte';
 
 	// Props
 	let { open, onClose } = $props<{ open: boolean; onClose?: () => void }>();
 
-	const gameState = getGameState();
-	const authState = getAuthState();
+	const permissionState = getPermissionState();
 
 	let currentPath = $state('');
 	onMount(() => {
@@ -26,12 +24,6 @@
 	function isSettingsActive() {
 		return currentPath.startsWith('/settings');
 	}
-
-	// Check if user can access settings (Administrator/Owner only)
-	let canAccessSettings = $derived(() => {
-		if (!authState.isAuthenticated || !authState.user?.email) return false;
-		return gameState.canManageSettings(authState.user.email);
-	});
 </script>
 
 <!-- Desktop Sidebar (fixed scrollable) -->
@@ -51,7 +43,7 @@
 						{$t('nav.game')}
 					</a>
 				</li>
-				{#if canAccessSettings()}
+				{#if permissionState.canAccessSettings()}
 					<li>
 						<a
 							href="/settings"
@@ -108,7 +100,7 @@
 							{$t('nav.game')}
 						</a>
 					</li>
-					{#if canAccessSettings()}
+					{#if permissionState.canAccessSettings()}
 						<li>
 							<a
 								href="/settings"

@@ -4,6 +4,7 @@
 	import { setAuthState } from '$lib/states/authState.svelte';
 	import { azureB2CConfig } from '$lib/auth/config';
 	import { setGameState } from '$lib/states/gameState.svelte';
+	import { setPermissionState } from '$lib/states/permissionState.svelte';
 	import Header from '$lib/components/Header.svelte';
 	import SideNav from '$lib/components/SideNav.svelte';
 	import ToastContainer from '$lib/components/ToastContainer.svelte';
@@ -18,6 +19,7 @@
 	// Initialize contexts
 	const authState = setAuthState();
 	const gameState = setGameState();
+	const permissionState = setPermissionState(authState, gameState);
 
 	// Initialize MSAL when the app starts
 	onMount(async () => {

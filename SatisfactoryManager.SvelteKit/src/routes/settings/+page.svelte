@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { getGameState } from '$lib/states/gameState.svelte';
 	import { getAuthState } from '$lib/states/authState.svelte';
+	import { getPermissionState } from '$lib/states/permissionState.svelte';
 	import {
 		Icon,
 		Identification,
@@ -33,13 +34,7 @@
 
 	const gameState = getGameState();
 	const authState = getAuthState();
-
-	// Check if user can access settings (Administrator/Owner only)
-	let canAccessSettings = $derived(() => {
-		if (!authState.isAuthenticated || !authState.user?.email || !gameState.selectedGameId)
-			return false;
-		return gameState.canManageSettings(authState.user.email);
-	});
+	const permissionState = getPermissionState();
 
 	let editingName = $state('');
 	let isDirty = $state(false);
@@ -190,12 +185,6 @@
 		});
 	}
 
-	// Check if user has contributor+ role
-	let canManageSites = $derived(() => {
-		if (!authState.isAuthenticated || !authState.user?.email) return false;
-		return gameState.canManageSites(authState.user.email);
-	});
-
 	let createDialogRef: CreateGameDialogHandle | null = $state(null);
 
 	// deletion handled inside DeleteGameDialog component
@@ -219,7 +208,7 @@
 		>
 		<CreateGameDialog bind:this={createDialogRef} />
 	</div>
-{:else if !canAccessSettings}
+{:else if !permissionState.canAccessSettings()}
 	<div class="mt-12 flex flex-col items-center gap-4">
 		<div class="alert max-w-md alert-warning">
 			<svg
@@ -405,7 +394,7 @@
 				<h2 class="card-title">
 					<Icon src={Map} class="size-6 stroke-1" />
 					{$t('sites.title')}
-					{#if canManageSites()}
+					{#if permissionState.canManageSites()}
 						<button
 							class="btn ml-auto btn-circle btn-ghost btn-xs btn-primary"
 							onclick={() => createSiteDialogRef?.open()}
@@ -427,7 +416,7 @@
 				{:else if gameState.gameSites.length === 0}
 					<div class="py-4 text-center">
 						<p class="mb-4 text-sm opacity-70">{$t('sites.no_sites')}</p>
-						{#if canManageSites()}
+						{#if permissionState.canManageSites()}
 							<button class="btn btn-sm btn-primary" onclick={() => createSiteDialogRef?.open()}>
 								{$t('sites.create_first_site')}
 							</button>
@@ -443,7 +432,7 @@
 										{$t('common.created')}: {new Date(site.createdAt).toLocaleDateString()}
 									</p>
 								</div>
-								{#if canManageSites()}
+								{#if permissionState.canManageSites()}
 									<div class="flex gap-1">
 										<button
 											class="btn btn-circle btn-ghost btn-xs"

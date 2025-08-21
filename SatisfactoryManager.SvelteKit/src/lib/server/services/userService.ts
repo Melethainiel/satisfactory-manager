@@ -14,17 +14,14 @@ export interface IUserService {
 class UserService implements IUserService {
 	async getAll(search?: string): Promise<User[]> {
 		let query = db.select().from(users);
-		
+
 		if (search) {
 			const searchTerm = `%${search.toLowerCase()}%`;
 			query = query.where(
-				or(
-					like(users.displayName, searchTerm),
-					like(users.email, searchTerm)
-				)
+				or(like(users.displayName, searchTerm), like(users.email, searchTerm))
 			) as typeof query;
 		}
-		
+
 		return await query.orderBy(users.id);
 	}
 	async getById(id: string): Promise<User | undefined> {

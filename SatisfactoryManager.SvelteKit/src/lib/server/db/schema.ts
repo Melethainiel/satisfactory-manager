@@ -410,7 +410,6 @@ export const recipeBuildingsRelations = relations(recipeBuildings, ({ one }) => 
 	})
 }));
 
-
 export const moduleGamesRelations = relations(moduleGames, ({ one }) => ({
 	user: one(modules, {
 		fields: [moduleGames.moduleId],

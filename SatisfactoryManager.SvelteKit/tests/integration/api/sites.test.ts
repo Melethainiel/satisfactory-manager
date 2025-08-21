@@ -8,7 +8,7 @@ import {
 import { testUsers, testGames } from '../../setup/fixtures';
 import { getTestDb } from '../../setup/test-db';
 import { users, games, userGames, sites } from '../../../src/lib/server/db/schema';
-import { eq} from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 describe('/api/games/[id]/sites', () => {
 	let testUserId: string;
@@ -70,10 +70,7 @@ describe('/api/games/[id]/sites', () => {
 			const db = getTestDb();
 
 			// Create a new game with no sites
-			const [newGame] = await db
-				.insert(games)
-				.values({ name: 'Empty Game' })
-				.returning();
+			const [newGame] = await db.insert(games).values({ name: 'Empty Game' }).returning();
 
 			const request = new Request(`http://localhost/api/games/${newGame.id}/sites`);
 			const response = await GET({
@@ -424,10 +421,7 @@ describe('/api/games/[id]/sites', () => {
 			const db = getTestDb();
 
 			// Create another game and site
-			const [otherGame] = await db
-				.insert(games)
-				.values({ name: 'Other Game' })
-				.returning();
+			const [otherGame] = await db.insert(games).values({ name: 'Other Game' }).returning();
 
 			const [otherSite] = await db
 				.insert(sites)
@@ -632,10 +626,7 @@ describe('/api/games/[id]/sites', () => {
 			expect(response.status).toBe(204);
 
 			// Verify site is deleted
-			const deletedSite = await db
-				.select()
-				.from(sites)
-				.where(eq(sites.id, testSiteId));
+			const deletedSite = await db.select().from(sites).where(eq(sites.id, testSiteId));
 
 			expect(deletedSite.length).toBe(0);
 		});

@@ -6,20 +6,20 @@ import { userService } from '$lib/server/services/userService';
 export const POST: RequestHandler = async ({ request }) => {
 	try {
 		const body = (await request.json()) as { displayName?: string; email?: string };
-		
+
 		// Trim input values
 		const email = body.email?.trim();
 		const displayName = body.displayName?.trim();
-		
+
 		// Validate required fields
 		if (!email || email === '') {
 			return json({ error: 'Display name and email are required' }, { status: 400 });
 		}
-		
+
 		if (!displayName || displayName === '') {
 			return json({ error: 'Display name and email are required' }, { status: 400 });
 		}
-		
+
 		// Check if user already exists
 		let existing = await userService.getByEmail(email);
 		if (existing) {
@@ -30,13 +30,13 @@ export const POST: RequestHandler = async ({ request }) => {
 			}
 			return json({ ...existing, created: false });
 		}
-		
+
 		// Create new user
 		const created = await userService.create({
 			displayName,
 			email
 		});
-		
+
 		return json({ ...created, created: true }, { status: 201 });
 	} catch (error) {
 		console.error('Error ensuring user:', error);

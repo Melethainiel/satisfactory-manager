@@ -32,11 +32,11 @@
 			// Select the current game if it's not already selected
 			if (gameState.selectedGameId !== gameId) {
 				// Check if the game exists in our loaded games
-				const game = gameState.games.find(g => g.id === gameId);
+				const game = gameState.games.find((g) => g.id === gameId);
 				if (!game) {
 					// If game not found, reload games
 					await gameState.loadGames(authState.user?.email ?? '');
-					const gameAfterReload = gameState.games.find(g => g.id === gameId);
+					const gameAfterReload = gameState.games.find((g) => g.id === gameId);
 					if (!gameAfterReload) {
 						error = $t('game.not_found');
 						isLoading = false;
@@ -47,11 +47,7 @@
 			}
 
 			// Load game data in parallel
-			await Promise.all([
-				gameState.loadGameUsers(gameId),
-				gameState.loadGameSites(gameId)
-			]);
-
+			await Promise.all([gameState.loadGameUsers(gameId), gameState.loadGameSites(gameId)]);
 		} catch (e: any) {
 			console.error('Error loading game:', e);
 			error = e?.message ?? $t('game.load_error');
@@ -61,7 +57,7 @@
 	});
 
 	// Get current game info
-	let currentGame = $derived(gameState.games.find(g => g.id === gameId));
+	let currentGame = $derived(gameState.games.find((g) => g.id === gameId));
 </script>
 
 <svelte:head>
@@ -69,27 +65,27 @@
 </svelte:head>
 
 {#if !authState.isAuthenticated}
-	<div class="text-center py-8">
+	<div class="py-8 text-center">
 		<p class="text-lg opacity-70">{$t('auth.sign_in_required')}</p>
 	</div>
 {:else if isLoading}
-	<div class="text-center py-8">
+	<div class="py-8 text-center">
 		<span class="loading loading-lg loading-spinner"></span>
 		<p class="mt-4 text-lg opacity-70">{$t('game.loading')}</p>
 	</div>
 {:else if error}
-	<div class="text-center py-8">
-		<div class="alert alert-error max-w-md mx-auto">
+	<div class="py-8 text-center">
+		<div class="mx-auto alert max-w-md alert-error">
 			<span>{error}</span>
 		</div>
-		<button class="btn btn-primary mt-4" onclick={() => goto('/')}>
+		<button class="btn mt-4 btn-primary" onclick={() => goto('/')}>
 			{$t('nav.back_to_home')}
 		</button>
 	</div>
 {:else if !currentGame}
-	<div class="text-center py-8">
+	<div class="py-8 text-center">
 		<p class="text-lg opacity-70">{$t('game.not_found')}</p>
-		<button class="btn btn-primary mt-4" onclick={() => goto('/')}>
+		<button class="btn mt-4 btn-primary" onclick={() => goto('/')}>
 			{$t('nav.back_to_home')}
 		</button>
 	</div>
@@ -98,7 +94,7 @@
 		<!-- Game Header -->
 		<div class="mb-6">
 			<h1 class="text-3xl font-bold">{currentGame.name}</h1>
-			<p class="text-base-content/70 mt-2">{$t('game.manage_description')}</p>
+			<p class="mt-2 text-base-content/70">{$t('game.manage_description')}</p>
 		</div>
 
 		<!-- Site Management -->

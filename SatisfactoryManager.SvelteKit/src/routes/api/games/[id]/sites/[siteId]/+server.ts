@@ -57,10 +57,12 @@ export const PATCH: RequestHandler = async ({ params, request, locals }) => {
 
 		// Check user role in game (Contributor+ required for PATCH)
 		const userDetail = await gameService.getUserDetailed(gameId, caller.id);
-		if (!userDetail || 
-			(userDetail.role !== 'Contributor' && 
-			 userDetail.role !== 'Administrator' && 
-			 userDetail.role !== 'Owner')) {
+		if (
+			!userDetail ||
+			(userDetail.role !== 'Contributor' &&
+				userDetail.role !== 'Administrator' &&
+				userDetail.role !== 'Owner')
+		) {
 			return json({ error: 'Forbidden - Contributor role or higher required' }, { status: 403 });
 		}
 
@@ -133,10 +135,12 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
 
 		// Check user role in game (Contributor+ required for DELETE)
 		const userDetail = await gameService.getUserDetailed(gameId, caller.id);
-		if (!userDetail || 
-			(userDetail.role !== 'Contributor' && 
-			 userDetail.role !== 'Administrator' && 
-			 userDetail.role !== 'Owner')) {
+		if (
+			!userDetail ||
+			(userDetail.role !== 'Contributor' &&
+				userDetail.role !== 'Administrator' &&
+				userDetail.role !== 'Owner')
+		) {
 			return json({ error: 'Forbidden - Contributor role or higher required' }, { status: 403 });
 		}
 

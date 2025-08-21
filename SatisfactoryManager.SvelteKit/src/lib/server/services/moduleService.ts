@@ -7,8 +7,9 @@ import {
 	type ModuleVersion,
 	type NewModuleVersion
 } from '../db/schema';
-import { eq, desc, like, ilike } from 'drizzle-orm';
+import { eq, desc, ilike } from 'drizzle-orm';
 import { githubService, type IModuleVersion } from './githubService';
+import { yamlService, type IParsedModuleInfo } from './yamlService';
 
 export interface IModuleService {
 	getAll(options?: { search?: string }): Promise<Module[]>;
@@ -16,6 +17,7 @@ export interface IModuleService {
 	getByName(name: string): Promise<Module | undefined>;
 	getByUrl(url: string): Promise<Module | undefined>;
 	create(data: Omit<NewModule, 'id' | 'createdAt' | 'updatedAt'>): Promise<Module>;
+	createFromUrl(manifestUrl: string): Promise<Module>;
 	update(
 		id: string,
 		data: Partial<Omit<NewModule, 'id' | 'createdAt' | 'updatedAt'>>
@@ -31,18 +33,22 @@ export interface IModuleService {
 	updateCurrentVersion(moduleId: string, version: string): Promise<Module | undefined>;
 	fetchAndSyncVersionsFromGitHub(moduleId: string): Promise<ModuleVersion[]>;
 	getAvailableVersionsFromGitHub(githubUrl: string): Promise<IModuleVersion[]>;
+
+	// YAML manifest methods
+	previewFromManifest(manifestUrl: string): Promise<IParsedModuleInfo>;
 }
 
 class ModuleService implements IModuleService {
 	async getAll(options?: { search?: string }): Promise<Module[]> {
-		let query = db.select().from(modules);
-
-		// Add search filter if provided (case-insensitive)
 		if (options?.search) {
-			query = query.where(ilike(modules.name, `%${options.search}%`));
+			return await db
+				.select()
+				.from(modules)
+				.where(ilike(modules.name, `%${options.search}%`))
+				.orderBy(modules.name);
+		} else {
+			return await db.select().from(modules).orderBy(modules.name);
 		}
-
-		return await query.orderBy(modules.name);
 	}
 	async getById(id: string): Promise<Module | undefined> {
 		const [row] = await db.select().from(modules).where(eq(modules.id, id));
@@ -77,6 +83,86 @@ class ModuleService implements IModuleService {
 	async delete(id: string): Promise<boolean> {
 		const res = await db.delete(modules).where(eq(modules.id, id)).returning({ id: modules.id });
 		return res.length > 0;
+	}
+
+	async createFromUrl(manifestUrl: string): Promise<Module> {
+		// Parse the YAML manifest
+		const parsedInfo = await yamlService.fetchAndParseManifest(manifestUrl);
+
+		// Check if module with same name already exists
+		const existingModule = await this.getByName(parsedInfo.name);
+		if (existingModule) {
+			throw new Error(`A module with name "${parsedInfo.name}" already exists`);
+		}
+
+		// Determine the module URL (prefer from manifest, fallback to guess from manifestUrl)
+		let moduleUrl = parsedInfo.url;
+		if (!moduleUrl) {
+			// Try to guess the repository URL from manifest URL
+			try {
+				const manifestUrlObj = new URL(manifestUrl);
+				if (
+					manifestUrlObj.hostname === 'github.com' ||
+					manifestUrlObj.hostname === 'raw.githubusercontent.com'
+				) {
+					const pathParts = manifestUrlObj.pathname.split('/').filter((p) => p.length > 0);
+					if (pathParts.length >= 2) {
+						moduleUrl = `https://github.com/${pathParts[0]}/${pathParts[1]}`;
+					}
+				}
+			} catch {
+				// If we can't guess, we'll use the manifest URL as fallback
+				moduleUrl = manifestUrl;
+			}
+		}
+
+		// Check if module with same URL already exists
+		if (moduleUrl) {
+			const existingUrlModule = await this.getByUrl(moduleUrl);
+			if (existingUrlModule) {
+				throw new Error(`A module with URL "${moduleUrl}" already exists`);
+			}
+		}
+
+		// Extract GitHub repo info if possible
+		let githubRepo: string | null = null;
+		if (moduleUrl) {
+			const parsedRepo = githubService.parseGitHubUrl(moduleUrl);
+			if (parsedRepo) {
+				githubRepo = `${parsedRepo.owner}/${parsedRepo.repo}`;
+			}
+		}
+
+		// Create the module with all parsed information
+		const moduleData = {
+			name: parsedInfo.name,
+			url: moduleUrl || manifestUrl,
+			description: parsedInfo.description || null,
+			version: parsedInfo.version,
+			dependencies:
+				parsedInfo.dependencies.length > 0 ? JSON.stringify(parsedInfo.dependencies) : null,
+			manifestUrl,
+			downloadUrl: parsedInfo.downloadUrl || null,
+			githubRepo
+		};
+
+		const module = await this.create(moduleData);
+
+		// If GitHub repo is available, try to sync versions
+		if (githubRepo) {
+			try {
+				await this.fetchAndSyncVersionsFromGitHub(module.id);
+			} catch (error) {
+				console.warn('Failed to sync versions from GitHub:', error);
+				// Don't fail the module creation if GitHub sync fails
+			}
+		}
+
+		return module;
+	}
+
+	async previewFromManifest(manifestUrl: string): Promise<IParsedModuleInfo> {
+		return yamlService.fetchAndParseManifest(manifestUrl);
 	}
 
 	async getVersions(moduleId: string): Promise<ModuleVersion[]> {

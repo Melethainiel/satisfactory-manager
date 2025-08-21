@@ -64,6 +64,13 @@
       "when": 1755768922756,
       "tag": "0008_add_sites",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1755799185590,
+      "tag": "0009_add_module_yaml_support",
+      "breakpoints": true
     }
   ]
 }

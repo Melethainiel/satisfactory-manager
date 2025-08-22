@@ -151,12 +151,20 @@
 			"refresh": "Refresh",
 			"sync_from_github": "Sync from GitHub",
 			"current_version": "Current Version",
+			"global_version_info": "Global module version",
+			"selected_version_for_game": "Selected version for this game",
+			"no_version_selected": "No version selected for this game",
+			"select_version_info": "Select a version for this game",
+			"different_version": "Different version",
 			"no_versions": "No versions available",
 			"sync_github_hint": "Try syncing from GitHub to fetch available versions",
 			"current_badge": "Current",
+			"selected_for_game": "Selected",
 			"published": "Published",
 			"view_release": "View Release",
-			"use_this_version": "Use This Version"
+			"use_this_version": "Use This Version",
+			"select_for_game": "Select for this game",
+			"selected": "Selected"
 		}
 	},
 	"common": {

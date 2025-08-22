@@ -249,7 +249,9 @@ class ModuleService implements IModuleService {
 		}
 
 		// Fetch versions from GitHub
-		const githubVersions = await githubService.getModuleVersions(module.githubRepo);
+		const githubVersions = await githubService.getModuleVersions(
+			`https://github.com/${module.githubRepo}`
+		);
 
 		// Get existing versions from database
 		const existingVersions = await this.getVersions(moduleId);

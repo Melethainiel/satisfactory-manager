@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { afterNavigate } from '$app/navigation';
-	import { Icon, Map, WrenchScrewdriver, Home, Cube } from 'svelte-hero-icons';
+	import { Icon, Map, WrenchScrewdriver, Home, Cube, MapPin } from 'svelte-hero-icons';
 	import { t } from '$lib/i18n';
 	import { getPermissionState } from '$lib/states/permissionState.svelte';
 	import { getGameState } from '$lib/states/gameState.svelte';
@@ -71,6 +71,7 @@
 										href="/games/{currentGameId}"
 										class={`rounded-lg transition-colors hover:text-primary ${isGameSitesActive() ? 'font-semibold text-primary' : ''}`}
 									>
+										<Icon src={MapPin} class="inline-block size-4 stroke-1" />
 										{$t('nav.sites')}
 									</a>
 								</li>
@@ -163,6 +164,7 @@
 											onclick={() => onClose?.()}
 											class={`rounded-lg transition-colors hover:text-primary ${isGameSitesActive() ? 'font-semibold text-primary' : ''}`}
 										>
+											<Icon src={MapPin} class="inline-block size-4 stroke-1" />
 											{$t('nav.sites')}
 										</a>
 									</li>

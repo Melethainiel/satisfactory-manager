@@ -19,6 +19,8 @@ export interface GameModule {
 	name: string;
 	url: string;
 	currentVersion: string | null;
+	selectedVersion: string | null;
+	selectedVersionId: string | null;
 	githubRepo: string | null;
 	createdAt: Date;
 	updatedAt: Date;
@@ -49,6 +51,7 @@ export interface GameState {
 	loadGameModules: (gameId: string) => Promise<void>;
 	addGameModule: (gameId: string, moduleId: string) => Promise<void>;
 	removeGameModule: (gameId: string, moduleId: string) => Promise<void>;
+	setGameModuleVersion: (gameId: string, moduleId: string, versionId: string) => Promise<void>;
 	gameModules: GameModule[];
 	loadGameSites: (gameId: string) => Promise<void>;
 	createGameSite: (gameId: string, name: string) => Promise<void>;
@@ -283,6 +286,23 @@ class GameStateClass implements GameState {
 			if (!res.ok) throw new Error(`Failed to remove module (${res.status})`);
 		} catch (e: any) {
 			notificationService.error(e?.message ?? 'Failed to remove game module');
+		}
+	}
+
+	async setGameModuleVersion(gameId: string, moduleId: string, versionId: string) {
+		if (!gameId || !moduleId || !versionId || !this.apiFetch) return;
+		try {
+			const res = await this.apiFetch(`/api/games/${gameId}/modules/${moduleId}/version`, {
+				method: 'PUT',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ versionId })
+			});
+			if (!res.ok) throw new Error(`Failed to set module version (${res.status})`);
+
+			// Reload modules to get updated version info
+			await this.loadGameModules(gameId);
+		} catch (e: any) {
+			notificationService.error(e?.message ?? 'Failed to set module version');
 		}
 	}
 

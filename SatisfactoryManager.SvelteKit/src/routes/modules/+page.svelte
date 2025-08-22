@@ -10,6 +10,8 @@
 		name: string;
 		url: string;
 		currentVersion: string | null;
+		selectedVersion: string | null;
+		selectedVersionId: string | null;
 		githubRepo: string | null;
 		createdAt: Date;
 		updatedAt: Date;

@@ -314,7 +314,10 @@ export const moduleGames = pgTable(
 			.references(() => modules.id, { onDelete: 'cascade' }),
 		gameId: uuid('game_id')
 			.notNull()
-			.references(() => games.id, { onDelete: 'cascade' })
+			.references(() => games.id, { onDelete: 'cascade' }),
+		selectedVersionId: uuid('selected_version_id').references(() => moduleVersions.id, {
+			onDelete: 'set null'
+		})
 	},
 	(t) => [primaryKey({ columns: [t.moduleId, t.gameId] })]
 );
@@ -416,12 +419,16 @@ export const recipeBuildingsRelations = relations(recipeBuildings, ({ one }) => 
 }));
 
 export const moduleGamesRelations = relations(moduleGames, ({ one }) => ({
-	user: one(modules, {
+	module: one(modules, {
 		fields: [moduleGames.moduleId],
 		references: [modules.id]
 	}),
 	game: one(games, {
 		fields: [moduleGames.gameId],
 		references: [games.id]
+	}),
+	selectedVersion: one(moduleVersions, {
+		fields: [moduleGames.selectedVersionId],
+		references: [moduleVersions.id]
 	})
 }));

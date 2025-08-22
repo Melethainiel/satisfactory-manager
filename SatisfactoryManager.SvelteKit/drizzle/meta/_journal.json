@@ -71,6 +71,13 @@
       "when": 1755799185590,
       "tag": "0009_add_module_yaml_support",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1755871019022,
+      "tag": "0010_add_selected_version_to_module_games",
+      "breakpoints": true
     }
   ]
 }

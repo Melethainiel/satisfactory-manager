@@ -394,8 +394,10 @@
 								<button
 									class="badge cursor-pointer badge-soft text-xs"
 									onclick={() => moduleVersionDialogRef?.open(mod)}
+									class:badge-warning={mod.selectedVersion &&
+										mod.selectedVersion !== mod.currentVersion}
 								>
-									{mod.currentVersion || 'No version'}
+									{mod.selectedVersion || mod.currentVersion || 'No version'}
 								</button>
 								<button
 									class="btn btn-circle btn-ghost btn-xs btn-error"

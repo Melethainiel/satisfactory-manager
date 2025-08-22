@@ -5,6 +5,7 @@ import {
 	users,
 	modules,
 	moduleGames,
+	moduleVersions,
 	type Game,
 	type NewGame,
 	type UserGame,
@@ -37,11 +38,37 @@ export interface IGameService {
 			sortOrder?: 'asc' | 'desc';
 		}
 	): Promise<(Game & { role: GameUserRole })[]>; // All games a user (by email) can access
-	getGameModules(gameId: string): Promise<{ id: string; name: string; url: string }[]>;
+	getGameModules(gameId: string): Promise<
+		{
+			id: string;
+			name: string;
+			url: string;
+			currentVersion: string | null;
+			selectedVersion: string | null;
+			selectedVersionId: string | null;
+			githubRepo: string | null;
+			createdAt: Date;
+			updatedAt: Date;
+		}[]
+	>;
 	addModuleToGame(
 		gameId: string,
-		moduleId: string
-	): Promise<{ id: string; name: string; url: string }[]>;
+		moduleId: string,
+		selectedVersionId?: string
+	): Promise<
+		{
+			id: string;
+			name: string;
+			url: string;
+			currentVersion: string | null;
+			selectedVersion: string | null;
+			selectedVersionId: string | null;
+			githubRepo: string | null;
+			createdAt: Date;
+			updatedAt: Date;
+		}[]
+	>;
+	setModuleVersion(gameId: string, moduleId: string, versionId: string): Promise<boolean>;
 	removeModuleFromGame(gameId: string, moduleId: string): Promise<boolean>;
 }
 
@@ -156,15 +183,34 @@ class GameService implements IGameService {
 		return await query;
 	}
 
-	async getGameModules(gameId: string): Promise<{ id: string; name: string; url: string }[]> {
+	async getGameModules(gameId: string): Promise<
+		{
+			id: string;
+			name: string;
+			url: string;
+			currentVersion: string | null;
+			selectedVersion: string | null;
+			selectedVersionId: string | null;
+			githubRepo: string | null;
+			createdAt: Date;
+			updatedAt: Date;
+		}[]
+	> {
 		const gameModules = await db
 			.select({
 				id: modules.id,
 				name: modules.name,
-				url: modules.url
+				url: modules.url,
+				currentVersion: modules.currentVersion,
+				selectedVersion: moduleVersions.version,
+				selectedVersionId: moduleGames.selectedVersionId,
+				githubRepo: modules.githubRepo,
+				createdAt: modules.createdAt,
+				updatedAt: modules.updatedAt
 			})
 			.from(modules)
 			.innerJoin(moduleGames, eq(modules.id, moduleGames.moduleId))
+			.leftJoin(moduleVersions, eq(moduleGames.selectedVersionId, moduleVersions.id))
 			.where(eq(moduleGames.gameId, gameId))
 			.orderBy(modules.name);
 
@@ -173,13 +219,27 @@ class GameService implements IGameService {
 
 	async addModuleToGame(
 		gameId: string,
-		moduleId: string
-	): Promise<{ id: string; name: string; url: string }[]> {
+		moduleId: string,
+		selectedVersionId?: string
+	): Promise<
+		{
+			id: string;
+			name: string;
+			url: string;
+			currentVersion: string | null;
+			selectedVersion: string | null;
+			selectedVersionId: string | null;
+			githubRepo: string | null;
+			createdAt: Date;
+			updatedAt: Date;
+		}[]
+	> {
 		await db
 			.insert(moduleGames)
 			.values({
 				gameId,
-				moduleId
+				moduleId,
+				selectedVersionId
 			})
 			.onConflictDoNothing();
 
@@ -190,6 +250,16 @@ class GameService implements IGameService {
 	async removeModuleFromGame(gameId: string, moduleId: string): Promise<boolean> {
 		const result = await db
 			.delete(moduleGames)
+			.where(and(eq(moduleGames.gameId, gameId), eq(moduleGames.moduleId, moduleId)))
+			.returning({ gameId: moduleGames.gameId });
+
+		return result.length > 0;
+	}
+
+	async setModuleVersion(gameId: string, moduleId: string, versionId: string): Promise<boolean> {
+		const result = await db
+			.update(moduleGames)
+			.set({ selectedVersionId: versionId })
 			.where(and(eq(moduleGames.gameId, gameId), eq(moduleGames.moduleId, moduleId)))
 			.returning({ gameId: moduleGames.gameId });
 

@@ -2,8 +2,10 @@
 	import { onMount } from 'svelte';
 	import { getAuthState } from '$lib/states/authState.svelte';
 	import { t } from '$lib/i18n';
-	import { Icon, Cube, Link, Calendar, Tag } from 'svelte-hero-icons';
+	import { Icon, Cube, Link, Calendar, Tag, Trash } from 'svelte-hero-icons';
 	import ModuleVersionManager from '$lib/components/ModuleVersionManager.svelte';
+	import { setDeleteModuleDialog, openDeleteModuleDialog } from '$lib/dialogs/DeleteModuleDialogHandle';
+	import DeleteModuleDialog from '$lib/dialogs/DeleteModuleDialog.svelte';
 
 	interface Module {
 		id: string;
@@ -23,6 +25,7 @@
 	let isLoading = $state(true);
 	let error = $state<string | null>(null);
 	let selectedModule = $state<Module | null>(null);
+	let deleteModuleDialogRef = $state<DeleteModuleDialog | null>(null);
 
 	async function loadModules() {
 		if (!authState.apiFetch) return;
@@ -50,6 +53,11 @@
 		if (authState.isAuthenticated) {
 			loadModules();
 		}
+		
+		// Set up delete dialog reference
+		if (deleteModuleDialogRef) {
+			setDeleteModuleDialog(deleteModuleDialogRef);
+		}
 	});
 
 	function formatDate(date: Date | string) {
@@ -62,6 +70,10 @@
 
 	function closeVersionManager() {
 		selectedModule = null;
+	}
+	
+	function deleteModule(module: Module) {
+		openDeleteModuleDialog(module);
 	}
 </script>
 
@@ -157,7 +169,14 @@
 							</div>
 						</div>
 
-						<div class="mt-4 card-actions justify-end">
+						<div class="mt-4 card-actions justify-between">
+							<button
+								class="btn btn-sm btn-error btn-outline"
+								onclick={() => deleteModule(module)}
+								title={$t('modules.remove_module')}
+							>
+								<Icon src={Trash} class="size-4" />
+							</button>
 							<button class="btn btn-sm btn-primary" onclick={() => openVersionManager(module)}>
 								{$t('modules.manage_versions')}
 							</button>
@@ -187,7 +206,7 @@
 				<button class="btn btn-ghost btn-sm" onclick={closeVersionManager}>✕</button>
 			</div>
 
-			<ModuleVersionManager module={selectedModule} />
+			<ModuleVersionManager module={selectedModule} context="admin" />
 		</div>
 		<div
 			class="modal-backdrop"
@@ -199,3 +218,6 @@
 		></div>
 	</div>
 {/if}
+
+<!-- Delete Module Dialog -->
+<DeleteModuleDialog bind:this={deleteModuleDialogRef} />

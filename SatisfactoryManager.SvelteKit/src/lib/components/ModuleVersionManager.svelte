@@ -27,7 +27,7 @@
 	const authState = getAuthState();
 	const gameState = getGameState();
 
-	let { module }: { module: Module } = $props();
+	let { module, context = 'game' }: { module: Module; context?: 'game' | 'admin' } = $props();
 
 	let versions = $state<ModuleVersion[]>([]);
 	let isLoading = $state(false);
@@ -154,25 +154,27 @@
 			</div>
 		{/if}
 
-		{#if module.selectedVersion}
-			<div class="rounded bg-primary/10 p-3">
-				<div class="text-sm font-medium">
-					{$t('dialogs.module_version.selected_version_for_game')}
+		{#if context === 'game'}
+			{#if module.selectedVersion}
+				<div class="rounded bg-primary/10 p-3">
+					<div class="text-sm font-medium">
+						{$t('dialogs.module_version.selected_version_for_game')}
+					</div>
+					<div class="flex items-center gap-2">
+						<div class="font-mono text-lg">{module.selectedVersion}</div>
+						{#if module.selectedVersion !== module.currentVersion}
+							<span class="badge badge-sm badge-warning"
+								>{$t('dialogs.module_version.different_version')}</span
+							>
+						{/if}
+					</div>
 				</div>
-				<div class="flex items-center gap-2">
-					<div class="font-mono text-lg">{module.selectedVersion}</div>
-					{#if module.selectedVersion !== module.currentVersion}
-						<span class="badge badge-sm badge-warning"
-							>{$t('dialogs.module_version.different_version')}</span
-						>
-					{/if}
+			{:else}
+				<div class="rounded bg-warning/10 p-3">
+					<div class="text-sm font-medium">{$t('dialogs.module_version.no_version_selected')}</div>
+					<div class="text-xs opacity-70">{$t('dialogs.module_version.select_version_info')}</div>
 				</div>
-			</div>
-		{:else}
-			<div class="rounded bg-warning/10 p-3">
-				<div class="text-sm font-medium">{$t('dialogs.module_version.no_version_selected')}</div>
-				<div class="text-xs opacity-70">{$t('dialogs.module_version.select_version_info')}</div>
-			</div>
+			{/if}
 		{/if}
 	</div>
 
@@ -229,22 +231,24 @@
 								{$t('dialogs.module_version.view_release')}
 							</a>
 						{/if}
-						{#if version.id !== module.selectedVersionId}
-							<button
-								class="btn btn-sm btn-primary"
-								onclick={() => setGameModuleVersion(version.id)}
-								disabled={isUpdatingVersion}
-							>
-								{#if isUpdatingVersion}
-									<span class="loading loading-sm loading-spinner"></span>
-								{:else}
-									{$t('dialogs.module_version.select_for_game')}
-								{/if}
-							</button>
-						{:else}
-							<button class="btn btn-sm btn-success" disabled>
-								{$t('dialogs.module_version.selected')}
-							</button>
+						{#if context === 'game'}
+							{#if version.id !== module.selectedVersionId}
+								<button
+									class="btn btn-sm btn-primary"
+									onclick={() => setGameModuleVersion(version.id)}
+									disabled={isUpdatingVersion}
+								>
+									{#if isUpdatingVersion}
+										<span class="loading loading-sm loading-spinner"></span>
+									{:else}
+										{$t('dialogs.module_version.select_for_game')}
+									{/if}
+								</button>
+							{:else}
+								<button class="btn btn-sm btn-success" disabled>
+									{$t('dialogs.module_version.selected')}
+								</button>
+							{/if}
 						{/if}
 					</div>
 				</div>

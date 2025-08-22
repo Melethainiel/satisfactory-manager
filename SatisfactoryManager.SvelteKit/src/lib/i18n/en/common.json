@@ -138,6 +138,12 @@
 			"error_failed": "Failed to delete game",
 			"close_label": "Close delete game modal"
 		},
+		"delete_module": {
+			"title": "Delete Module",
+			"message": "Are you sure you want to delete this module? This action will also remove all associated versions and data. This action cannot be undone.",
+			"yes_delete": "Yes, Delete",
+			"close_label": "Close delete module dialog"
+		},
 		"confirm": {
 			"confirm": "Confirm",
 			"error_occurred": "An error occurred"

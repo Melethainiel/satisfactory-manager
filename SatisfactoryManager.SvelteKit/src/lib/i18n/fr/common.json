@@ -138,6 +138,12 @@
 			"error_failed": "Échec de la suppression de la partie",
 			"close_label": "Fermer la boîte de dialogue de suppression de la partie"
 		},
+		"delete_module": {
+			"title": "Supprimer le module",
+			"message": "Êtes-vous sûr de vouloir supprimer ce module ? Cette action supprimera également toutes les versions et données associées. Cette action ne peut pas être annulée.",
+			"yes_delete": "Oui, supprimer",
+			"close_label": "Fermer la boîte de dialogue de suppression du module"
+		},
 		"confirm": {
 			"confirm": "Confirmer",
 			"error_occurred": "Une erreur est survenue"

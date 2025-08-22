@@ -1,21 +1,22 @@
-import * as yaml from 'js-yaml';
+// Note: YAML parsing is now handled by yamlValidationService
 import { archiveService, type IArchiveService } from './archiveService';
 import { recipeService } from './recipeService';
+import { yamlValidationService } from './yamlValidationService';
 
 // Interface for recipes as they appear in the Satisfactory mod archive YAML files
 interface ArchiveRecipeData {
-	ClassName: string;
-	DisplayName: string;
-	ManufacturingDuration: number;
-	Ingredients: Array<{
-		Item: string;
-		Count: number;
+	className: string;
+	displayName: string;
+	manufacturingDuration: number;
+	ingredients: Array<{
+		item: string;
+		count: number;
 	}>;
-	Products: Array<{
-		Item: string;
-		Count: number;
+	products: Array<{
+		item: string;
+		count: number;
 	}>;
-	CraftedIn: string[];
+	craftedIn: string[];
 	// Additional fields that might exist but we don't use yet
 	[key: string]: any;
 }
@@ -52,6 +53,10 @@ export interface ArchiveRecipeImportResult {
 export interface IArchiveRecipeService {
 	importRecipesFromArchive(
 		archiveUrl: string,
+		moduleVersionId: string
+	): Promise<ArchiveRecipeImportResult>;
+	importRecipesFromYamlContent(
+		yamlContent: string,
 		moduleVersionId: string
 	): Promise<ArchiveRecipeImportResult>;
 	parseRecipesYaml(yamlContent: string): Promise<ImportRecipeData[]>;
@@ -124,63 +129,64 @@ class ArchiveRecipeService implements IArchiveRecipeService {
 	}
 
 	/**
+	 * Imports recipes directly from YAML content without downloading
+	 * @param yamlContent Raw YAML content string
+	 * @param moduleVersionId Module version to associate recipes with
+	 * @returns Import results with statistics
+	 */
+	async importRecipesFromYamlContent(
+		yamlContent: string,
+		moduleVersionId: string
+	): Promise<ArchiveRecipeImportResult> {
+		try {
+			// Parse YAML content
+			const importRecipes = await this.parseRecipesYaml(yamlContent);
+
+			if (importRecipes.length === 0) {
+				return {
+					totalRecipes: 0,
+					validRecipes: 0,
+					importResults: {
+						created: 0,
+						updated: 0,
+						versionsCreated: 0,
+						errors: ['No valid recipes found in YAML content']
+					}
+				};
+			}
+
+			// Use existing recipe import logic
+			const results = await this.importRecipesBulk(importRecipes, moduleVersionId);
+
+			return {
+				totalRecipes: importRecipes.length,
+				validRecipes: importRecipes.length,
+				importResults: results
+			};
+		} catch (error) {
+			console.error('Error importing recipes from YAML content:', error);
+			throw new Error(`Failed to import recipes from YAML content: ${error}`);
+		}
+	}
+
+	/**
 	 * Parses YAML content and converts recipes to import format
 	 * @param yamlContent Raw YAML content string
 	 * @returns Array of recipes in import format
 	 */
 	async parseRecipesYaml(yamlContent: string): Promise<ImportRecipeData[]> {
 		try {
-			// Parse YAML
-			const parsedYaml: any = yaml.load(yamlContent);
+			// Use secure YAML validation service
+			const validatedRecipes = await yamlValidationService.validateAndParseRecipesYaml(yamlContent);
 
-			if (!parsedYaml) {
-				throw new Error('Invalid or empty YAML content');
-			}
+			// Convert validated recipes to import format
+			const importRecipes: ImportRecipeData[] = validatedRecipes.map(recipe => 
+				this.convertToImportFormat(recipe)
+			);
 
-			// Handle different possible YAML structures
-			let recipesArray: any[];
-
-			if (Array.isArray(parsedYaml)) {
-				// YAML is a direct array of recipes
-				recipesArray = parsedYaml;
-			} else if (parsedYaml.recipes && Array.isArray(parsedYaml.recipes)) {
-				// YAML has a 'recipes' property containing the array
-				recipesArray = parsedYaml.recipes;
-			} else if (parsedYaml.Recipes && Array.isArray(parsedYaml.Recipes)) {
-				// YAML has 'Recipes' (capitalized) property containing the array
-				recipesArray = parsedYaml.Recipes;
-			} else {
-				// Try to find any array property
-				const arrayProperty = Object.values(parsedYaml).find((val) => Array.isArray(val));
-				if (arrayProperty) {
-					recipesArray = arrayProperty as any[];
-				} else {
-					throw new Error(
-						'No recipes array found in YAML. Expected structure: array of recipes or {recipes: [...]}'
-					);
-				}
-			}
-
-			// Validate and convert each recipe
-			const validRecipes: ImportRecipeData[] = [];
-			const errors: string[] = [];
-
-			for (let i = 0; i < recipesArray.length; i++) {
-				const validatedRecipe = this.validateArchiveRecipe(recipesArray[i], i);
-				if (validatedRecipe) {
-					validRecipes.push(this.convertToImportFormat(validatedRecipe));
-				} else {
-					errors.push(`Invalid recipe data at index ${i}`);
-				}
-			}
-
-			if (errors.length > 0) {
-				console.warn('Archive recipe validation errors:', errors);
-			}
-
-			return validRecipes;
+			return importRecipes;
 		} catch (error) {
-			console.error('Error parsing recipes YAML:', error);
+			console.error('Error parsing recipes YAML with security validation:', error);
 			throw new Error(`Failed to parse recipes YAML: ${error}`);
 		}
 	}
@@ -242,7 +248,7 @@ class ArchiveRecipeService implements IArchiveRecipeService {
 				return null;
 			}
 
-			const validatedIngredients: Array<{ Item: string; Count: number }> = [];
+			const validatedIngredients: Array<{ item: string; count: number }> = [];
 			for (let i = 0; i < ingredients.length; i++) {
 				const ing = ingredients[i];
 				const item = ing.item || ing.Item;
@@ -271,8 +277,8 @@ class ArchiveRecipeService implements IArchiveRecipeService {
 				}
 
 				validatedIngredients.push({
-					Item: item.trim(),
-					Count: numericCount
+					item: item.trim(),
+					count: numericCount
 				});
 			}
 
@@ -282,7 +288,7 @@ class ArchiveRecipeService implements IArchiveRecipeService {
 				return null;
 			}
 
-			const validatedProducts: Array<{ Item: string; Count: number }> = [];
+			const validatedProducts: Array<{ item: string; count: number }> = [];
 			for (let i = 0; i < products.length; i++) {
 				const prod = products[i];
 				const item = prod.item || prod.Item;
@@ -309,8 +315,8 @@ class ArchiveRecipeService implements IArchiveRecipeService {
 				}
 
 				validatedProducts.push({
-					Item: item.trim(),
-					Count: numericCount
+					item: item.trim(),
+					count: numericCount
 				});
 			}
 
@@ -336,12 +342,12 @@ class ArchiveRecipeService implements IArchiveRecipeService {
 
 			// Return validated recipe with normalized field names
 			return {
-				ClassName: className.trim(),
-				DisplayName: displayName.trim(),
-				ManufacturingDuration: numericDuration,
-				Ingredients: validatedIngredients,
-				Products: validatedProducts,
-				CraftedIn: validatedCraftedIn
+				className: className.trim(),
+				displayName: displayName.trim(),
+				manufacturingDuration: numericDuration,
+				ingredients: validatedIngredients,
+				products: validatedProducts,
+				craftedIn: validatedCraftedIn
 			};
 		} catch (error) {
 			console.warn(`Error validating recipe at index ${index}:`, error);
@@ -356,18 +362,18 @@ class ArchiveRecipeService implements IArchiveRecipeService {
 	 */
 	convertToImportFormat(archiveRecipe: ArchiveRecipeData): ImportRecipeData {
 		return {
-			className: archiveRecipe.ClassName,
-			displayName: archiveRecipe.DisplayName,
-			manufacturingDuration: archiveRecipe.ManufacturingDuration,
-			ingredients: archiveRecipe.Ingredients.map((ing) => ({
-				itemClassName: ing.Item,
-				count: ing.Count.toString()
+			className: archiveRecipe.className,
+			displayName: archiveRecipe.displayName,
+			manufacturingDuration: archiveRecipe.manufacturingDuration,
+			ingredients: archiveRecipe.ingredients.map((ing) => ({
+				itemClassName: ing.item,
+				count: ing.count.toString()
 			})),
-			products: archiveRecipe.Products.map((prod) => ({
-				itemClassName: prod.Item,
-				count: prod.Count.toString()
+			products: archiveRecipe.products.map((prod) => ({
+				itemClassName: prod.item,
+				count: prod.count.toString()
 			})),
-			craftedIn: archiveRecipe.CraftedIn.map((building) => ({
+			craftedIn: archiveRecipe.craftedIn.map((building) => ({
 				buildingClassName: building
 			}))
 		};

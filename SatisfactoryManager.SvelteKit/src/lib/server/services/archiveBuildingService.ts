@@ -1,16 +1,17 @@
 import * as yaml from 'js-yaml';
 import { archiveService, type IArchiveService } from './archiveService';
 import { buildingService } from './buildingService';
+import { yamlValidationService } from './yamlValidationService';
 
 // Interface for buildings as they appear in the Satisfactory mod archive YAML files
 interface ArchiveBuildingData {
-	ClassName: string;
-	Name: string;
-	Type: 'Generator' | 'Constructor' | 'Miner';
-	EnergyConsumption?: number;
-	EnergyProduction?: number;
-	SupplementalLoadAmount?: number;
-	Output?: number;
+	className: string;
+	name: string;
+	type: 'Generator' | 'Constructor' | 'Miner';
+	energyConsumption?: number;
+	energyProduction?: number;
+	supplementalLoadAmount?: number;
+	output?: number;
 	// Additional fields that might exist but we don't use yet
 	[key: string]: any;
 }
@@ -40,6 +41,10 @@ export interface ArchiveBuildingImportResult {
 export interface IArchiveBuildingService {
 	importBuildingsFromArchive(
 		archiveUrl: string,
+		moduleVersionId: string
+	): Promise<ArchiveBuildingImportResult>;
+	importBuildingsFromYamlContent(
+		yamlContent: string,
 		moduleVersionId: string
 	): Promise<ArchiveBuildingImportResult>;
 	parseBuildingsYaml(yamlContent: string): Promise<ImportBuildingData[]>;
@@ -112,63 +117,64 @@ class ArchiveBuildingService implements IArchiveBuildingService {
 	}
 
 	/**
+	 * Imports buildings directly from YAML content without downloading
+	 * @param yamlContent Raw YAML content string
+	 * @param moduleVersionId Module version to associate buildings with
+	 * @returns Import results with statistics
+	 */
+	async importBuildingsFromYamlContent(
+		yamlContent: string,
+		moduleVersionId: string
+	): Promise<ArchiveBuildingImportResult> {
+		try {
+			// Parse YAML content
+			const importBuildings = await this.parseBuildingsYaml(yamlContent);
+
+			if (importBuildings.length === 0) {
+				return {
+					totalBuildings: 0,
+					validBuildings: 0,
+					importResults: {
+						created: 0,
+						updated: 0,
+						versionsCreated: 0,
+						errors: ['No valid buildings found in YAML content']
+					}
+				};
+			}
+
+			// Use existing building import logic
+			const results = await this.importBuildingsBulk(importBuildings, moduleVersionId);
+
+			return {
+				totalBuildings: importBuildings.length,
+				validBuildings: importBuildings.length,
+				importResults: results
+			};
+		} catch (error) {
+			console.error('Error importing buildings from YAML content:', error);
+			throw new Error(`Failed to import buildings from YAML content: ${error}`);
+		}
+	}
+
+	/**
 	 * Parses YAML content and converts buildings to import format
 	 * @param yamlContent Raw YAML content string
 	 * @returns Array of buildings in import format
 	 */
 	async parseBuildingsYaml(yamlContent: string): Promise<ImportBuildingData[]> {
 		try {
-			// Parse YAML
-			const parsedYaml: any = yaml.load(yamlContent);
+			// Use secure YAML validation service
+			const validatedBuildings = await yamlValidationService.validateAndParseBuildingsYaml(yamlContent);
 
-			if (!parsedYaml) {
-				throw new Error('Invalid or empty YAML content');
-			}
+			// Convert validated buildings to import format
+			const importBuildings: ImportBuildingData[] = validatedBuildings.map(building => 
+				this.convertToImportFormat(building)
+			);
 
-			// Handle different possible YAML structures
-			let buildingsArray: any[];
-
-			if (Array.isArray(parsedYaml)) {
-				// YAML is a direct array of buildings
-				buildingsArray = parsedYaml;
-			} else if (parsedYaml.buildings && Array.isArray(parsedYaml.buildings)) {
-				// YAML has a 'buildings' property containing the array
-				buildingsArray = parsedYaml.buildings;
-			} else if (parsedYaml.Buildings && Array.isArray(parsedYaml.Buildings)) {
-				// YAML has 'Buildings' (capitalized) property containing the array
-				buildingsArray = parsedYaml.Buildings;
-			} else {
-				// Try to find any array property
-				const arrayProperty = Object.values(parsedYaml).find((val) => Array.isArray(val));
-				if (arrayProperty) {
-					buildingsArray = arrayProperty as any[];
-				} else {
-					throw new Error(
-						'No buildings array found in YAML. Expected structure: array of buildings or {buildings: [...]}'
-					);
-				}
-			}
-
-			// Validate and convert each building
-			const validBuildings: ImportBuildingData[] = [];
-			const errors: string[] = [];
-
-			for (let i = 0; i < buildingsArray.length; i++) {
-				const validatedBuilding = this.validateArchiveBuilding(buildingsArray[i], i);
-				if (validatedBuilding) {
-					validBuildings.push(this.convertToImportFormat(validatedBuilding));
-				} else {
-					errors.push(`Invalid building data at index ${i}`);
-				}
-			}
-
-			if (errors.length > 0) {
-				console.warn('Archive building validation errors:', errors);
-			}
-
-			return validBuildings;
+			return importBuildings;
 		} catch (error) {
-			console.error('Error parsing buildings YAML:', error);
+			console.error('Error parsing buildings YAML with security validation:', error);
 			throw new Error(`Failed to parse buildings YAML: ${error}`);
 		}
 	}
@@ -271,13 +277,13 @@ class ArchiveBuildingService implements IArchiveBuildingService {
 
 			// Return validated building with normalized field names
 			return {
-				ClassName: className.trim(),
-				Name: name.trim(),
-				Type: type as 'Generator' | 'Constructor' | 'Miner',
-				EnergyConsumption: validatedEnergyConsumption,
-				EnergyProduction: validatedEnergyProduction,
-				SupplementalLoadAmount: validatedSupplementalLoadAmount,
-				Output: validatedOutput
+				className: className.trim(),
+				name: name.trim(),
+				type: type as 'Generator' | 'Constructor' | 'Miner',
+				energyConsumption: validatedEnergyConsumption,
+				energyProduction: validatedEnergyProduction,
+				supplementalLoadAmount: validatedSupplementalLoadAmount,
+				output: validatedOutput
 			};
 		} catch (error) {
 			console.warn(`Error validating building at index ${index}:`, error);
@@ -292,13 +298,13 @@ class ArchiveBuildingService implements IArchiveBuildingService {
 	 */
 	convertToImportFormat(archiveBuilding: ArchiveBuildingData): ImportBuildingData {
 		return {
-			className: archiveBuilding.ClassName,
-			name: archiveBuilding.Name,
-			type: archiveBuilding.Type,
-			energyConsumption: archiveBuilding.EnergyConsumption,
-			energyProduction: archiveBuilding.EnergyProduction,
-			supplementalLoadAmount: archiveBuilding.SupplementalLoadAmount,
-			output: archiveBuilding.Output
+			className: archiveBuilding.className,
+			name: archiveBuilding.name,
+			type: archiveBuilding.type,
+			energyConsumption: archiveBuilding.energyConsumption,
+			energyProduction: archiveBuilding.energyProduction,
+			supplementalLoadAmount: archiveBuilding.supplementalLoadAmount,
+			output: archiveBuilding.output
 		};
 	}
 

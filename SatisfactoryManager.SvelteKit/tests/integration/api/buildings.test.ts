@@ -28,7 +28,7 @@ describe('/api/buildings', () => {
 			.values({
 				moduleId: module.id,
 				version: '1.0.0',
-				url: 'https://example.com/module/1.0.0'
+				releaseUrl: 'https://example.com/module/1.0.0'
 			})
 			.returning();
 

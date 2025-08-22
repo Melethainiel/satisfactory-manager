@@ -67,6 +67,7 @@
 		"postgres": "^3.4.5",
 		"svelte-i18n": "^4.0.1",
 		"tmp": "^0.2.5",
-		"yauzl-promise": "^4.0.0"
+		"yauzl-promise": "^4.0.0",
+		"zod": "^4.0.17"
 	}
 }

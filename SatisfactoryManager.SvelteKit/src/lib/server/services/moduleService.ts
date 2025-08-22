@@ -11,6 +11,7 @@ import { eq, desc, ilike } from 'drizzle-orm';
 import { githubService, type IModuleVersion } from './githubService';
 import { yamlService, type IParsedModuleInfo } from './yamlService';
 import { archiveContentService, type ArchiveContentImportResult } from './archiveContentService';
+import { importQueueService } from './importQueueService';
 
 export interface IModuleService {
 	getAll(options?: { search?: string }): Promise<Module[]>;
@@ -40,6 +41,7 @@ export interface IModuleService {
 
 	// Archive import methods
 	importContentFromModuleArchive(moduleId: string): Promise<ArchiveContentImportResult | null>;
+	queueContentImportFromModuleArchive(moduleId: string): Promise<string | null>;
 }
 
 class ModuleService implements IModuleService {
@@ -178,38 +180,16 @@ class ModuleService implements IModuleService {
 			}
 		}
 
-		// If module has download URL, try to import content from archive
+		// If module has download URL, queue content import from archive
 		if (parsedInfo.downloadUrl) {
 			try {
-				const importResult = await this.importContentFromModuleArchive(module.id);
-				if (importResult) {
-					console.log('Archive import completed:', {
-						moduleId: module.id,
-						moduleName: module.name,
-						items: {
-							total: importResult.items.totalItems,
-							created: importResult.items.created,
-							updated: importResult.items.updated,
-							versionsCreated: importResult.items.versionsCreated
-						},
-						buildings: {
-							total: importResult.buildings.totalBuildings,
-							created: importResult.buildings.created,
-							updated: importResult.buildings.updated,
-							versionsCreated: importResult.buildings.versionsCreated
-						},
-						recipes: {
-							total: importResult.recipes.totalRecipes,
-							created: importResult.recipes.created,
-							updated: importResult.recipes.updated,
-							versionsCreated: importResult.recipes.versionsCreated
-						},
-						summary: importResult.summary
-					});
+				const importId = await this.queueContentImportFromModuleArchive(module.id);
+				if (importId) {
+					console.log(`Queued content import for module ${module.name} (ID: ${importId})`);
 				}
 			} catch (error) {
-				console.warn('Failed to import content from module archive:', error);
-				// Don't fail the module creation if archive import fails
+				console.warn('Failed to queue content import from module archive:', error);
+				// Don't fail the module creation if queue fails
 			}
 		}
 
@@ -328,6 +308,36 @@ class ModuleService implements IModuleService {
 		);
 
 		return importResult;
+	}
+
+	async queueContentImportFromModuleArchive(
+		moduleId: string
+	): Promise<string | null> {
+		// Get the module to check if it has a download URL
+		const module = await this.getById(moduleId);
+		if (!module || !module.downloadUrl) {
+			return null;
+		}
+
+		// Get the latest version for this module to associate content with
+		const versions = await this.getVersions(moduleId);
+		if (versions.length === 0) {
+			throw new Error(
+				'No versions found for module. Cannot import content without a module version.'
+			);
+		}
+
+		// Use the latest version (versions are ordered by date descending)
+		const latestVersion = versions[0];
+
+		// Queue the import
+		const importId = await importQueueService.queueImport(
+			moduleId,
+			module.downloadUrl,
+			latestVersion.id
+		);
+
+		return importId;
 	}
 }
 

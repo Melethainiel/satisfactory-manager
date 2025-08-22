@@ -10,6 +10,7 @@ import {
 import { eq, desc, ilike } from 'drizzle-orm';
 import { githubService, type IModuleVersion } from './githubService';
 import { yamlService, type IParsedModuleInfo } from './yamlService';
+import { archiveContentService, type ArchiveContentImportResult } from './archiveContentService';
 
 export interface IModuleService {
 	getAll(options?: { search?: string }): Promise<Module[]>;
@@ -36,6 +37,9 @@ export interface IModuleService {
 
 	// YAML manifest methods
 	previewFromManifest(manifestUrl: string): Promise<IParsedModuleInfo>;
+
+	// Archive import methods
+	importContentFromModuleArchive(moduleId: string): Promise<ArchiveContentImportResult | null>;
 }
 
 class ModuleService implements IModuleService {
@@ -158,6 +162,57 @@ class ModuleService implements IModuleService {
 			}
 		}
 
+		// Ensure we have at least one module version for item import
+		let hasVersions = await this.getVersions(module.id);
+		if (hasVersions.length === 0 && parsedInfo.version) {
+			try {
+				await this.addVersion(module.id, {
+					version: parsedInfo.version,
+					releaseUrl: parsedInfo.downloadUrl || null,
+					releaseNotes: 'Version from manifest',
+					publishedAt: new Date()
+				});
+				console.log(`Created version ${parsedInfo.version} for module ${module.name}`);
+			} catch (error) {
+				console.warn('Failed to create version from manifest:', error);
+			}
+		}
+
+		// If module has download URL, try to import content from archive
+		if (parsedInfo.downloadUrl) {
+			try {
+				const importResult = await this.importContentFromModuleArchive(module.id);
+				if (importResult) {
+					console.log('Archive import completed:', {
+						moduleId: module.id,
+						moduleName: module.name,
+						items: {
+							total: importResult.items.totalItems,
+							created: importResult.items.created,
+							updated: importResult.items.updated,
+							versionsCreated: importResult.items.versionsCreated
+						},
+						buildings: {
+							total: importResult.buildings.totalBuildings,
+							created: importResult.buildings.created,
+							updated: importResult.buildings.updated,
+							versionsCreated: importResult.buildings.versionsCreated
+						},
+						recipes: {
+							total: importResult.recipes.totalRecipes,
+							created: importResult.recipes.created,
+							updated: importResult.recipes.updated,
+							versionsCreated: importResult.recipes.versionsCreated
+						},
+						summary: importResult.summary
+					});
+				}
+			} catch (error) {
+				console.warn('Failed to import content from module archive:', error);
+				// Don't fail the module creation if archive import fails
+			}
+		}
+
 		return module;
 	}
 
@@ -244,6 +299,35 @@ class ModuleService implements IModuleService {
 
 	async getAvailableVersionsFromGitHub(githubUrl: string): Promise<IModuleVersion[]> {
 		return await githubService.getModuleVersions(githubUrl);
+	}
+
+	async importContentFromModuleArchive(
+		moduleId: string
+	): Promise<ArchiveContentImportResult | null> {
+		// Get the module to check if it has a download URL
+		const module = await this.getById(moduleId);
+		if (!module || !module.downloadUrl) {
+			return null;
+		}
+
+		// Get the latest version for this module to associate content with
+		const versions = await this.getVersions(moduleId);
+		if (versions.length === 0) {
+			throw new Error(
+				'No versions found for module. Cannot import content without a module version.'
+			);
+		}
+
+		// Use the latest version (versions are ordered by date descending)
+		const latestVersion = versions[0];
+
+		// Import both items and buildings from the archive
+		const importResult = await archiveContentService.importContentFromArchive(
+			module.downloadUrl,
+			latestVersion.id
+		);
+
+		return importResult;
 	}
 }
 

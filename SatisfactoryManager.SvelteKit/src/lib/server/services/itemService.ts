@@ -8,7 +8,7 @@ import {
 	type NewItemVersion,
 	type ItemForm
 } from '../db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, and } from 'drizzle-orm';
 
 export interface IItemService {
 	// Item CRUD operations
@@ -68,14 +68,7 @@ class ItemService implements IItemService {
 		id: string,
 		data: Partial<Omit<NewItem, 'id' | 'createdAt' | 'updatedAt'>>
 	): Promise<Item | undefined> {
-		const [row] = await db
-			.update(items)
-			.set({
-				...data,
-				updatedAt: new Date()
-			})
-			.where(eq(items.id, id))
-			.returning();
+		const [row] = await db.update(items).set(data).where(eq(items.id, id)).returning();
 		return row;
 	}
 
@@ -121,7 +114,9 @@ class ItemService implements IItemService {
 		const [row] = await db
 			.select()
 			.from(itemVersions)
-			.where(eq(itemVersions.itemId, itemId) && eq(itemVersions.moduleVersionId, moduleVersionId));
+			.where(
+				and(eq(itemVersions.itemId, itemId), eq(itemVersions.moduleVersionId, moduleVersionId))
+			);
 		return row;
 	}
 

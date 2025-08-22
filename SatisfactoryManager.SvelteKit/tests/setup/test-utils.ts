@@ -1,3 +1,4 @@
+import { expect } from 'vitest';
 import { getTestDb } from './test-db';
 import {
 	users,

@@ -7,8 +7,11 @@ import {
 	type ModuleVersion,
 	type NewModuleVersion
 } from '../db/schema';
-import { eq, desc, like, ilike } from 'drizzle-orm';
+import { eq, desc, ilike } from 'drizzle-orm';
 import { githubService, type IModuleVersion } from './githubService';
+import { yamlService, type IParsedModuleInfo } from './yamlService';
+import { archiveContentService, type ArchiveContentImportResult } from './archiveContentService';
+import { importQueueService } from './importQueueService';
 
 export interface IModuleService {
 	getAll(options?: { search?: string }): Promise<Module[]>;
@@ -16,6 +19,7 @@ export interface IModuleService {
 	getByName(name: string): Promise<Module | undefined>;
 	getByUrl(url: string): Promise<Module | undefined>;
 	create(data: Omit<NewModule, 'id' | 'createdAt' | 'updatedAt'>): Promise<Module>;
+	createFromUrl(manifestUrl: string): Promise<Module>;
 	update(
 		id: string,
 		data: Partial<Omit<NewModule, 'id' | 'createdAt' | 'updatedAt'>>
@@ -31,18 +35,26 @@ export interface IModuleService {
 	updateCurrentVersion(moduleId: string, version: string): Promise<Module | undefined>;
 	fetchAndSyncVersionsFromGitHub(moduleId: string): Promise<ModuleVersion[]>;
 	getAvailableVersionsFromGitHub(githubUrl: string): Promise<IModuleVersion[]>;
+
+	// YAML manifest methods
+	previewFromManifest(manifestUrl: string): Promise<IParsedModuleInfo>;
+
+	// Archive import methods
+	importContentFromModuleArchive(moduleId: string): Promise<ArchiveContentImportResult | null>;
+	queueContentImportFromModuleArchive(moduleId: string): Promise<string | null>;
 }
 
 class ModuleService implements IModuleService {
 	async getAll(options?: { search?: string }): Promise<Module[]> {
-		let query = db.select().from(modules);
-
-		// Add search filter if provided (case-insensitive)
 		if (options?.search) {
-			query = query.where(ilike(modules.name, `%${options.search}%`));
+			return await db
+				.select()
+				.from(modules)
+				.where(ilike(modules.name, `%${options.search}%`))
+				.orderBy(modules.name);
+		} else {
+			return await db.select().from(modules).orderBy(modules.name);
 		}
-
-		return await query.orderBy(modules.name);
 	}
 	async getById(id: string): Promise<Module | undefined> {
 		const [row] = await db.select().from(modules).where(eq(modules.id, id));
@@ -77,6 +89,115 @@ class ModuleService implements IModuleService {
 	async delete(id: string): Promise<boolean> {
 		const res = await db.delete(modules).where(eq(modules.id, id)).returning({ id: modules.id });
 		return res.length > 0;
+	}
+
+	async createFromUrl(manifestUrl: string): Promise<Module> {
+		// Parse the YAML manifest
+		const parsedInfo = await yamlService.fetchAndParseManifest(manifestUrl);
+
+		// Check if module with same name already exists
+		const existingModule = await this.getByName(parsedInfo.name);
+		if (existingModule) {
+			throw new Error(`A module with name "${parsedInfo.name}" already exists`);
+		}
+
+		// Determine the module URL (prefer from manifest, fallback to guess from manifestUrl)
+		let moduleUrl = parsedInfo.url;
+		if (!moduleUrl) {
+			// Try to guess the repository URL from manifest URL
+			try {
+				const manifestUrlObj = new URL(manifestUrl);
+				if (
+					manifestUrlObj.hostname === 'github.com' ||
+					manifestUrlObj.hostname === 'raw.githubusercontent.com'
+				) {
+					const pathParts = manifestUrlObj.pathname.split('/').filter((p) => p.length > 0);
+					if (pathParts.length >= 2) {
+						moduleUrl = `https://github.com/${pathParts[0]}/${pathParts[1]}`;
+					}
+				}
+			} catch {
+				// If we can't guess, we'll use the manifest URL as fallback
+				moduleUrl = manifestUrl;
+			}
+		}
+
+		// Check if module with same URL already exists
+		if (moduleUrl) {
+			const existingUrlModule = await this.getByUrl(moduleUrl);
+			if (existingUrlModule) {
+				throw new Error(`A module with URL "${moduleUrl}" already exists`);
+			}
+		}
+
+		// Extract GitHub repo info if possible
+		let githubRepo: string | null = null;
+		if (moduleUrl) {
+			const parsedRepo = githubService.parseGitHubUrl(moduleUrl);
+			if (parsedRepo) {
+				githubRepo = `${parsedRepo.owner}/${parsedRepo.repo}`;
+			}
+		}
+
+		// Create the module with all parsed information
+		const moduleData = {
+			name: parsedInfo.name,
+			url: moduleUrl || manifestUrl,
+			description: parsedInfo.description || null,
+			version: parsedInfo.version,
+			dependencies:
+				parsedInfo.dependencies.length > 0 ? JSON.stringify(parsedInfo.dependencies) : null,
+			manifestUrl,
+			downloadUrl: parsedInfo.downloadUrl || null,
+			githubRepo
+		};
+
+		const module = await this.create(moduleData);
+
+		// If GitHub repo is available, try to sync versions
+		if (githubRepo) {
+			try {
+				await this.fetchAndSyncVersionsFromGitHub(module.id);
+			} catch (error) {
+				console.warn('Failed to sync versions from GitHub:', error);
+				// Don't fail the module creation if GitHub sync fails
+			}
+		}
+
+		// Ensure we have at least one module version for item import
+		let hasVersions = await this.getVersions(module.id);
+		if (hasVersions.length === 0 && parsedInfo.version) {
+			try {
+				await this.addVersion(module.id, {
+					version: parsedInfo.version,
+					releaseUrl: parsedInfo.downloadUrl || null,
+					releaseNotes: 'Version from manifest',
+					publishedAt: new Date()
+				});
+				console.log(`Created version ${parsedInfo.version} for module ${module.name}`);
+			} catch (error) {
+				console.warn('Failed to create version from manifest:', error);
+			}
+		}
+
+		// If module has download URL, queue content import from archive
+		if (parsedInfo.downloadUrl) {
+			try {
+				const importId = await this.queueContentImportFromModuleArchive(module.id);
+				if (importId) {
+					console.log(`Queued content import for module ${module.name} (ID: ${importId})`);
+				}
+			} catch (error) {
+				console.warn('Failed to queue content import from module archive:', error);
+				// Don't fail the module creation if queue fails
+			}
+		}
+
+		return module;
+	}
+
+	async previewFromManifest(manifestUrl: string): Promise<IParsedModuleInfo> {
+		return yamlService.fetchAndParseManifest(manifestUrl);
 	}
 
 	async getVersions(moduleId: string): Promise<ModuleVersion[]> {
@@ -158,6 +279,65 @@ class ModuleService implements IModuleService {
 
 	async getAvailableVersionsFromGitHub(githubUrl: string): Promise<IModuleVersion[]> {
 		return await githubService.getModuleVersions(githubUrl);
+	}
+
+	async importContentFromModuleArchive(
+		moduleId: string
+	): Promise<ArchiveContentImportResult | null> {
+		// Get the module to check if it has a download URL
+		const module = await this.getById(moduleId);
+		if (!module || !module.downloadUrl) {
+			return null;
+		}
+
+		// Get the latest version for this module to associate content with
+		const versions = await this.getVersions(moduleId);
+		if (versions.length === 0) {
+			throw new Error(
+				'No versions found for module. Cannot import content without a module version.'
+			);
+		}
+
+		// Use the latest version (versions are ordered by date descending)
+		const latestVersion = versions[0];
+
+		// Import both items and buildings from the archive
+		const importResult = await archiveContentService.importContentFromArchive(
+			module.downloadUrl,
+			latestVersion.id
+		);
+
+		return importResult;
+	}
+
+	async queueContentImportFromModuleArchive(
+		moduleId: string
+	): Promise<string | null> {
+		// Get the module to check if it has a download URL
+		const module = await this.getById(moduleId);
+		if (!module || !module.downloadUrl) {
+			return null;
+		}
+
+		// Get the latest version for this module to associate content with
+		const versions = await this.getVersions(moduleId);
+		if (versions.length === 0) {
+			throw new Error(
+				'No versions found for module. Cannot import content without a module version.'
+			);
+		}
+
+		// Use the latest version (versions are ordered by date descending)
+		const latestVersion = versions[0];
+
+		// Queue the import
+		const importId = await importQueueService.queueImport(
+			moduleId,
+			module.downloadUrl,
+			latestVersion.id
+		);
+
+		return importId;
 	}
 }
 

@@ -8,7 +8,7 @@ import {
 	type NewItemVersion,
 	type ItemForm
 } from '../db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, and, inArray } from 'drizzle-orm';
 
 export interface IItemService {
 	// Item CRUD operations
@@ -42,6 +42,11 @@ export interface IItemService {
 
 	// Helper methods
 	getItemsByForm(form: ItemForm): Promise<Item[]>;
+	getItemsByClassNames(classNames: string[]): Promise<Item[]>;
+	getExistingVersionsForModule(
+		itemIds: string[], 
+		moduleVersionId: string
+	): Promise<Map<string, ItemVersion>>;
 }
 
 class ItemService implements IItemService {
@@ -68,14 +73,7 @@ class ItemService implements IItemService {
 		id: string,
 		data: Partial<Omit<NewItem, 'id' | 'createdAt' | 'updatedAt'>>
 	): Promise<Item | undefined> {
-		const [row] = await db
-			.update(items)
-			.set({
-				...data,
-				updatedAt: new Date()
-			})
-			.where(eq(items.id, id))
-			.returning();
+		const [row] = await db.update(items).set(data).where(eq(items.id, id)).returning();
 		return row;
 	}
 
@@ -121,7 +119,9 @@ class ItemService implements IItemService {
 		const [row] = await db
 			.select()
 			.from(itemVersions)
-			.where(eq(itemVersions.itemId, itemId) && eq(itemVersions.moduleVersionId, moduleVersionId));
+			.where(
+				and(eq(itemVersions.itemId, itemId), eq(itemVersions.moduleVersionId, moduleVersionId))
+			);
 		return row;
 	}
 
@@ -141,6 +141,30 @@ class ItemService implements IItemService {
 
 	async getItemsByForm(form: ItemForm): Promise<Item[]> {
 		return await db.select().from(items).where(eq(items.form, form)).orderBy(items.displayName);
+	}
+
+	async getItemsByClassNames(classNames: string[]): Promise<Item[]> {
+		if (classNames.length === 0) return [];
+		return await db.select().from(items).where(inArray(items.className, classNames));
+	}
+
+	async getExistingVersionsForModule(
+		itemIds: string[], 
+		moduleVersionId: string
+	): Promise<Map<string, ItemVersion>> {
+		if (itemIds.length === 0) return new Map();
+		
+		const versions = await db
+			.select()
+			.from(itemVersions)
+			.where(
+				and(
+					inArray(itemVersions.itemId, itemIds),
+					eq(itemVersions.moduleVersionId, moduleVersionId)
+				)
+			);
+			
+		return new Map(versions.map(v => [v.itemId, v]));
 	}
 }
 

@@ -50,7 +50,12 @@ export const modules = pgTable('modules', {
 	id: uuid('id').defaultRandom().primaryKey(),
 	name: varchar('name', { length: 200 }).notNull(),
 	url: varchar('url', { length: 2048 }).notNull(),
+	description: varchar('description', { length: 1000 }),
+	version: varchar('version', { length: 100 }),
 	currentVersion: varchar('current_version', { length: 100 }),
+	dependencies: varchar('dependencies', { length: 5000 }),
+	manifestUrl: varchar('manifest_url', { length: 2048 }),
+	downloadUrl: varchar('download_url', { length: 2048 }),
 	githubRepo: varchar('github_repo', { length: 500 }),
 	createdAt: timestamp('created_at').defaultNow().notNull(),
 	updatedAt: timestamp('updated_at').defaultNow().notNull()

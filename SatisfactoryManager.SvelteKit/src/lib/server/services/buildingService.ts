@@ -8,7 +8,7 @@ import {
 	type NewBuildingVersion,
 	type BuildingType
 } from '../db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, and } from 'drizzle-orm';
 
 export interface IBuildingService {
 	// Building CRUD operations
@@ -129,8 +129,10 @@ class BuildingService implements IBuildingService {
 			.select()
 			.from(buildingVersions)
 			.where(
-				eq(buildingVersions.buildingId, buildingId) &&
+				and(
+					eq(buildingVersions.buildingId, buildingId),
 					eq(buildingVersions.moduleVersionId, moduleVersionId)
+				)
 			);
 		return row;
 	}

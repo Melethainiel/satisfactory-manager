@@ -270,7 +270,10 @@ export const generateLargeItemDataset = (count: number) => ({
 		stackSize: 100,
 		energyValue: Math.floor(Math.random() * 1000),
 		radioactiveDecay: Math.floor(Math.random() * 50),
-		form: ['RF_SOLID', 'RF_LIQUID', 'RF_GAS'][Math.floor(Math.random() * 3)] as 'RF_SOLID' | 'RF_LIQUID' | 'RF_GAS'
+		form: ['RF_SOLID', 'RF_LIQUID', 'RF_GAS'][Math.floor(Math.random() * 3)] as
+			| 'RF_SOLID'
+			| 'RF_LIQUID'
+			| 'RF_GAS'
 	}))
 });
 
@@ -278,7 +281,10 @@ export const generateLargeBuildingDataset = (count: number) =>
 	Array.from({ length: count }, (_, i) => ({
 		className: `Build_TestBuilding${i}_C`,
 		name: `Test Building ${i}`,
-		type: ['Constructor', 'Miner', 'Generator'][Math.floor(Math.random() * 3)] as 'Constructor' | 'Miner' | 'Generator',
+		type: ['Constructor', 'Miner', 'Generator'][Math.floor(Math.random() * 3)] as
+			| 'Constructor'
+			| 'Miner'
+			| 'Generator',
 		energyConsumption: Math.floor(Math.random() * 100),
 		energyProduction: Math.floor(Math.random() * 100),
 		supplementalLoadAmount: 0,

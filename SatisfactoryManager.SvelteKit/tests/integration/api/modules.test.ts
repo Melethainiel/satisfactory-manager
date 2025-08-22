@@ -21,7 +21,7 @@ describe('/api/modules', () => {
 		await db.insert(moduleVersions).values({
 			moduleId: module.id,
 			version: '1.0.0',
-			url: 'https://example.com/module1/1.0.0'
+			releaseUrl: 'https://example.com/module1/1.0.0'
 		});
 	});
 

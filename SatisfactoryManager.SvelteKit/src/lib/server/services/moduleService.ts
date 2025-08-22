@@ -310,9 +310,7 @@ class ModuleService implements IModuleService {
 		return importResult;
 	}
 
-	async queueContentImportFromModuleArchive(
-		moduleId: string
-	): Promise<string | null> {
+	async queueContentImportFromModuleArchive(moduleId: string): Promise<string | null> {
 		// Get the module to check if it has a download URL
 		const module = await this.getById(moduleId);
 		if (!module || !module.downloadUrl) {

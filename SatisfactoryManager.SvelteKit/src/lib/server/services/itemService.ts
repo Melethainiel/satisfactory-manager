@@ -44,7 +44,7 @@ export interface IItemService {
 	getItemsByForm(form: ItemForm): Promise<Item[]>;
 	getItemsByClassNames(classNames: string[]): Promise<Item[]>;
 	getExistingVersionsForModule(
-		itemIds: string[], 
+		itemIds: string[],
 		moduleVersionId: string
 	): Promise<Map<string, ItemVersion>>;
 }
@@ -149,11 +149,11 @@ class ItemService implements IItemService {
 	}
 
 	async getExistingVersionsForModule(
-		itemIds: string[], 
+		itemIds: string[],
 		moduleVersionId: string
 	): Promise<Map<string, ItemVersion>> {
 		if (itemIds.length === 0) return new Map();
-		
+
 		const versions = await db
 			.select()
 			.from(itemVersions)
@@ -163,8 +163,8 @@ class ItemService implements IItemService {
 					eq(itemVersions.moduleVersionId, moduleVersionId)
 				)
 			);
-			
-		return new Map(versions.map(v => [v.itemId, v]));
+
+		return new Map(versions.map((v) => [v.itemId, v]));
 	}
 }
 

@@ -70,7 +70,7 @@
 	onMount(async () => {
 		// Wait for authentication to finish loading before checking auth state
 		while (authState.isLoading) {
-			await new Promise(resolve => setTimeout(resolve, 100));
+			await new Promise((resolve) => setTimeout(resolve, 100));
 		}
 
 		if (!authState.isAuthenticated) {
@@ -103,7 +103,7 @@
 
 			// Load game data first (needed for permission checks)
 			await Promise.all([
-				gameState.loadGameUsers(gameId), 
+				gameState.loadGameUsers(gameId),
 				gameState.loadGameModules(gameId),
 				gameState.loadGameSites(gameId)
 			]);
@@ -158,9 +158,9 @@
 		if (!gameId) return;
 
 		// Check if this user is an Owner and if they are the last one
-		const userToRemove = gameState.gameUsers.find(u => u.email === userEmail);
+		const userToRemove = gameState.gameUsers.find((u) => u.email === userEmail);
 		if (userToRemove?.role === 'Owner') {
-			const ownerCount = gameState.gameUsers.filter(u => u.role === 'Owner').length;
+			const ownerCount = gameState.gameUsers.filter((u) => u.role === 'Owner').length;
 			if (ownerCount <= 1) {
 				// Show error notification - can't remove the last owner
 				notificationService.error($t('users.cannot_remove_last_owner'));
@@ -223,7 +223,10 @@
 </script>
 
 <svelte:head>
-	<title>Satisfactory Manager | {$t('settings.title')} - {currentGame?.name ?? $t('common.loading')}</title>
+	<title
+		>Satisfactory Manager | {$t('settings.title')} - {currentGame?.name ??
+			$t('common.loading')}</title
+	>
 </svelte:head>
 
 {#if !authState.isAuthenticated}
@@ -255,14 +258,14 @@
 	<div class="container mx-auto">
 		<!-- Header -->
 		<div class="mb-8">
-			<h1 class="mb-4 text-3xl font-bold flex items-center gap-3">
+			<h1 class="mb-4 flex items-center gap-3 text-3xl font-bold">
 				<Icon src={AdjustmentsHorizontal} class="size-8" />
 				{$t('settings.title')} - {currentGame.name}
 			</h1>
 		</div>
 
 		<!-- Game Info Section -->
-		<div class="mb-8 card bg-base-100 shadow">
+		<div class="card mb-8 bg-base-100 shadow">
 			<div class="card-body">
 				<h2 class="card-title flex items-center gap-2">
 					<Icon src={Identification} class="size-5" />
@@ -276,7 +279,7 @@
 					<input
 						id="game-name"
 						type="text"
-						class="input input-bordered w-full max-w-xs"
+						class="input-bordered input w-full max-w-xs"
 						bind:value={editingName}
 						oninput={handleNameInput}
 						placeholder={$t('game.game_name')}
@@ -304,7 +307,7 @@
 		</div>
 
 		<!-- Users Section -->
-		<div class="mb-8 card bg-base-100 shadow">
+		<div class="card mb-8 bg-base-100 shadow">
 			<div class="card-body">
 				<h2 class="card-title">
 					<Icon src={AdjustmentsHorizontal} class="size-6 stroke-1" />
@@ -354,7 +357,7 @@
 		</div>
 
 		<!-- Modules Section -->
-		<div class="mb-8 card bg-base-100 shadow">
+		<div class="card mb-8 bg-base-100 shadow">
 			<div class="card-body">
 				<h2 class="card-title">
 					<Icon src={AdjustmentsHorizontal} class="size-6 stroke-1" />
@@ -408,7 +411,7 @@
 		</div>
 
 		<!-- Sites Section -->
-		<div class="mb-8 card bg-base-100 shadow">
+		<div class="card mb-8 bg-base-100 shadow">
 			<div class="card-body">
 				<h2 class="card-title flex items-center justify-between">
 					<div class="flex items-center gap-2">
@@ -450,7 +453,7 @@
 											<Icon src={PencilSquare} class="size-3" />
 										</button>
 										<button
-											class="btn btn-ghost btn-xs text-error"
+											class="btn text-error btn-ghost btn-xs"
 											onclick={() => removeSite(site.id, site.name)}
 										>
 											<Icon src={Trash} class="size-3" />
@@ -465,7 +468,7 @@
 		</div>
 
 		<!-- Danger Zone -->
-		<div class="card bg-base-100 shadow border-error">
+		<div class="card border-error bg-base-100 shadow">
 			<div class="card-body">
 				<h2 class="card-title text-error">
 					<Icon src={Trash} class="size-5" />
@@ -473,10 +476,7 @@
 				</h2>
 				<p class="text-sm opacity-70">{$t('settings.delete_warning')}</p>
 				<div class="card-actions">
-					<button
-						class="btn btn-error"
-						onclick={() => deleteDialogRef?.open()}
-					>
+					<button class="btn btn-error" onclick={() => deleteDialogRef?.open()}>
 						{$t('settings.delete_game')}
 					</button>
 				</div>

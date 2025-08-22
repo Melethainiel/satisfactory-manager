@@ -19,7 +19,7 @@
 	onMount(async () => {
 		// Wait for authentication to finish loading before checking auth state
 		while (authState.isLoading) {
-			await new Promise(resolve => setTimeout(resolve, 100));
+			await new Promise((resolve) => setTimeout(resolve, 100));
 		}
 
 		if (!authState.isAuthenticated) {

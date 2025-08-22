@@ -39,7 +39,10 @@ export interface ArchiveImportResult {
 
 export interface IArchiveItemService {
 	importItemsFromArchive(archiveUrl: string, moduleVersionId: string): Promise<ArchiveImportResult>;
-	importItemsFromYamlContent(yamlContent: string, moduleVersionId: string): Promise<ArchiveImportResult>;
+	importItemsFromYamlContent(
+		yamlContent: string,
+		moduleVersionId: string
+	): Promise<ArchiveImportResult>;
 	parseItemsYaml(yamlContent: string): Promise<ImportItemData[]>;
 	validateArchiveItem(item: any, index: number): ArchiveItemData | null;
 	convertToImportFormat(archiveItem: ArchiveItemData): ImportItemData;
@@ -151,7 +154,7 @@ class ArchiveItemService implements IArchiveItemService {
 			const validatedItems = await yamlValidationService.validateAndParseItemsYaml(yamlContent);
 
 			// Convert validated items to import format
-			const importItems: ImportItemData[] = validatedItems.map(item => 
+			const importItems: ImportItemData[] = validatedItems.map((item) =>
 				this.convertToImportFormat(item)
 			);
 
@@ -268,9 +271,9 @@ class ArchiveItemService implements IArchiveItemService {
 
 		try {
 			// Get all existing items in one query instead of N queries
-			const classNames = items.map(item => item.className);
+			const classNames = items.map((item) => item.className);
 			const existingItems = await itemService.getItemsByClassNames(classNames);
-			const existingItemsMap = new Map(existingItems.map(item => [item.className, item]));
+			const existingItemsMap = new Map(existingItems.map((item) => [item.className, item]));
 
 			// Separate items into create/update batches
 			const itemsToCreate: ImportItemData[] = [];
@@ -278,7 +281,7 @@ class ArchiveItemService implements IArchiveItemService {
 
 			for (const itemData of items) {
 				const existingItem = existingItemsMap.get(itemData.className);
-				
+
 				if (!existingItem) {
 					itemsToCreate.push(itemData);
 				} else {
@@ -295,7 +298,7 @@ class ArchiveItemService implements IArchiveItemService {
 
 			// Bulk create new items
 			if (itemsToCreate.length > 0) {
-				const newItemsData = itemsToCreate.map(item => ({
+				const newItemsData = itemsToCreate.map((item) => ({
 					className: item.className,
 					displayName: item.displayName,
 					form: item.form
@@ -324,11 +327,11 @@ class ArchiveItemService implements IArchiveItemService {
 			}
 
 			// Get all item IDs for version checking
-			const allItemIds = Array.from(existingItemsMap.values()).map(item => item.id);
-			
+			const allItemIds = Array.from(existingItemsMap.values()).map((item) => item.id);
+
 			// Batch query for existing versions
 			const existingVersionsMap = await itemService.getExistingVersionsForModule(
-				allItemIds, 
+				allItemIds,
 				moduleVersionId
 			);
 
@@ -355,7 +358,6 @@ class ArchiveItemService implements IArchiveItemService {
 				const createdVersions = await itemService.bulkCreateItemVersions(versionsToCreate);
 				results.versionsCreated = createdVersions.length;
 			}
-
 		} catch (error) {
 			results.errors.push(`Bulk import failed: ${error}`);
 		}

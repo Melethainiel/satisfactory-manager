@@ -165,7 +165,11 @@
 					</li>
 					{#if permissionState.canAccessSettings() && gameState.selectedGameId}
 						<li>
-							<a href="/games/{gameState.selectedGameId}/settings" role="menuitem" onclick={hideUserMenu}>{$t('auth.settings')}</a>
+							<a
+								href="/games/{gameState.selectedGameId}/settings"
+								role="menuitem"
+								onclick={hideUserMenu}>{$t('auth.settings')}</a
+							>
 						</li>
 					{/if}
 					<div class="divider my-1"></div>

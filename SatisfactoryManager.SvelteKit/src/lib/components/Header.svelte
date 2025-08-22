@@ -2,18 +2,14 @@
 	import { getAuthState } from '$lib/states/authState.svelte';
 	import { getGameState } from '$lib/states/gameState.svelte';
 	import { getPermissionState } from '$lib/states/permissionState.svelte';
-	import CreateGameDialog from '$lib/dialogs/CreateGameDialog.svelte';
-	import type { CreateGameDialogHandle } from '$lib/dialogs/CreateGameDialogHandle';
 	import { t, locale, setLocale } from '$lib/i18n';
 	// New Svelte 5 pattern: accept a callback prop instead of dispatching an event
 	let { toggleNav } = $props<{ toggleNav?: () => void }>();
 
-	// Get auth & game state from context
+	// Get state from context
 	const authState = getAuthState();
 	const gameState = getGameState();
 	const permissionState = getPermissionState();
-
-	let createDialogRef: CreateGameDialogHandle | null = null;
 
 	// Popover helpers
 	const popoverId = 'user-menu-popover';
@@ -65,7 +61,7 @@
 		<a href="/" class="flex text-xl font-bold">
 			<!-- Logo -->
 			<img
-				src="./logo-256.png"
+				src="/logo-256.png"
 				alt={$t('app.logo_alt')}
 				class="mr-2 h-8 w-8 rounded-lg object-contain"
 				width="32"
@@ -74,33 +70,7 @@
 			/>
 			{$t('app.name')}
 		</a>
-		<!-- Game selector when authenticated -->
-		{#if authState.isAuthenticated}
-			<div class="flex items-center gap-2" class:opacity-50={gameState.isLoading}>
-				<select
-					class="select w-52 select-sm"
-					onchange={(e: any) => gameState.selectGame(e.target.value)}
-					bind:value={gameState.selectedGameId}
-					disabled={gameState.isLoading || gameState.games.length === 0}
-				>
-					<option value={null} disabled>{$t('game.select_server')}</option>
-					{#each gameState.games as g}
-						<option value={g.id}>{g.name}</option>
-					{/each}
-				</select>
-				<button
-					class="btn btn-xs"
-					onclick={() => createDialogRef?.open()}
-					title={$t('game.create_new')}>+</button
-				>
-				{#if gameState.isLoading}
-					<span class="loading ml-2 loading-xs loading-spinner"></span>
-				{/if}
-			</div>
-		{/if}
 	</div>
-
-	<CreateGameDialog bind:this={createDialogRef} />
 
 	<!-- Right side: Language selector and Authentication -->
 	<div class="navbar-end gap-2">
@@ -193,9 +163,9 @@
 					<li>
 						<a href="/profile" role="menuitem" onclick={hideUserMenu}>{$t('auth.profile')}</a>
 					</li>
-					{#if permissionState.canAccessSettings()}
+					{#if permissionState.canAccessSettings() && gameState.selectedGameId}
 						<li>
-							<a href="/settings" role="menuitem" onclick={hideUserMenu}>{$t('auth.settings')}</a>
+							<a href="/games/{gameState.selectedGameId}/settings" role="menuitem" onclick={hideUserMenu}>{$t('auth.settings')}</a>
 						</li>
 					{/if}
 					<div class="divider my-1"></div>

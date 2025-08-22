@@ -1,14 +1,16 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { afterNavigate } from '$app/navigation';
-	import { Icon, Map, WrenchScrewdriver } from 'svelte-hero-icons';
+	import { Icon, Map, WrenchScrewdriver, Home, Cube } from 'svelte-hero-icons';
 	import { t } from '$lib/i18n';
 	import { getPermissionState } from '$lib/states/permissionState.svelte';
+	import { getGameState } from '$lib/states/gameState.svelte';
 
 	// Props
 	let { open, onClose } = $props<{ open: boolean; onClose?: () => void }>();
 
 	const permissionState = getPermissionState();
+	const gameState = getGameState();
 
 	let currentPath = $state('');
 	onMount(() => {
@@ -19,11 +21,21 @@
 	});
 
 	function isHomeActive() {
-		return currentPath === '/' || currentPath.startsWith('/games');
+		return currentPath === '/';
+	}
+	function isGameSitesActive() {
+		return currentPath.startsWith('/games');
 	}
 	function isSettingsActive() {
-		return currentPath.startsWith('/settings');
+		return currentPath.includes('/settings');
 	}
+	function isModulesActive() {
+		return currentPath.startsWith('/modules');
+	}
+
+	// Check if game is selected and user has permissions
+	let hasSelectedGame = $derived(gameState.selectedGameId !== null);
+	let currentGameId = $derived(gameState.selectedGameId);
 </script>
 
 <!-- Desktop Sidebar (fixed scrollable) -->
@@ -34,26 +46,60 @@
 		<li>
 			<h2 class="menu-title">{$t('nav.navigation')}</h2>
 			<ul>
+				<!-- Home -->
 				<li>
 					<a
 						href="/"
 						class={`rounded-lg transition-colors hover:text-primary ${isHomeActive() ? 'font-semibold text-primary' : ''}`}
 					>
-						<Icon src={Map} class="inline-block size-5 stroke-1" />
-						{$t('nav.game')}
+						<Icon src={Home} class="inline-block size-5 stroke-1" />
+						{$t('nav.home')}
 					</a>
 				</li>
-				{#if permissionState.canAccessSettings()}
+
+				<!-- Game Section (only show when game is selected) -->
+				{#if hasSelectedGame}
 					<li>
-						<a
-							href="/settings"
-							class={`rounded-lg transition-colors hover:text-primary ${isSettingsActive() ? 'font-semibold text-primary' : ''}`}
-						>
-							<Icon src={WrenchScrewdriver} class="inline-block size-5 stroke-1" />
-							{$t('nav.settings')}
-						</a>
+						<details open={isGameSitesActive() || isSettingsActive()}>
+							<summary class="font-medium text-base-content/80">
+								<Icon src={Map} class="inline-block size-5 stroke-1" />
+								{$t('nav.game')}
+							</summary>
+							<ul>
+								<li>
+									<a
+										href="/games/{currentGameId}"
+										class={`rounded-lg transition-colors hover:text-primary ${isGameSitesActive() ? 'font-semibold text-primary' : ''}`}
+									>
+										{$t('nav.sites')}
+									</a>
+								</li>
+								{#if permissionState.canAccessSettings()}
+									<li>
+										<a
+											href="/games/{currentGameId}/settings"
+											class={`rounded-lg transition-colors hover:text-primary ${isSettingsActive() ? 'font-semibold text-primary' : ''}`}
+										>
+											<Icon src={WrenchScrewdriver} class="inline-block size-4 stroke-1" />
+											{$t('nav.settings')}
+										</a>
+									</li>
+								{/if}
+							</ul>
+						</details>
 					</li>
 				{/if}
+
+				<!-- Modules -->
+				<li>
+					<a
+						href="/modules"
+						class={`rounded-lg transition-colors hover:text-primary ${isModulesActive() ? 'font-semibold text-primary' : ''}`}
+					>
+						<Icon src={Cube} class="inline-block size-5 stroke-1" />
+						{$t('nav.modules')}
+					</a>
+				</li>
 			</ul>
 		</li>
 	</ul>
@@ -90,28 +136,64 @@
 			<li>
 				<h2 class="menu-title">{$t('nav.navigation')}</h2>
 				<ul>
+					<!-- Home -->
 					<li>
 						<a
 							href="/"
 							onclick={() => onClose?.()}
 							class={`rounded-lg transition-colors hover:text-primary ${isHomeActive() ? 'font-semibold text-primary' : ''}`}
 						>
-							<Icon src={Map} class="inline-block size-4 stroke-1" />
-							{$t('nav.game')}
+							<Icon src={Home} class="inline-block size-4 stroke-1" />
+							{$t('nav.home')}
 						</a>
 					</li>
-					{#if permissionState.canAccessSettings()}
+
+					<!-- Game Section (only show when game is selected) -->
+					{#if hasSelectedGame}
 						<li>
-							<a
-								href="/settings"
-								onclick={() => onClose?.()}
-								class={`rounded-lg transition-colors hover:text-primary ${isSettingsActive() ? 'font-semibold text-primary' : ''}`}
-							>
-								<Icon src={WrenchScrewdriver} class="inline-block size-4 stroke-1" />
-								{$t('nav.settings')}
-							</a>
+							<details open={isGameSitesActive() || isSettingsActive()}>
+								<summary class="font-medium text-base-content/80">
+									<Icon src={Map} class="inline-block size-4 stroke-1" />
+									{$t('nav.game')}
+								</summary>
+								<ul>
+									<li>
+										<a
+											href="/games/{currentGameId}"
+											onclick={() => onClose?.()}
+											class={`rounded-lg transition-colors hover:text-primary ${isGameSitesActive() ? 'font-semibold text-primary' : ''}`}
+										>
+											{$t('nav.sites')}
+										</a>
+									</li>
+									{#if permissionState.canAccessSettings()}
+										<li>
+											<a
+												href="/games/{currentGameId}/settings"
+												onclick={() => onClose?.()}
+												class={`rounded-lg transition-colors hover:text-primary ${isSettingsActive() ? 'font-semibold text-primary' : ''}`}
+											>
+												<Icon src={WrenchScrewdriver} class="inline-block size-4 stroke-1" />
+												{$t('nav.settings')}
+											</a>
+										</li>
+									{/if}
+								</ul>
+							</details>
 						</li>
 					{/if}
+
+					<!-- Modules -->
+					<li>
+						<a
+							href="/modules"
+							onclick={() => onClose?.()}
+							class={`rounded-lg transition-colors hover:text-primary ${isModulesActive() ? 'font-semibold text-primary' : ''}`}
+						>
+							<Icon src={Cube} class="inline-block size-4 stroke-1" />
+							{$t('nav.modules')}
+						</a>
+					</li>
 				</ul>
 			</li>
 		</ul>

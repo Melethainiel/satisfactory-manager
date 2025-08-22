@@ -4,8 +4,11 @@
 		"logo_alt": "Satisfactory Manager logo"
 	},
 	"nav": {
+		"home": "Home",
 		"game": "Game",
+		"sites": "Sites",
 		"settings": "Settings",
+		"modules": "Modules",
 		"menu": "Menu",
 		"navigation": "Navigation",
 		"toggle_nav": "Toggle navigation",
@@ -59,14 +62,21 @@
 		"no_users": "No users found.",
 		"add_users": "Add Users",
 		"remove_user": "Remove User",
-		"remove_user_confirm": "Are you sure you want to remove {email} from this game?"
+		"remove_user_confirm": "Are you sure you want to remove {email} from this game?",
+		"cannot_remove_last_owner": "Cannot remove the last Owner. At least one Owner must remain in the game."
 	},
 	"modules": {
 		"title": "Modules",
-		"no_modules": "No modules attached to this game.",
+		"description": "Manage all available modules and their versions.",
+		"no_modules": "No modules found.",
+		"no_modules_description": "No modules have been created yet. Modules can be created and managed from the settings page.",
 		"add_module": "Add Module",
 		"remove_module": "Remove Module",
-		"remove_module_confirm": "Are you sure you want to remove the module \"{name}\" from this game?"
+		"remove_module_confirm": "Are you sure you want to remove the module \"{name}\" from this game?",
+		"current_version": "Current Version",
+		"no_version": "No version set",
+		"updated": "Updated",
+		"manage_versions": "Manage Versions"
 	},
 	"sites": {
 		"title": "Sites",
@@ -161,7 +171,9 @@
 		"success": "Success",
 		"clear": "Clear",
 		"dismiss": "Dismiss",
-		"created": "Created"
+		"created": "Created",
+		"refresh": "Refresh",
+		"retry": "Retry"
 	},
 	"demo": {
 		"title": "Azure AD B2C Authentication Demo",

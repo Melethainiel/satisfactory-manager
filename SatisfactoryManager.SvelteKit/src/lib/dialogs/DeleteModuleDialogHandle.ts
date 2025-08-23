@@ -20,6 +20,9 @@ export function setDeleteModuleDialog(dialog: DeleteModuleDialog): void {
 	deleteModuleDialogRef = dialog;
 }
 
-export function openDeleteModuleDialog(module: Module): void {
-	deleteModuleDialogRef?.open(module);
+export function openDeleteModuleDialog(
+	module: Module,
+	onDeleted?: (moduleId: string) => void
+): void {
+	deleteModuleDialogRef?.open(module, onDeleted);
 }

@@ -4,7 +4,10 @@
 	import { t } from '$lib/i18n';
 	import { Icon, Cube, Link, Calendar, Tag, Trash } from 'svelte-hero-icons';
 	import ModuleVersionManager from '$lib/components/ModuleVersionManager.svelte';
-	import { setDeleteModuleDialog, openDeleteModuleDialog } from '$lib/dialogs/DeleteModuleDialogHandle';
+	import {
+		setDeleteModuleDialog,
+		openDeleteModuleDialog
+	} from '$lib/dialogs/DeleteModuleDialogHandle';
 	import DeleteModuleDialog from '$lib/dialogs/DeleteModuleDialog.svelte';
 
 	interface Module {
@@ -53,7 +56,7 @@
 		if (authState.isAuthenticated) {
 			loadModules();
 		}
-		
+
 		// Set up delete dialog reference
 		if (deleteModuleDialogRef) {
 			setDeleteModuleDialog(deleteModuleDialogRef);
@@ -71,9 +74,12 @@
 	function closeVersionManager() {
 		selectedModule = null;
 	}
-	
+
 	function deleteModule(module: Module) {
-		openDeleteModuleDialog(module);
+		openDeleteModuleDialog(module, (deletedModuleId: string) => {
+			// Remove the deleted module from the modules array reactively
+			modules = modules.filter((m) => m.id !== deletedModuleId);
+		});
 	}
 </script>
 
@@ -171,7 +177,7 @@
 
 						<div class="mt-4 card-actions justify-between">
 							<button
-								class="btn btn-sm btn-error btn-outline"
+								class="btn btn-outline btn-sm btn-error"
 								onclick={() => deleteModule(module)}
 								title={$t('modules.remove_module')}
 							>

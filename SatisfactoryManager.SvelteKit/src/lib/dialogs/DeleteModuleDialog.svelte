@@ -18,10 +18,12 @@
 	let currentModule: Module | null = $state(null);
 	let isDeleting = $state(false);
 	let error = $state<string | null>(null);
+	let onModuleDeleted: ((moduleId: string) => void) | null = $state(null);
 
-	export function open(module: Module) {
+	export function open(module: Module, onDeleted?: (moduleId: string) => void) {
 		currentModule = module;
 		error = null;
+		onModuleDeleted = onDeleted || null;
 		dialogEl?.showModal();
 	}
 
@@ -48,9 +50,13 @@
 				throw new Error(errorData.error || `Failed to delete module (${res.status})`);
 			}
 
-			// Close dialog and reload page
+			// Notify parent component of successful deletion
+			if (onModuleDeleted) {
+				onModuleDeleted(currentModule.id);
+			}
+
+			// Close dialog
 			dialogEl?.close();
-			window.location.reload();
 		} catch (e: any) {
 			error = e?.message ?? 'Failed to delete module';
 		} finally {
@@ -81,20 +87,10 @@
 			{/if}
 
 			<div class="modal-action">
-				<button
-					type="button"
-					class="btn"
-					onclick={() => dialogEl?.close()}
-					disabled={isDeleting}
-				>
+				<button type="button" class="btn" onclick={() => dialogEl?.close()} disabled={isDeleting}>
 					{$t('common.cancel')}
 				</button>
-				<button
-					type="button"
-					class="btn btn-error"
-					onclick={deleteModule}
-					disabled={isDeleting}
-				>
+				<button type="button" class="btn btn-error" onclick={deleteModule} disabled={isDeleting}>
 					{#if isDeleting}
 						<span class="loading loading-sm loading-spinner"></span>
 					{:else}

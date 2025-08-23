@@ -1,12 +1,7 @@
 import type { ArchiveContentImportResult } from './archiveContentService';
 
 // Import queue entry status
-export type ImportStatus = 
-	| 'queued' 
-	| 'processing' 
-	| 'completed' 
-	| 'failed' 
-	| 'cancelled';
+export type ImportStatus = 'queued' | 'processing' | 'completed' | 'failed' | 'cancelled';
 
 // Import queue entry interface
 export interface ImportQueueEntry {
@@ -43,7 +38,7 @@ export interface IImportQueueService {
 	getAllQueueEntries(): Promise<ImportQueueEntry[]>;
 	getModuleQueueEntries(moduleId: string): Promise<ImportQueueEntry[]>;
 	cancelImport(importId: string): Promise<boolean>;
-	
+
 	// Queue processing
 	processQueue(): Promise<void>;
 	isImportInProgress(moduleId: string): Promise<boolean>;
@@ -62,15 +57,21 @@ class ImportQueueService implements IImportQueueService {
 	/**
 	 * Adds an import to the queue
 	 */
-	async queueImport(moduleId: string, archiveUrl: string, moduleVersionId: string): Promise<string> {
+	async queueImport(
+		moduleId: string,
+		archiveUrl: string,
+		moduleVersionId: string
+	): Promise<string> {
 		// Check if import already in progress for this module
 		const existingImport = Array.from(this.queue.values()).find(
-			entry => entry.moduleId === moduleId && 
-			(entry.status === 'queued' || entry.status === 'processing')
+			(entry) =>
+				entry.moduleId === moduleId && (entry.status === 'queued' || entry.status === 'processing')
 		);
 
 		if (existingImport) {
-			throw new Error(`Import already in progress for module ${moduleId} (ID: ${existingImport.id})`);
+			throw new Error(
+				`Import already in progress for module ${moduleId} (ID: ${existingImport.id})`
+			);
 		}
 
 		// Check queue size limit
@@ -119,7 +120,7 @@ class ImportQueueService implements IImportQueueService {
 	 * Gets queue entries for a specific module
 	 */
 	async getModuleQueueEntries(moduleId: string): Promise<ImportQueueEntry[]> {
-		return Array.from(this.queue.values()).filter(entry => entry.moduleId === moduleId);
+		return Array.from(this.queue.values()).filter((entry) => entry.moduleId === moduleId);
 	}
 
 	/**
@@ -127,7 +128,7 @@ class ImportQueueService implements IImportQueueService {
 	 */
 	async cancelImport(importId: string): Promise<boolean> {
 		const entry = this.queue.get(importId);
-		
+
 		if (!entry) {
 			return false;
 		}
@@ -149,8 +150,8 @@ class ImportQueueService implements IImportQueueService {
 	 */
 	async isImportInProgress(moduleId: string): Promise<boolean> {
 		return Array.from(this.queue.values()).some(
-			entry => entry.moduleId === moduleId && 
-			(entry.status === 'queued' || entry.status === 'processing')
+			(entry) =>
+				entry.moduleId === moduleId && (entry.status === 'queued' || entry.status === 'processing')
 		);
 	}
 
@@ -161,7 +162,7 @@ class ImportQueueService implements IImportQueueService {
 		try {
 			// Get queued entries
 			const queuedEntries = Array.from(this.queue.values())
-				.filter(entry => entry.status === 'queued')
+				.filter((entry) => entry.status === 'queued')
 				.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
 
 			// Check how many are currently processing
@@ -178,7 +179,6 @@ class ImportQueueService implements IImportQueueService {
 			for (const entry of entriesToProcess) {
 				this.processImportEntry(entry);
 			}
-
 		} catch (error) {
 			console.error('Error processing import queue:', error);
 		}
@@ -212,7 +212,6 @@ class ImportQueueService implements IImportQueueService {
 			entry.completedAt = new Date();
 
 			console.log(`Completed import ${id} for module ${moduleId}`);
-
 		} catch (error) {
 			// Mark as failed
 			entry.status = 'failed';
@@ -220,7 +219,6 @@ class ImportQueueService implements IImportQueueService {
 			entry.completedAt = new Date();
 
 			console.error(`Failed import ${id} for module ${moduleId}:`, error);
-
 		} finally {
 			// Remove from processing set
 			this.processingQueue.delete(id);
@@ -234,8 +232,8 @@ class ImportQueueService implements IImportQueueService {
 	 * Executes the actual import with progress tracking
 	 */
 	private async executeImport(
-		archiveUrl: string, 
-		moduleVersionId: string, 
+		archiveUrl: string,
+		moduleVersionId: string,
 		entry: ImportQueueEntry
 	): Promise<ArchiveContentImportResult> {
 		// Dynamically import the service to avoid circular dependencies
@@ -249,7 +247,10 @@ class ImportQueueService implements IImportQueueService {
 		};
 
 		// Execute import
-		const result = await archiveContentService.importContentFromArchive(archiveUrl, moduleVersionId);
+		const result = await archiveContentService.importContentFromArchive(
+			archiveUrl,
+			moduleVersionId
+		);
 
 		// Update final progress
 		entry.progress = {
@@ -280,9 +281,14 @@ class ImportQueueService implements IImportQueueService {
 
 		for (const [id, entry] of this.queue.entries()) {
 			// Remove entries older than 1 hour that are completed/failed/cancelled
-			if ((entry.status === 'completed' || entry.status === 'failed' || entry.status === 'cancelled') &&
+			if (
+				(entry.status === 'completed' ||
+					entry.status === 'failed' ||
+					entry.status === 'cancelled') &&
 				entry.completedAt &&
-				now - entry.completedAt.getTime() > 60 * 60 * 1000) { // 1 hour
+				now - entry.completedAt.getTime() > 60 * 60 * 1000
+			) {
+				// 1 hour
 				entriesToRemove.push(id);
 			}
 		}

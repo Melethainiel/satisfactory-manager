@@ -4,8 +4,11 @@
 		"logo_alt": "Logo de Satisfactory Manager"
 	},
 	"nav": {
-		"game": "Parties",
+		"home": "Accueil",
+		"game": "Partie",
+		"sites": "Sites",
 		"settings": "Paramètres",
+		"modules": "Modules",
 		"menu": "Menu",
 		"navigation": "Navigation",
 		"toggle_nav": "Basculer la navigation",
@@ -59,14 +62,21 @@
 		"no_users": "Aucun utilisateur trouvé.",
 		"add_users": "Ajouter des utilisateurs",
 		"remove_user": "Supprimer l'utilisateur",
-		"remove_user_confirm": "Êtes-vous sûr de vouloir supprimer {email} de cette partie ?"
+		"remove_user_confirm": "Êtes-vous sûr de vouloir supprimer {email} de cette partie ?",
+		"cannot_remove_last_owner": "Impossible de supprimer le dernier Propriétaire. Au moins un Propriétaire doit rester dans la partie."
 	},
 	"modules": {
 		"title": "Modules",
-		"no_modules": "Aucun module attaché à cette partie.",
+		"description": "Gérez tous les modules disponibles et leurs versions.",
+		"no_modules": "Aucun module trouvé.",
+		"no_modules_description": "Aucun module n'a encore été créé. Les modules peuvent être créés et gérés depuis la page de paramètres.",
 		"add_module": "Ajouter un module",
 		"remove_module": "Supprimer le module",
-		"remove_module_confirm": "Êtes-vous sûr de vouloir supprimer le module \"{name}\" de cette partie ?"
+		"remove_module_confirm": "Êtes-vous sûr de vouloir supprimer le module \"{name}\" de cette partie ?",
+		"current_version": "Version actuelle",
+		"no_version": "Aucune version définie",
+		"updated": "Mis à jour",
+		"manage_versions": "Gérer les versions"
 	},
 	"sites": {
 		"title": "Sites",
@@ -128,6 +138,12 @@
 			"error_failed": "Échec de la suppression de la partie",
 			"close_label": "Fermer la boîte de dialogue de suppression de la partie"
 		},
+		"delete_module": {
+			"title": "Supprimer le module",
+			"message": "Êtes-vous sûr de vouloir supprimer ce module ? Cette action supprimera également toutes les versions et données associées. Cette action ne peut pas être annulée.",
+			"yes_delete": "Oui, supprimer",
+			"close_label": "Fermer la boîte de dialogue de suppression du module"
+		},
 		"confirm": {
 			"confirm": "Confirmer",
 			"error_occurred": "Une erreur est survenue"
@@ -141,12 +157,20 @@
 			"refresh": "Actualiser",
 			"sync_from_github": "Synchroniser depuis GitHub",
 			"current_version": "Version actuelle",
+			"global_version_info": "Version globale du module",
+			"selected_version_for_game": "Version sélectionnée pour cette partie",
+			"no_version_selected": "Aucune version sélectionnée pour cette partie",
+			"select_version_info": "Sélectionnez une version pour cette partie",
+			"different_version": "Version différente",
 			"no_versions": "Aucune version disponible",
 			"sync_github_hint": "Essayez de synchroniser depuis GitHub pour récupérer les versions disponibles",
 			"current_badge": "Actuelle",
+			"selected_for_game": "Sélectionnée",
 			"published": "Publiée",
 			"view_release": "Voir la version",
-			"use_this_version": "Utiliser cette version"
+			"use_this_version": "Utiliser cette version",
+			"select_for_game": "Sélectionner pour cette partie",
+			"selected": "Sélectionnée"
 		}
 	},
 	"common": {
@@ -161,7 +185,9 @@
 		"success": "Succès",
 		"clear": "Effacer",
 		"dismiss": "Fermer",
-		"created": "Créé"
+		"created": "Créé",
+		"refresh": "Actualiser",
+		"retry": "Réessayer"
 	},
 	"demo": {
 		"title": "Démo d'authentification Azure AD B2C",

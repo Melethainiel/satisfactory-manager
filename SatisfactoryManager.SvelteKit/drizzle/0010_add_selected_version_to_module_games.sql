@@ -1,0 +1,2 @@
+ALTER TABLE "module_games" ADD COLUMN "selected_version_id" uuid;--> statement-breakpoint
+ALTER TABLE "module_games" ADD CONSTRAINT "module_games_selected_version_id_module_versions_id_fk" FOREIGN KEY ("selected_version_id") REFERENCES "public"."module_versions"("id") ON DELETE set null ON UPDATE no action;

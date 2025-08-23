@@ -165,10 +165,11 @@ class ArchiveBuildingService implements IArchiveBuildingService {
 	async parseBuildingsYaml(yamlContent: string): Promise<ImportBuildingData[]> {
 		try {
 			// Use secure YAML validation service
-			const validatedBuildings = await yamlValidationService.validateAndParseBuildingsYaml(yamlContent);
+			const validatedBuildings =
+				await yamlValidationService.validateAndParseBuildingsYaml(yamlContent);
 
 			// Convert validated buildings to import format
-			const importBuildings: ImportBuildingData[] = validatedBuildings.map(building => 
+			const importBuildings: ImportBuildingData[] = validatedBuildings.map((building) =>
 				this.convertToImportFormat(building)
 			);
 

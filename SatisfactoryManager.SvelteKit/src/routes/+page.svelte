@@ -77,10 +77,7 @@
 								{#if canAccessSettingsForGame(game)}
 									<button
 										class="btn btn-ghost btn-sm"
-										onclick={() => {
-											gameState.selectGame(game.id);
-											goto('/settings');
-										}}
+										onclick={() => goto(`/games/${game.id}/settings`)}
 									>
 										<Icon src={WrenchScrewdriver} class="size-4" />
 										{$t('nav.settings')}

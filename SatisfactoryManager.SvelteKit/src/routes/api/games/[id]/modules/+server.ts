@@ -26,12 +26,12 @@ export const POST: RequestHandler = async ({ params, request }) => {
 			return json({ error: 'Game ID is required' }, { status: 400 });
 		}
 
-		const { moduleId } = await request.json();
+		const { moduleId, selectedVersionId } = await request.json();
 		if (!moduleId) {
 			return json({ error: 'Module ID is required' }, { status: 400 });
 		}
 
-		const gameModules = await gameService.addModuleToGame(gameId, moduleId);
+		const gameModules = await gameService.addModuleToGame(gameId, moduleId, selectedVersionId);
 		return json(gameModules);
 	} catch (error) {
 		console.error('Error adding module to game:', error);

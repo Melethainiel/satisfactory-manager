@@ -15,7 +15,7 @@ export const GET: RequestHandler = async () => {
 export const POST: RequestHandler = async ({ request }) => {
 	try {
 		const { action, importId } = await request.json();
-		
+
 		if (action === 'cancel' && importId) {
 			const cancelled = await importQueueService.cancelImport(importId);
 			return json({ success: cancelled });

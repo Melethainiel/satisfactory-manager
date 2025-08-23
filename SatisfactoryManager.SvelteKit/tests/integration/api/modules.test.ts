@@ -1,17 +1,22 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { GET, POST } from '../../../src/routes/api/modules/+server';
+import { DELETE } from '../../../src/routes/api/modules/[id]/+server';
 import { GET as GETGithubPreview } from '../../../src/routes/api/modules/github-preview/+server';
-import { testModules } from '../../setup/fixtures';
+import { testModules, testUsers } from '../../setup/fixtures';
 import { getTestDb } from '../../setup/test-db';
-import { modules, moduleVersions } from '../../../src/lib/server/db/schema';
+import { modules, moduleVersions, users } from '../../../src/lib/server/db/schema';
 import { eq } from 'drizzle-orm';
 import { moduleService } from '../../../src/lib/server/services/moduleService';
+import { createAuthHeaders, createExpiredAuthHeaders } from '../../setup/auth-helpers';
 
 describe('/api/modules', () => {
 	let testModuleId: string;
 
 	beforeEach(async () => {
 		const db = getTestDb();
+
+		// Create test user for authentication
+		await db.insert(users).values(testUsers[0]);
 
 		// Create test module
 		const [module] = await db.insert(modules).values(testModules[0]).returning();
@@ -21,7 +26,7 @@ describe('/api/modules', () => {
 		await db.insert(moduleVersions).values({
 			moduleId: module.id,
 			version: '1.0.0',
-			url: 'https://example.com/module1/1.0.0'
+			releaseUrl: 'https://example.com/module1/1.0.0'
 		});
 	});
 
@@ -629,6 +634,316 @@ describe('/api/modules', () => {
 
 			expect(allModules.length).toBeGreaterThanOrEqual(batchSize);
 			expect(queryTime).toBeLessThan(1000); // Should be very fast
+		});
+	});
+
+	describe('DELETE /api/modules/[id]', () => {
+		it('should delete module successfully with valid authentication and UUID', async () => {
+			const request = new Request(`http://localhost/api/modules/${testModuleId}`, {
+				method: 'DELETE',
+				headers: createAuthHeaders()
+			});
+
+			const response = await DELETE({ request, params: { id: testModuleId } } as any);
+
+			expect(response.status).toBe(200);
+
+			const data = await response.json();
+			expect(data.success).toBe(true);
+
+			// Verify module is actually deleted from database
+			const db = getTestDb();
+			const deletedModule = await db.select().from(modules).where(eq(modules.id, testModuleId));
+			expect(deletedModule.length).toBe(0);
+		});
+
+		it('should return 401 when no authorization header provided', async () => {
+			const request = new Request(`http://localhost/api/modules/${testModuleId}`, {
+				method: 'DELETE'
+			});
+
+			const response = await DELETE({ request, params: { id: testModuleId } } as any);
+
+			expect(response.status).toBe(401);
+
+			const data = await response.json();
+			expect(data.error).toBe('No authorization token provided');
+		});
+
+		it('should return 401 when Bearer token is missing', async () => {
+			const request = new Request(`http://localhost/api/modules/${testModuleId}`, {
+				method: 'DELETE',
+				headers: {
+					Authorization: 'InvalidFormat token'
+				}
+			});
+
+			const response = await DELETE({ request, params: { id: testModuleId } } as any);
+
+			expect(response.status).toBe(401);
+
+			const data = await response.json();
+			expect(data.error).toBe('No authorization token provided');
+		});
+
+		it('should return 401 when token is expired', async () => {
+			const request = new Request(`http://localhost/api/modules/${testModuleId}`, {
+				method: 'DELETE',
+				headers: createExpiredAuthHeaders()
+			});
+
+			const response = await DELETE({ request, params: { id: testModuleId } } as any);
+
+			expect(response.status).toBe(401);
+
+			const data = await response.json();
+			expect(data.error).toBe('Token expired');
+		});
+
+		it('should return 401 when user does not exist in database', async () => {
+			const nonExistentUserHeaders = createAuthHeaders(
+				'nonexistent@example.com',
+				'Non Existent User'
+			);
+
+			const request = new Request(`http://localhost/api/modules/${testModuleId}`, {
+				method: 'DELETE',
+				headers: nonExistentUserHeaders
+			});
+
+			const response = await DELETE({ request, params: { id: testModuleId } } as any);
+
+			expect(response.status).toBe(401);
+
+			const data = await response.json();
+			expect(data.error).toBe('User not found');
+		});
+
+		it('should return 400 when module ID is missing', async () => {
+			const request = new Request('http://localhost/api/modules/', {
+				method: 'DELETE',
+				headers: createAuthHeaders()
+			});
+
+			const response = await DELETE({ request, params: { id: undefined } } as any);
+
+			expect(response.status).toBe(400);
+
+			const data = await response.json();
+			expect(data.error).toBe('Module ID is required');
+		});
+
+		it('should return 400 when module ID format is invalid', async () => {
+			const invalidIds = [
+				'not-a-uuid',
+				'12345',
+				'invalid-uuid-format',
+				'123e4567-e89b-12d3-a456-42661417400g', // invalid character
+				'123e4567-e89b-12d3-a456', // too short
+				'123e4567-e89b-12d3-a456-426614174000-extra' // too long
+			];
+
+			for (const invalidId of invalidIds) {
+				const request = new Request(`http://localhost/api/modules/${invalidId}`, {
+					method: 'DELETE',
+					headers: createAuthHeaders()
+				});
+
+				const response = await DELETE({ request, params: { id: invalidId } } as any);
+
+				expect(response.status).toBe(400);
+
+				const data = await response.json();
+				expect(data.error).toBe('Invalid module ID format');
+			}
+		});
+
+		it('should return 404 when module does not exist', async () => {
+			const nonExistentId = '123e4567-e89b-42d3-a456-426614174000'; // Valid v4 UUID format
+
+			const request = new Request(`http://localhost/api/modules/${nonExistentId}`, {
+				method: 'DELETE',
+				headers: createAuthHeaders()
+			});
+
+			const response = await DELETE({ request, params: { id: nonExistentId } } as any);
+
+			expect(response.status).toBe(404);
+
+			const data = await response.json();
+			expect(data.error).toBe('Module not found or could not be deleted');
+		});
+
+		it('should handle cascade delete of related module versions', async () => {
+			const db = getTestDb();
+
+			// Add multiple versions to the test module
+			await db.insert(moduleVersions).values([
+				{
+					moduleId: testModuleId,
+					version: '1.1.0',
+					releaseUrl: 'https://example.com/module1/1.1.0'
+				},
+				{
+					moduleId: testModuleId,
+					version: '2.0.0',
+					releaseUrl: 'https://example.com/module1/2.0.0'
+				}
+			]);
+
+			// Verify versions exist before deletion
+			const versionsBefore = await db
+				.select()
+				.from(moduleVersions)
+				.where(eq(moduleVersions.moduleId, testModuleId));
+			expect(versionsBefore.length).toBe(3); // Original + 2 new versions
+
+			// Delete the module
+			const request = new Request(`http://localhost/api/modules/${testModuleId}`, {
+				method: 'DELETE',
+				headers: createAuthHeaders()
+			});
+
+			const response = await DELETE({ request, params: { id: testModuleId } } as any);
+
+			expect(response.status).toBe(200);
+
+			// Verify module is deleted
+			const deletedModule = await db.select().from(modules).where(eq(modules.id, testModuleId));
+			expect(deletedModule.length).toBe(0);
+
+			// Verify related versions are also deleted (cascade delete)
+			const versionsAfter = await db
+				.select()
+				.from(moduleVersions)
+				.where(eq(moduleVersions.moduleId, testModuleId));
+			expect(versionsAfter.length).toBe(0);
+		});
+
+		it('should log admin actions for security audit', async () => {
+			// Capture console logs for testing
+			const consoleLogs: string[] = [];
+			const originalConsoleLog = console.log;
+			console.log = (message: string) => {
+				consoleLogs.push(message);
+			};
+
+			try {
+				const request = new Request(`http://localhost/api/modules/${testModuleId}`, {
+					method: 'DELETE',
+					headers: createAuthHeaders()
+				});
+
+				const response = await DELETE({ request, params: { id: testModuleId } } as any);
+
+				expect(response.status).toBe(200);
+
+				// Check that admin actions are logged
+				const attemptLog = consoleLogs.find(
+					(log) => log.includes('Admin user') && log.includes('attempting to delete module')
+				);
+				const successLog = consoleLogs.find((log) => log.includes('successfully deleted by admin'));
+
+				expect(attemptLog).toBeDefined();
+				expect(successLog).toBeDefined();
+			} finally {
+				console.log = originalConsoleLog;
+			}
+		});
+
+		it('should validate UUID format with proper v4 UUID pattern', async () => {
+			// Valid v4 UUIDs
+			const validUuids = [
+				'123e4567-e89b-42d3-a456-426614174000', // v4
+				'550e8400-e29b-41d4-a716-446655440000' // v4
+			];
+
+			// Invalid UUIDs or non-v4 formats
+			const invalidUuids = [
+				'123e4567-e89b-12d3-a456-426614174000', // v1
+				'123e4567-e89b-32d3-a456-426614174000', // v3
+				'123e4567-e89b-52d3-a456-426614174000' // v5
+			];
+
+			for (const validUuid of validUuids) {
+				const request = new Request(`http://localhost/api/modules/${validUuid}`, {
+					method: 'DELETE',
+					headers: createAuthHeaders()
+				});
+
+				const response = await DELETE({ request, params: { id: validUuid } } as any);
+
+				// Should not fail on UUID validation (might fail on 404 since module doesn't exist)
+				expect([404, 200]).toContain(response.status);
+			}
+
+			for (const invalidUuid of invalidUuids) {
+				const request = new Request(`http://localhost/api/modules/${invalidUuid}`, {
+					method: 'DELETE',
+					headers: createAuthHeaders()
+				});
+
+				const response = await DELETE({ request, params: { id: invalidUuid } } as any);
+
+				expect(response.status).toBe(400);
+
+				const data = await response.json();
+				expect(data.error).toBe('Invalid module ID format');
+			}
+		});
+
+		it('should handle malformed JWT tokens gracefully', async () => {
+			const malformedTokens = [
+				'Bearer invalid.token.format',
+				'Bearer header.payload', // Missing signature
+				'Bearer header.payload.signature.extra', // Too many parts
+				'Bearer .payload.signature', // Empty header
+				'Bearer header..signature', // Empty payload
+				'Bearer header.payload.' // Empty signature
+			];
+
+			for (const malformedToken of malformedTokens) {
+				const request = new Request(`http://localhost/api/modules/${testModuleId}`, {
+					method: 'DELETE',
+					headers: {
+						Authorization: malformedToken,
+						'Content-Type': 'application/json'
+					}
+				});
+
+				const response = await DELETE({ request, params: { id: testModuleId } } as any);
+
+				expect(response.status).toBe(401);
+
+				const data = await response.json();
+				expect(['Invalid token format', 'Token validation failed']).toContain(data.error);
+			}
+		});
+
+		it('should handle concurrent deletion attempts gracefully', async () => {
+			// Create multiple simultaneous delete requests
+			const deleteRequests = Array.from({ length: 3 }, () => {
+				const request = new Request(`http://localhost/api/modules/${testModuleId}`, {
+					method: 'DELETE',
+					headers: createAuthHeaders()
+				});
+
+				return DELETE({ request, params: { id: testModuleId } } as any);
+			});
+
+			const responses = await Promise.all(deleteRequests);
+
+			// One should succeed (200), others should fail (404)
+			const successResponses = responses.filter((r) => r.status === 200);
+			const notFoundResponses = responses.filter((r) => r.status === 404);
+
+			expect(successResponses.length).toBe(1);
+			expect(notFoundResponses.length).toBe(2);
+
+			// Verify module is deleted
+			const db = getTestDb();
+			const deletedModule = await db.select().from(modules).where(eq(modules.id, testModuleId));
+			expect(deletedModule.length).toBe(0);
 		});
 	});
 });

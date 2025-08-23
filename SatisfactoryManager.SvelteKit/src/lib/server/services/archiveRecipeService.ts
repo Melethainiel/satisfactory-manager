@@ -180,7 +180,7 @@ class ArchiveRecipeService implements IArchiveRecipeService {
 			const validatedRecipes = await yamlValidationService.validateAndParseRecipesYaml(yamlContent);
 
 			// Convert validated recipes to import format
-			const importRecipes: ImportRecipeData[] = validatedRecipes.map(recipe => 
+			const importRecipes: ImportRecipeData[] = validatedRecipes.map((recipe) =>
 				this.convertToImportFormat(recipe)
 			);
 

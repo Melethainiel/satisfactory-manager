@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { getAuthState } from '$lib/states/authState.svelte';
+	import { getGameState } from '$lib/states/gameState.svelte';
 	import { t } from '$lib/i18n';
 
 	interface ModuleVersion {
@@ -16,14 +17,17 @@
 		name: string;
 		url: string;
 		currentVersion: string | null;
+		selectedVersion: string | null;
+		selectedVersionId: string | null;
 		githubRepo: string | null;
 		createdAt: Date;
 		updatedAt: Date;
 	}
 
 	const authState = getAuthState();
+	const gameState = getGameState();
 
-	let { module }: { module: Module } = $props();
+	let { module, context = 'game' }: { module: Module; context?: 'game' | 'admin' } = $props();
 
 	let versions = $state<ModuleVersion[]>([]);
 	let isLoading = $state(false);
@@ -80,30 +84,23 @@
 		}
 	}
 
-	async function updateCurrentVersion(version: string) {
-		if (!authState.apiFetch) return;
+	async function setGameModuleVersion(versionId: string) {
+		if (!authState.apiFetch || !gameState.selectedGameId) return;
 
 		isUpdatingVersion = true;
 		error = null;
 
 		try {
-			const res = await authState.apiFetch(`/api/modules/${module.id}/current-version`, {
-				method: 'PUT',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({ version })
-			});
+			await gameState.setGameModuleVersion(gameState.selectedGameId, module.id, versionId);
 
-			if (!res.ok) {
-				const errorData = await res.json();
-				throw new Error(errorData.error || `Failed to update version (${res.status})`);
+			// Find the version that was selected to update the module object
+			const selectedVersionObj = versions.find((v) => v.id === versionId);
+			if (selectedVersionObj) {
+				module.selectedVersion = selectedVersionObj.version;
+				module.selectedVersionId = versionId;
 			}
-
-			const updatedModule = await res.json();
-			module.currentVersion = updatedModule.currentVersion;
 		} catch (e: any) {
-			error = e?.message ?? 'Failed to update current version';
+			error = e?.message ?? 'Failed to update module version for this game';
 		} finally {
 			isUpdatingVersion = false;
 		}
@@ -148,12 +145,38 @@
 		</div>
 	{/if}
 
-	{#if module.currentVersion}
-		<div class="mb-4 rounded bg-base-200 p-3">
-			<div class="text-sm font-medium">{$t('dialogs.module_version.current_version')}</div>
-			<div class="font-mono text-lg">{module.currentVersion}</div>
-		</div>
-	{/if}
+	<div class="mb-4 space-y-3">
+		{#if module.currentVersion}
+			<div class="rounded bg-base-200 p-3">
+				<div class="text-sm font-medium">{$t('dialogs.module_version.current_version')}</div>
+				<div class="font-mono text-lg">{module.currentVersion}</div>
+				<div class="text-xs opacity-70">{$t('dialogs.module_version.global_version_info')}</div>
+			</div>
+		{/if}
+
+		{#if context === 'game'}
+			{#if module.selectedVersion}
+				<div class="rounded bg-primary/10 p-3">
+					<div class="text-sm font-medium">
+						{$t('dialogs.module_version.selected_version_for_game')}
+					</div>
+					<div class="flex items-center gap-2">
+						<div class="font-mono text-lg">{module.selectedVersion}</div>
+						{#if module.selectedVersion !== module.currentVersion}
+							<span class="badge badge-sm badge-warning"
+								>{$t('dialogs.module_version.different_version')}</span
+							>
+						{/if}
+					</div>
+				</div>
+			{:else}
+				<div class="rounded bg-warning/10 p-3">
+					<div class="text-sm font-medium">{$t('dialogs.module_version.no_version_selected')}</div>
+					<div class="text-xs opacity-70">{$t('dialogs.module_version.select_version_info')}</div>
+				</div>
+			{/if}
+		{/if}
+	</div>
 
 	{#if isLoading}
 		<div class="flex justify-center py-8">
@@ -174,8 +197,13 @@
 						<div class="flex items-center gap-2">
 							<span class="font-mono font-medium">{version.version}</span>
 							{#if version.version === module.currentVersion}
-								<span class="badge badge-sm badge-primary"
+								<span class="badge badge-sm badge-neutral"
 									>{$t('dialogs.module_version.current_badge')}</span
+								>
+							{/if}
+							{#if version.id === module.selectedVersionId}
+								<span class="badge badge-sm badge-primary"
+									>{$t('dialogs.module_version.selected_for_game')}</span
 								>
 							{/if}
 						</div>
@@ -203,18 +231,24 @@
 								{$t('dialogs.module_version.view_release')}
 							</a>
 						{/if}
-						{#if version.version !== module.currentVersion}
-							<button
-								class="btn btn-sm btn-primary"
-								onclick={() => updateCurrentVersion(version.version)}
-								disabled={isUpdatingVersion}
-							>
-								{#if isUpdatingVersion}
-									<span class="loading loading-sm loading-spinner"></span>
-								{:else}
-									{$t('dialogs.module_version.use_this_version')}
-								{/if}
-							</button>
+						{#if context === 'game'}
+							{#if version.id !== module.selectedVersionId}
+								<button
+									class="btn btn-sm btn-primary"
+									onclick={() => setGameModuleVersion(version.id)}
+									disabled={isUpdatingVersion}
+								>
+									{#if isUpdatingVersion}
+										<span class="loading loading-sm loading-spinner"></span>
+									{:else}
+										{$t('dialogs.module_version.select_for_game')}
+									{/if}
+								</button>
+							{:else}
+								<button class="btn btn-sm btn-success" disabled>
+									{$t('dialogs.module_version.selected')}
+								</button>
+							{/if}
 						{/if}
 					</div>
 				</div>

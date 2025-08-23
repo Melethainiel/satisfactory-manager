@@ -249,7 +249,9 @@ class ModuleService implements IModuleService {
 		}
 
 		// Fetch versions from GitHub
-		const githubVersions = await githubService.getModuleVersions(module.githubRepo);
+		const githubVersions = await githubService.getModuleVersions(
+			`https://github.com/${module.githubRepo}`
+		);
 
 		// Get existing versions from database
 		const existingVersions = await this.getVersions(moduleId);
@@ -310,9 +312,7 @@ class ModuleService implements IModuleService {
 		return importResult;
 	}
 
-	async queueContentImportFromModuleArchive(
-		moduleId: string
-	): Promise<string | null> {
+	async queueContentImportFromModuleArchive(moduleId: string): Promise<string | null> {
 		// Get the module to check if it has a download URL
 		const module = await this.getById(moduleId);
 		if (!module || !module.downloadUrl) {

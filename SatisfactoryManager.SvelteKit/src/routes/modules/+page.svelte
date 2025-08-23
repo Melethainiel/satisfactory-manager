@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { fade, fly, scale } from 'svelte/transition';
 	import { getAuthState } from '$lib/states/authState.svelte';
 	import { t } from '$lib/i18n';
 	import { Icon, Cube, Link, Calendar, Tag, Trash } from 'svelte-hero-icons';
@@ -88,12 +89,12 @@
 </svelte:head>
 
 <div class="container mx-auto p-4">
-	<div class="mb-8">
-		<h1 class="mb-4 flex items-center gap-3 text-3xl font-bold">
+	<div class="mb-8" in:fade={{ duration: 400, delay: 100 }}>
+		<h1 class="mb-4 flex items-center gap-3 text-3xl font-bold" in:fly={{ y: -20, duration: 500, delay: 200 }}>
 			<Icon src={Cube} class="size-8" />
 			{$t('nav.modules')}
 		</h1>
-		<p class="text-base-content/70">{$t('modules.description')}</p>
+		<p class="text-base-content/70" in:fly={{ y: 10, duration: 400, delay: 300 }}>{$t('modules.description')}</p>
 	</div>
 
 	{#if !authState.isAuthenticated}
@@ -121,16 +122,24 @@
 		</div>
 	{:else if modules.length === 0}
 		<!-- No Modules State -->
-		<div class="py-12 text-center">
-			<Icon src={Cube} class="mx-auto mb-4 size-16 opacity-30" />
-			<h2 class="mb-4 text-2xl font-semibold">{$t('modules.no_modules')}</h2>
-			<p class="mb-6 text-base-content/70">{$t('modules.no_modules_description')}</p>
+		<div class="py-12 text-center" in:fade={{ duration: 400, delay: 200 }}>
+			<div class="mx-auto mb-4" in:scale={{ duration: 400, delay: 300, start: 0.8 }}>
+				<Icon 
+					src={Cube} 
+					class="size-16 opacity-30" 
+				/>
+			</div>
+			<h2 class="mb-4 text-2xl font-semibold" in:fly={{ y: 20, duration: 400, delay: 400 }}>{$t('modules.no_modules')}</h2>
+			<p class="mb-6 text-base-content/70" in:fly={{ y: 20, duration: 400, delay: 500 }}>{$t('modules.no_modules_description')}</p>
 		</div>
 	{:else}
 		<!-- Modules List -->
-		<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-			{#each modules as module}
-				<div class="card bg-base-100 shadow transition-shadow hover:shadow-lg">
+		<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3" in:fade={{ duration: 300, delay: 200 }}>
+			{#each modules as module, i}
+				<div 
+					class="card bg-base-100 shadow transition-all duration-300 hover:scale-105 hover:shadow-xl"
+					in:fly={{ y: 30, duration: 400, delay: 300 + i * 80 }}
+				>
 					<div class="card-body">
 						<h3 class="card-title flex items-center gap-2">
 							<Icon src={Cube} class="size-5" />
@@ -160,7 +169,7 @@
 										href="https://github.com/{module.githubRepo}"
 										target="_blank"
 										rel="noopener noreferrer"
-										class="link truncate text-sm link-primary"
+										class="link truncate text-sm link-primary hover:scale-105 transition-transform"
 									>
 										{module.githubRepo}
 									</a>
@@ -177,13 +186,16 @@
 
 						<div class="mt-4 card-actions justify-between">
 							<button
-								class="btn btn-outline btn-sm btn-error"
+								class="btn btn-outline btn-sm btn-error transition-transform hover:scale-110"
 								onclick={() => deleteModule(module)}
 								title={$t('modules.remove_module')}
 							>
 								<Icon src={Trash} class="size-4" />
 							</button>
-							<button class="btn btn-sm btn-primary" onclick={() => openVersionManager(module)}>
+							<button 
+								class="btn btn-sm btn-primary transition-transform hover:scale-105" 
+								onclick={() => openVersionManager(module)}
+							>
 								{$t('modules.manage_versions')}
 							</button>
 						</div>
@@ -193,8 +205,11 @@
 		</div>
 
 		<!-- Refresh Button -->
-		<div class="mt-8 text-center">
-			<button class="btn btn-outline" onclick={loadModules}>
+		<div class="mt-8 text-center" in:fade={{ duration: 300, delay: 600 }}>
+			<button 
+				class="btn btn-outline transition-transform hover:scale-105" 
+				onclick={loadModules}
+			>
 				{$t('common.refresh')}
 			</button>
 		</div>
@@ -203,13 +218,16 @@
 
 <!-- Version Manager Modal -->
 {#if selectedModule}
-	<div class="modal-open modal">
-		<div class="modal-box max-w-4xl">
+	<div class="modal-open modal" in:fade={{ duration: 200 }}>
+		<div class="modal-box max-w-4xl" in:scale={{ duration: 300, start: 0.9 }}>
 			<div class="mb-4 flex items-center justify-between">
 				<h3 class="text-lg font-bold">
 					{$t('dialogs.module_version.version_management')} - {selectedModule.name}
 				</h3>
-				<button class="btn btn-ghost btn-sm" onclick={closeVersionManager}>✕</button>
+				<button 
+					class="btn btn-ghost btn-sm transition-transform hover:scale-110" 
+					onclick={closeVersionManager}
+				>✕</button>
 			</div>
 
 			<ModuleVersionManager module={selectedModule} context="admin" />

@@ -28,6 +28,7 @@ export interface IModuleService {
 
 	// Version management methods
 	getVersions(moduleId: string): Promise<ModuleVersion[]>;
+	getVersionById(versionId: string): Promise<ModuleVersion | undefined>;
 	addVersion(
 		moduleId: string,
 		versionData: Omit<NewModuleVersion, 'id' | 'moduleId' | 'createdAt'>
@@ -41,6 +42,11 @@ export interface IModuleService {
 
 	// Archive import methods
 	importContentFromModuleArchive(moduleId: string): Promise<ArchiveContentImportResult | null>;
+	importContentFromVersionArchive(
+		moduleId: string,
+		versionId: string
+	): Promise<ArchiveContentImportResult | null>;
+	checkVersionContentExists(versionId: string): Promise<boolean>;
 	queueContentImportFromModuleArchive(moduleId: string): Promise<string | null>;
 }
 
@@ -208,6 +214,15 @@ class ModuleService implements IModuleService {
 			.orderBy(desc(moduleVersions.publishedAt), desc(moduleVersions.createdAt));
 	}
 
+	async getVersionById(versionId: string): Promise<ModuleVersion | undefined> {
+		const [version] = await db
+			.select()
+			.from(moduleVersions)
+			.where(eq(moduleVersions.id, versionId))
+			.limit(1);
+		return version;
+	}
+
 	async addVersion(
 		moduleId: string,
 		versionData: Omit<NewModuleVersion, 'id' | 'moduleId' | 'createdAt'>
@@ -338,6 +353,245 @@ class ModuleService implements IModuleService {
 		);
 
 		return importId;
+	}
+
+	/**
+	 * Detect the type of URL based on its structure
+	 */
+	private detectUrlType(
+		url: string
+	): 'github_release' | 'direct_download' | 'manifest' | 'unknown' {
+		try {
+			const urlObj = new URL(url);
+
+			// GitHub release page URL
+			if (urlObj.hostname === 'github.com' && url.includes('/releases/tag/')) {
+				return 'github_release';
+			}
+
+			// Manifest URL (ends with .yaml or .yml)
+			if (url.toLowerCase().endsWith('.yaml') || url.toLowerCase().endsWith('.yml')) {
+				return 'manifest';
+			}
+
+			// Direct download URL (ends with .zip or similar archive formats)
+			const archiveExtensions = ['.zip', '.tar.gz', '.tar', '.rar'];
+			if (archiveExtensions.some((ext) => url.toLowerCase().endsWith(ext))) {
+				return 'direct_download';
+			}
+
+			return 'unknown';
+		} catch {
+			return 'unknown';
+		}
+	}
+
+	/**
+	 * Build manifest URL from GitHub release URL with custom filename
+	 * Transforms: https://github.com/user/repo/releases/tag/v1.0.0
+	 * Into: https://github.com/user/repo/releases/download/v1.0.0/{manifestFileName}
+	 */
+	private buildManifestUrlFromRelease(
+		releaseUrl: string,
+		manifestFileName = 'plugin.yaml'
+	): string {
+		try {
+			// Validate it's a GitHub release URL
+			const url = new URL(releaseUrl);
+			if (url.hostname !== 'github.com' || !releaseUrl.includes('/releases/tag/')) {
+				throw new Error('Not a valid GitHub release URL');
+			}
+
+			// Transform the URL
+			const manifestUrl =
+				releaseUrl.replace('/releases/tag/', '/releases/download/') + `/${manifestFileName}`;
+			return manifestUrl;
+		} catch (error) {
+			throw new Error(`Failed to build manifest URL from release URL: ${releaseUrl}`);
+		}
+	}
+
+	/**
+	 * Try multiple manifest names to find the correct one
+	 * Returns the first working manifest data and the successful URL
+	 */
+	private async tryMultipleManifestNames(
+		releaseUrl: string
+	): Promise<{ manifestData: any; manifestUrl: string; attemptedNames: string[] }> {
+		// List of manifest names to try, in order of priority
+		const manifestNames = ['plugin.yaml', 'manifest.yaml', 'mod.yaml', 'module.yaml'];
+		const attemptedNames: string[] = [];
+		const errors: string[] = [];
+
+		for (const manifestName of manifestNames) {
+			attemptedNames.push(manifestName);
+			try {
+				const manifestUrl = this.buildManifestUrlFromRelease(releaseUrl, manifestName);
+				console.log(`Trying manifest: ${manifestUrl}`);
+
+				const manifestData = await yamlService.fetchAndParseManifest(manifestUrl);
+				console.log(`Successfully found manifest: ${manifestName}`);
+
+				return { manifestData, manifestUrl, attemptedNames };
+			} catch (error) {
+				const errorMsg = error instanceof Error ? error.message : String(error);
+				errors.push(`${manifestName}: ${errorMsg}`);
+				console.warn(`Failed to fetch manifest ${manifestName}:`, errorMsg);
+			}
+		}
+
+		// If we reach here, none of the manifest names worked
+		throw new Error(
+			`Could not find manifest file. Tried: ${attemptedNames.join(', ')}. Errors: ${errors.join('; ')}`
+		);
+	}
+
+	/**
+	 * Try different strategies to get a downloadable archive URL
+	 */
+	private async resolveDownloadUrl(url: string): Promise<string> {
+		const urlType = this.detectUrlType(url);
+
+		switch (urlType) {
+			case 'direct_download':
+				// URL is already a direct download, return as-is
+				return url;
+
+			case 'manifest':
+				// Parse manifest to get download URL
+				const manifestData = await yamlService.fetchAndParseManifest(url);
+				if (!manifestData.downloadUrl) {
+					throw new Error('Manifest does not contain a download URL');
+				}
+				return manifestData.downloadUrl;
+
+			case 'github_release':
+				// Try to get manifest first, then extract download URL
+				let manifestAttemptedNames: string[] = [];
+				try {
+					const { manifestData, manifestUrl, attemptedNames } =
+						await this.tryMultipleManifestNames(url);
+					manifestAttemptedNames = attemptedNames;
+					if (manifestData.downloadUrl) {
+						console.log(`Successfully resolved download URL from manifest: ${manifestUrl}`);
+						return manifestData.downloadUrl;
+					} else {
+						console.warn(`Manifest found at ${manifestUrl} but no download URL specified`);
+					}
+				} catch (error) {
+					console.warn(
+						'Failed to get download URL from any manifest, will try direct asset approaches:',
+						error
+					);
+				}
+
+				// Fallback: try common asset patterns
+				const fallbackUrls = [
+					url.replace('/releases/tag/', '/releases/download/') +
+						'/' +
+						this.extractRepoNameFromUrl(url) +
+						'.zip',
+					url.replace('/releases/tag/', '/releases/download/') + '/release.zip',
+					url.replace('/releases/tag/', '/releases/download/') + '/archive.zip'
+				];
+
+				const testedUrls: string[] = [];
+				for (const fallbackUrl of fallbackUrls) {
+					testedUrls.push(fallbackUrl);
+					try {
+						// Test if URL exists by making a HEAD request
+						const response = await fetch(fallbackUrl, { method: 'HEAD' });
+						if (response.ok) {
+							console.log(`Successfully found direct download URL: ${fallbackUrl}`);
+							return fallbackUrl;
+						}
+					} catch {
+						// Continue to next fallback
+					}
+				}
+
+				// Provide detailed error message with all attempted approaches
+				const errorDetails = [
+					manifestAttemptedNames.length > 0
+						? `Tried manifests: ${manifestAttemptedNames.join(', ')}`
+						: 'No manifests were accessible',
+					`Tried direct downloads: ${testedUrls.map((url) => url.split('/').pop()).join(', ')}`
+				];
+
+				throw new Error(
+					`Could not resolve download URL from GitHub release. ${errorDetails.join('. ')}`
+				);
+
+			default:
+				throw new Error(`Cannot resolve download URL for URL type: ${urlType}`);
+		}
+	}
+
+	/**
+	 * Extract repository name from URL for fallback download patterns
+	 */
+	private extractRepoNameFromUrl(url: string): string {
+		try {
+			const urlObj = new URL(url);
+			const pathParts = urlObj.pathname.split('/').filter((part) => part.length > 0);
+
+			if (pathParts.length >= 2) {
+				return pathParts[1]; // Return repo name
+			}
+
+			throw new Error('Cannot extract repo name from URL');
+		} catch {
+			return 'archive'; // Generic fallback name
+		}
+	}
+
+	async importContentFromVersionArchive(
+		moduleId: string,
+		versionId: string
+	): Promise<ArchiveContentImportResult | null> {
+		// Get the specific version
+		const version = await this.getVersionById(versionId);
+		if (!version) {
+			throw new Error('Version not found');
+		}
+
+		// Check if the version has a releaseUrl to download from
+		if (!version.releaseUrl) {
+			throw new Error('Version does not have a release URL configured');
+		}
+
+		// Validate that the version belongs to the specified module
+		if (version.moduleId !== moduleId) {
+			throw new Error('Version does not belong to the specified module');
+		}
+
+		try {
+			// Use intelligent URL resolution to get the actual download URL
+			const downloadUrl = await this.resolveDownloadUrl(version.releaseUrl);
+
+			// Import content from the resolved download URL
+			const importResult = await archiveContentService.importContentFromArchive(
+				downloadUrl,
+				version.id
+			);
+
+			return importResult;
+		} catch (error) {
+			// Provide detailed error message with URL type information
+			const urlType = this.detectUrlType(version.releaseUrl);
+			if (error instanceof Error) {
+				throw new Error(
+					`Failed to import version content (URL type: ${urlType}): ${error.message}`
+				);
+			}
+			throw new Error(`Failed to import version content (URL type: ${urlType})`);
+		}
+	}
+
+	async checkVersionContentExists(versionId: string): Promise<boolean> {
+		// Check if this version has any imported content (items, buildings, or recipes)
+		// We'll use the archiveContentService to check for existing content linked to this version
+		return await archiveContentService.hasContentForVersion(versionId);
 	}
 }
 

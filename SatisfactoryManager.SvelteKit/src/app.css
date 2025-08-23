@@ -4,3 +4,45 @@
 		light --default,
 		dark --prefersdark;
 }
+
+/* Custom animations and transitions */
+@keyframes cardEnter {
+	from {
+		opacity: 0;
+		transform: translateY(20px) scale(0.95);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+}
+
+@keyframes pulseGlow {
+	0%, 100% {
+		box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.4);
+	}
+	50% {
+		box-shadow: 0 0 0 10px rgba(79, 70, 229, 0);
+	}
+}
+
+/* Improved hover states for cards */
+.card-hover-enhanced {
+	@apply transition-all duration-300 ease-out;
+}
+
+.card-hover-enhanced:hover {
+	@apply transform scale-105;
+	filter: brightness(1.05);
+	box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Subtle entrance animation class */
+.enter-animation {
+	animation: cardEnter 0.4s ease-out forwards;
+}
+
+/* Custom loading animation for cards */
+.card-loading {
+	@apply animate-pulse bg-gradient-to-r from-base-200 to-base-100;
+}

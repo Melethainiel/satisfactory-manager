@@ -34,6 +34,10 @@
 	let isSyncing = $state(false);
 	let isUpdatingVersion = $state(false);
 	let error = $state<string | null>(null);
+	let versionContentStatus = $state<Record<string, { hasContent: boolean; canImport: boolean }>>(
+		{}
+	);
+	let importingVersions = $state<Set<string>>(new Set());
 
 	async function loadVersions() {
 		if (!authState.apiFetch) return;
@@ -50,10 +54,56 @@
 			}
 
 			versions = await res.json();
-		} catch (e: any) {
-			error = e?.message ?? 'Failed to load versions';
+			// Load content status for all versions
+			await loadVersionsContentStatus();
+		} catch (e: unknown) {
+			error = e instanceof Error ? e.message : 'Failed to load versions';
 		} finally {
 			isLoading = false;
+		}
+	}
+
+	async function loadVersionsContentStatus() {
+		if (!authState.apiFetch || versions.length === 0) return;
+
+		try {
+			// Load content status for all versions in parallel
+			const statusPromises = versions.map(async (version) => {
+				try {
+					const res = await authState.apiFetch(
+						`/api/modules/${module.id}/versions/${version.id}/content-status`
+					);
+					if (res.ok) {
+						const statusData = await res.json();
+						return {
+							versionId: version.id,
+							hasContent: statusData.hasContent,
+							canImport: statusData.canImport
+						};
+					}
+				} catch (error) {
+					console.warn(`Failed to load content status for version ${version.id}:`, error);
+				}
+				return {
+					versionId: version.id,
+					hasContent: false,
+					canImport: false
+				};
+			});
+
+			const statusResults = await Promise.all(statusPromises);
+
+			// Update the status record
+			const newStatus: Record<string, { hasContent: boolean; canImport: boolean }> = {};
+			statusResults.forEach((status) => {
+				newStatus[status.versionId] = {
+					hasContent: status.hasContent,
+					canImport: status.canImport
+				};
+			});
+			versionContentStatus = newStatus;
+		} catch (e: unknown) {
+			console.error('Failed to load versions content status:', e);
 		}
 	}
 
@@ -73,12 +123,12 @@
 				throw new Error(errorData.error || `Failed to sync versions (${res.status})`);
 			}
 
-			const data = await res.json();
+			await res.json();
 
 			// Reload versions to get the updated list
 			await loadVersions();
-		} catch (e: any) {
-			error = e?.message ?? 'Failed to sync versions from GitHub';
+		} catch (e: unknown) {
+			error = e instanceof Error ? e.message : 'Failed to sync versions from GitHub';
 		} finally {
 			isSyncing = false;
 		}
@@ -99,10 +149,55 @@
 				module.selectedVersion = selectedVersionObj.version;
 				module.selectedVersionId = versionId;
 			}
-		} catch (e: any) {
-			error = e?.message ?? 'Failed to update module version for this game';
+		} catch (e: unknown) {
+			error = e instanceof Error ? e.message : 'Failed to update module version for this game';
 		} finally {
 			isUpdatingVersion = false;
+		}
+	}
+
+	async function importVersionContent(versionId: string) {
+		if (!authState.apiFetch) return;
+
+		// Add to importing set
+		const newImportingVersions = new Set(importingVersions);
+		newImportingVersions.add(versionId);
+		importingVersions = newImportingVersions;
+		error = null;
+
+		try {
+			const res = await authState.apiFetch(
+				`/api/modules/${module.id}/versions/${versionId}/import`,
+				{
+					method: 'POST'
+				}
+			);
+
+			if (!res.ok) {
+				const errorData = await res.json();
+				throw new Error(errorData.error || `Failed to import version content (${res.status})`);
+			}
+
+			const importResult = await res.json();
+
+			// Update content status for this version
+			versionContentStatus = {
+				...versionContentStatus,
+				[versionId]: {
+					...versionContentStatus[versionId],
+					hasContent: true
+				}
+			};
+
+			// Show success feedback (could be enhanced with more detailed results)
+			console.log('Version content imported successfully:', importResult);
+		} catch (e: unknown) {
+			error = e instanceof Error ? e.message : 'Failed to import version content';
+		} finally {
+			// Remove from importing set
+			const newImportingVersions = new Set(importingVersions);
+			newImportingVersions.delete(versionId);
+			importingVersions = newImportingVersions;
 		}
 	}
 
@@ -191,7 +286,7 @@
 		</div>
 	{:else}
 		<div class="space-y-2">
-			{#each versions as version}
+			{#each versions as version (version.id)}
 				<div class="flex items-center justify-between rounded border border-base-300 p-3">
 					<div class="flex-1">
 						<div class="flex items-center gap-2">
@@ -204,6 +299,11 @@
 							{#if version.id === module.selectedVersionId}
 								<span class="badge badge-sm badge-primary"
 									>{$t('dialogs.module_version.selected_for_game')}</span
+								>
+							{/if}
+							{#if versionContentStatus[version.id]?.hasContent}
+								<span class="badge badge-sm badge-success"
+									>{$t('dialogs.module_version.imported_badge')}</span
 								>
 							{/if}
 						</div>
@@ -230,6 +330,27 @@
 							>
 								{$t('dialogs.module_version.view_release')}
 							</a>
+						{/if}
+						<!-- Import button for versions with release URLs -->
+						{#if versionContentStatus[version.id]?.canImport}
+							{#if versionContentStatus[version.id]?.hasContent}
+								<button class="btn btn-sm btn-success" disabled>
+									{$t('dialogs.module_version.already_imported')}
+								</button>
+							{:else}
+								<button
+									class="btn btn-sm btn-secondary"
+									onclick={() => importVersionContent(version.id)}
+									disabled={importingVersions.has(version.id)}
+								>
+									{#if importingVersions.has(version.id)}
+										<span class="loading loading-sm loading-spinner"></span>
+										{$t('dialogs.module_version.importing')}
+									{:else}
+										{$t('dialogs.module_version.import_version')}
+									{/if}
+								</button>
+							{/if}
 						{/if}
 						{#if context === 'game'}
 							{#if version.id !== module.selectedVersionId}

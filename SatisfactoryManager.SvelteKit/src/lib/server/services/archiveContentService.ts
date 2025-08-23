@@ -3,6 +3,8 @@ import { archiveBuildingService, type ArchiveBuildingImportResult } from './arch
 import { archiveRecipeService, type ArchiveRecipeImportResult } from './archiveRecipeService';
 import { archiveService } from './archiveService';
 import { db } from '../db/index';
+import { itemVersions, buildingVersions, recipeVersions } from '../db/schema';
+import { eq, or } from 'drizzle-orm';
 
 // Combined result interface for items, buildings, and recipes
 export interface ArchiveContentImportResult {
@@ -55,6 +57,7 @@ export interface IArchiveContentService {
 		archiveUrl: string,
 		moduleVersionId: string
 	): Promise<ArchiveContentImportResult>;
+	hasContentForVersion(versionId: string): Promise<boolean>;
 }
 
 class ArchiveContentService implements IArchiveContentService {
@@ -293,6 +296,43 @@ class ArchiveContentService implements IArchiveContentService {
 		console.log('Importing recipes from YAML content');
 		// TODO: This will need to be updated when we add transaction support to archiveRecipeService
 		return await archiveRecipeService.importRecipesFromYamlContent(yamlContent, moduleVersionId);
+	}
+
+	/**
+	 * Check if a version has any imported content (items, buildings, or recipes)
+	 * @param versionId The module version ID to check
+	 * @returns true if the version has any content, false otherwise
+	 */
+	async hasContentForVersion(versionId: string): Promise<boolean> {
+		try {
+			// Check for items, buildings, or recipes associated with this version
+			const [itemExists, buildingExists, recipeExists] = await Promise.all([
+				// Check for item versions
+				db
+					.select({ id: itemVersions.id })
+					.from(itemVersions)
+					.where(eq(itemVersions.moduleVersionId, versionId))
+					.limit(1),
+				// Check for building versions
+				db
+					.select({ id: buildingVersions.id })
+					.from(buildingVersions)
+					.where(eq(buildingVersions.moduleVersionId, versionId))
+					.limit(1),
+				// Check for recipe versions
+				db
+					.select({ id: recipeVersions.id })
+					.from(recipeVersions)
+					.where(eq(recipeVersions.moduleVersionId, versionId))
+					.limit(1)
+			]);
+
+			// Return true if any content exists for this version
+			return itemExists.length > 0 || buildingExists.length > 0 || recipeExists.length > 0;
+		} catch (error) {
+			console.error('Error checking version content:', error);
+			return false;
+		}
 	}
 
 	/**

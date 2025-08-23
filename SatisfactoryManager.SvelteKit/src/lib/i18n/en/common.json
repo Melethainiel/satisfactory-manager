@@ -170,7 +170,11 @@
 			"view_release": "View Release",
 			"use_this_version": "Use This Version",
 			"select_for_game": "Select for this game",
-			"selected": "Selected"
+			"selected": "Selected",
+			"import_version": "Import",
+			"importing": "Importing...",
+			"already_imported": "Already Imported",
+			"imported_badge": "Imported"
 		}
 	},
 	"common": {

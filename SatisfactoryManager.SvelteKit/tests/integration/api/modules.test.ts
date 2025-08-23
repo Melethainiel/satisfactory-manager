@@ -759,7 +759,7 @@ describe('/api/modules', () => {
 		});
 
 		it('should return 404 when module does not exist', async () => {
-			const nonExistentId = '123e4567-e89b-12d3-a456-426614174000';
+			const nonExistentId = '123e4567-e89b-42d3-a456-426614174000'; // Valid v4 UUID format
 
 			const request = new Request(`http://localhost/api/modules/${nonExistentId}`, {
 				method: 'DELETE',

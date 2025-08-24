@@ -170,7 +170,11 @@
 			"view_release": "Voir la version",
 			"use_this_version": "Utiliser cette version",
 			"select_for_game": "Sélectionner pour cette partie",
-			"selected": "Sélectionnée"
+			"selected": "Sélectionnée",
+			"import_version": "Importer",
+			"importing": "Import en cours...",
+			"already_imported": "Déjà importé",
+			"imported_badge": "Importé"
 		}
 	},
 	"common": {

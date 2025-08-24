@@ -67,6 +67,32 @@
 		if (!authState.apiFetch || versions.length === 0) return;
 
 		try {
+			// Use batch endpoint for better performance
+			const res = await authState.apiFetch(`/api/modules/${module.id}/versions/content-status`);
+
+			if (!res.ok) {
+				console.warn('Failed to load batch content status:', res.status, res.statusText);
+				return;
+			}
+
+			const batchData = await res.json();
+
+			if (batchData.contentStatus) {
+				// Update the status record with batch results
+				versionContentStatus = batchData.contentStatus;
+			}
+		} catch (e: unknown) {
+			console.error('Failed to load versions content status:', e);
+			// Fallback to individual requests if batch fails
+			await loadVersionsContentStatusIndividual();
+		}
+	}
+
+	// Fallback method for individual status requests (kept for reliability)
+	async function loadVersionsContentStatusIndividual() {
+		if (!authState.apiFetch || versions.length === 0) return;
+
+		try {
 			// Load content status for all versions in parallel
 			const statusPromises = versions.map(async (version) => {
 				try {
@@ -103,7 +129,7 @@
 			});
 			versionContentStatus = newStatus;
 		} catch (e: unknown) {
-			console.error('Failed to load versions content status:', e);
+			console.error('Failed to load individual versions content status:', e);
 		}
 	}
 

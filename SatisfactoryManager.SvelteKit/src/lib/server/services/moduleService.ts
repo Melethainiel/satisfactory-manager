@@ -12,6 +12,7 @@ import { githubService, type IModuleVersion } from './githubService';
 import { yamlService, type IParsedModuleInfo } from './yamlService';
 import { archiveContentService, type ArchiveContentImportResult } from './archiveContentService';
 import { importQueueService } from './importQueueService';
+import { getModuleConfig, validateModuleConfig } from '../config/moduleConfig';
 
 export interface IModuleService {
 	getAll(options?: { search?: string }): Promise<Module[]>;
@@ -51,6 +52,12 @@ export interface IModuleService {
 }
 
 class ModuleService implements IModuleService {
+	private readonly config = getModuleConfig();
+
+	constructor() {
+		// Validate configuration on startup
+		validateModuleConfig(this.config);
+	}
 	async getAll(options?: { search?: string }): Promise<Module[]> {
 		if (options?.search) {
 			return await db
@@ -375,8 +382,9 @@ class ModuleService implements IModuleService {
 			}
 
 			// Direct download URL (ends with .zip or similar archive formats)
-			const archiveExtensions = ['.zip', '.tar.gz', '.tar', '.rar'];
-			if (archiveExtensions.some((ext) => url.toLowerCase().endsWith(ext))) {
+			if (
+				this.config.urlResolution.archiveExtensions.some((ext) => url.toLowerCase().endsWith(ext))
+			) {
 				return 'direct_download';
 			}
 
@@ -418,12 +426,11 @@ class ModuleService implements IModuleService {
 	private async tryMultipleManifestNames(
 		releaseUrl: string
 	): Promise<{ manifestData: any; manifestUrl: string; attemptedNames: string[] }> {
-		// List of manifest names to try, in order of priority
-		const manifestNames = ['plugin.yaml', 'manifest.yaml', 'mod.yaml', 'module.yaml'];
+		// Use configured manifest names in order of priority
 		const attemptedNames: string[] = [];
 		const errors: string[] = [];
 
-		for (const manifestName of manifestNames) {
+		for (const manifestName of this.config.urlResolution.manifestNames) {
 			attemptedNames.push(manifestName);
 			try {
 				const manifestUrl = this.buildManifestUrlFromRelease(releaseUrl, manifestName);
@@ -447,9 +454,89 @@ class ModuleService implements IModuleService {
 	}
 
 	/**
+	 * Validate that a URL is safe for external requests (SSRF protection)
+	 */
+	private async isUrlSafe(url: string): Promise<boolean> {
+		try {
+			const urlObj = new URL(url);
+
+			// Only allow HTTPS for external requests (security requirement)
+			if (urlObj.protocol !== 'https:') {
+				console.warn(`Rejected non-HTTPS URL: ${url}`);
+				return false;
+			}
+
+			// Allow only trusted domains to prevent SSRF attacks
+			if (!this.config.urlResolution.allowedHosts.includes(urlObj.hostname)) {
+				console.warn(`Rejected untrusted host: ${urlObj.hostname}`);
+				return false;
+			}
+
+			// Reject suspicious paths or query parameters
+			const fullUrl = url.toLowerCase();
+			for (const pattern of this.config.urlResolution.suspiciousPatterns) {
+				if (fullUrl.includes(pattern)) {
+					console.warn(`Rejected URL with suspicious pattern: ${pattern}`);
+					return false;
+				}
+			}
+
+			return true;
+		} catch (error) {
+			console.warn(`URL validation failed: ${url}`, error);
+			return false;
+		}
+	}
+
+	/**
+	 * Make a safe HTTP request with SSRF protection
+	 */
+	private async safeFetch(url: string, options: RequestInit = {}): Promise<Response> {
+		// Validate URL safety first
+		if (!(await this.isUrlSafe(url))) {
+			throw new Error(`URL rejected for security reasons: ${url}`);
+		}
+
+		// Set secure defaults for fetch options
+		const secureOptions: RequestInit = {
+			...options,
+			// Add timeout to prevent hanging requests
+			signal: AbortSignal.timeout(this.config.httpRequests.timeoutMs),
+			headers: {
+				'User-Agent': this.config.httpRequests.userAgent,
+				...options.headers
+			}
+		};
+
+		try {
+			const response = await fetch(url, secureOptions);
+
+			// Check for suspicious redirects
+			if (response.redirected) {
+				const finalUrl = response.url;
+				if (!(await this.isUrlSafe(finalUrl))) {
+					throw new Error(`Redirect to unsafe URL detected: ${finalUrl}`);
+				}
+			}
+
+			return response;
+		} catch (error) {
+			if (error instanceof Error && error.name === 'TimeoutError') {
+				throw new Error(`Request timeout for URL: ${url}`);
+			}
+			throw error;
+		}
+	}
+
+	/**
 	 * Try different strategies to get a downloadable archive URL
 	 */
 	private async resolveDownloadUrl(url: string): Promise<string> {
+		// Validate URL safety before processing
+		if (!(await this.isUrlSafe(url))) {
+			throw new Error(`URL rejected for security reasons: ${url}`);
+		}
+
 		const urlType = this.detectUrlType(url);
 
 		switch (urlType) {
@@ -499,13 +586,14 @@ class ModuleService implements IModuleService {
 				for (const fallbackUrl of fallbackUrls) {
 					testedUrls.push(fallbackUrl);
 					try {
-						// Test if URL exists by making a HEAD request
-						const response = await fetch(fallbackUrl, { method: 'HEAD' });
+						// Test if URL exists by making a secure HEAD request
+						const response = await this.safeFetch(fallbackUrl, { method: 'HEAD' });
 						if (response.ok) {
 							console.log(`Successfully found direct download URL: ${fallbackUrl}`);
 							return fallbackUrl;
 						}
-					} catch {
+					} catch (error) {
+						console.warn(`Failed to verify fallback URL: ${fallbackUrl}`, error);
 						// Continue to next fallback
 					}
 				}
@@ -569,7 +657,7 @@ class ModuleService implements IModuleService {
 			// Use intelligent URL resolution to get the actual download URL
 			const downloadUrl = await this.resolveDownloadUrl(version.releaseUrl);
 
-			// Import content from the resolved download URL
+			// Import content from the resolved download URL with security limits
 			const importResult = await archiveContentService.importContentFromArchive(
 				downloadUrl,
 				version.id

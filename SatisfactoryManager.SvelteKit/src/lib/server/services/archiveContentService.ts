@@ -5,6 +5,7 @@ import { archiveService } from './archiveService';
 import { db } from '../db/index';
 import { itemVersions, buildingVersions, recipeVersions } from '../db/schema';
 import { eq, or } from 'drizzle-orm';
+import { getModuleConfig } from '../config/moduleConfig';
 
 // Combined result interface for items, buildings, and recipes
 export interface ArchiveContentImportResult {
@@ -62,7 +63,11 @@ export interface IArchiveContentService {
 
 class ArchiveContentService implements IArchiveContentService {
 	private archiveCache = new Map<string, ArchiveCacheEntry>();
-	private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+	private readonly config = getModuleConfig();
+
+	// Cache access tracking for LRU eviction
+	private cacheAccess = new Map<string, number>();
+	private accessCounter = 0;
 
 	/**
 	 * Downloads an archive and imports items, buildings, and recipes within a single transaction
@@ -191,12 +196,58 @@ class ArchiveContentService implements IArchiveContentService {
 	}
 
 	/**
+	 * Enforce cache size limits using LRU eviction
+	 */
+	private enforceCacheLimit(): void {
+		if (this.archiveCache.size <= this.config.cache.maxEntries) {
+			return;
+		}
+
+		// Find least recently used entries
+		const sortedByAccess = Array.from(this.cacheAccess.entries()).sort(([, a], [, b]) => a - b);
+
+		// Remove oldest entries until under limit
+		const toRemove = this.archiveCache.size - this.config.cache.maxEntries;
+		for (let i = 0; i < toRemove && i < sortedByAccess.length; i++) {
+			const [url] = sortedByAccess[i];
+			this.archiveCache.delete(url);
+			this.cacheAccess.delete(url);
+			console.log(`Evicted cache entry: ${url}`);
+		}
+	}
+
+	/**
+	 * Clean expired cache entries
+	 */
+	private cleanExpiredCache(): void {
+		const now = Date.now();
+		const expired: string[] = [];
+
+		for (const [url, entry] of this.archiveCache) {
+			if (now - entry.timestamp > this.config.cache.ttlMs) {
+				expired.push(url);
+			}
+		}
+
+		for (const url of expired) {
+			this.archiveCache.delete(url);
+			this.cacheAccess.delete(url);
+			console.log(`Removed expired cache entry: ${url}`);
+		}
+	}
+
+	/**
 	 * Gets archive content from cache or downloads and extracts it
 	 */
 	private async getArchiveContent(archiveUrl: string): Promise<ArchiveCacheEntry> {
+		// Clean up expired entries first
+		this.cleanExpiredCache();
+
 		// Check cache first
 		const cached = this.archiveCache.get(archiveUrl);
-		if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+		if (cached && Date.now() - cached.timestamp < this.config.cache.ttlMs) {
+			// Update access tracking
+			this.cacheAccess.set(archiveUrl, ++this.accessCounter);
 			console.log('Using cached archive:', archiveUrl);
 			return cached;
 		}
@@ -222,8 +273,12 @@ class ArchiveContentService implements IArchiveContentService {
 			timestamp: Date.now()
 		};
 
-		// Cache the result
+		// Cache the result with size enforcement
 		this.archiveCache.set(archiveUrl, cacheEntry);
+		this.cacheAccess.set(archiveUrl, ++this.accessCounter);
+
+		// Enforce cache size limits
+		this.enforceCacheLimit();
 
 		return cacheEntry;
 	}

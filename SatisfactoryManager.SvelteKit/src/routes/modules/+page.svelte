@@ -90,11 +90,16 @@
 
 <div class="container mx-auto p-4">
 	<div class="mb-8" in:fade={{ duration: 400, delay: 100 }}>
-		<h1 class="mb-4 flex items-center gap-3 text-3xl font-bold" in:fly={{ y: -20, duration: 500, delay: 200 }}>
+		<h1
+			class="mb-4 flex items-center gap-3 text-3xl font-bold"
+			in:fly={{ y: -20, duration: 500, delay: 200 }}
+		>
 			<Icon src={Cube} class="size-8" />
 			{$t('nav.modules')}
 		</h1>
-		<p class="text-base-content/70" in:fly={{ y: 10, duration: 400, delay: 300 }}>{$t('modules.description')}</p>
+		<p class="text-base-content/70" in:fly={{ y: 10, duration: 400, delay: 300 }}>
+			{$t('modules.description')}
+		</p>
 	</div>
 
 	{#if !authState.isAuthenticated}
@@ -124,19 +129,23 @@
 		<!-- No Modules State -->
 		<div class="py-12 text-center" in:fade={{ duration: 400, delay: 200 }}>
 			<div class="mx-auto mb-4" in:scale={{ duration: 400, delay: 300, start: 0.8 }}>
-				<Icon 
-					src={Cube} 
-					class="size-16 opacity-30" 
-				/>
+				<Icon src={Cube} class="size-16 opacity-30" />
 			</div>
-			<h2 class="mb-4 text-2xl font-semibold" in:fly={{ y: 20, duration: 400, delay: 400 }}>{$t('modules.no_modules')}</h2>
-			<p class="mb-6 text-base-content/70" in:fly={{ y: 20, duration: 400, delay: 500 }}>{$t('modules.no_modules_description')}</p>
+			<h2 class="mb-4 text-2xl font-semibold" in:fly={{ y: 20, duration: 400, delay: 400 }}>
+				{$t('modules.no_modules')}
+			</h2>
+			<p class="mb-6 text-base-content/70" in:fly={{ y: 20, duration: 400, delay: 500 }}>
+				{$t('modules.no_modules_description')}
+			</p>
 		</div>
 	{:else}
 		<!-- Modules List -->
-		<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3" in:fade={{ duration: 300, delay: 200 }}>
+		<div
+			class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
+			in:fade={{ duration: 300, delay: 200 }}
+		>
 			{#each modules as module, i}
-				<div 
+				<div
 					class="card bg-base-100 shadow transition-all duration-300 hover:scale-105 hover:shadow-xl"
 					in:fly={{ y: 30, duration: 400, delay: 300 + i * 80 }}
 				>
@@ -169,7 +178,7 @@
 										href="https://github.com/{module.githubRepo}"
 										target="_blank"
 										rel="noopener noreferrer"
-										class="link truncate text-sm link-primary hover:scale-105 transition-transform"
+										class="link truncate text-sm link-primary transition-transform hover:scale-105"
 									>
 										{module.githubRepo}
 									</a>
@@ -186,14 +195,14 @@
 
 						<div class="mt-4 card-actions justify-between">
 							<button
-								class="btn btn-outline btn-sm btn-error transition-transform hover:scale-110"
+								class="btn transition-transform btn-outline btn-sm btn-error hover:scale-110"
 								onclick={() => deleteModule(module)}
 								title={$t('modules.remove_module')}
 							>
 								<Icon src={Trash} class="size-4" />
 							</button>
-							<button 
-								class="btn btn-sm btn-primary transition-transform hover:scale-105" 
+							<button
+								class="btn transition-transform btn-sm btn-primary hover:scale-105"
 								onclick={() => openVersionManager(module)}
 							>
 								{$t('modules.manage_versions')}
@@ -206,10 +215,7 @@
 
 		<!-- Refresh Button -->
 		<div class="mt-8 text-center" in:fade={{ duration: 300, delay: 600 }}>
-			<button 
-				class="btn btn-outline transition-transform hover:scale-105" 
-				onclick={loadModules}
-			>
+			<button class="btn transition-transform btn-outline hover:scale-105" onclick={loadModules}>
 				{$t('common.refresh')}
 			</button>
 		</div>
@@ -224,10 +230,10 @@
 				<h3 class="text-lg font-bold">
 					{$t('dialogs.module_version.version_management')} - {selectedModule.name}
 				</h3>
-				<button 
-					class="btn btn-ghost btn-sm transition-transform hover:scale-110" 
-					onclick={closeVersionManager}
-				>✕</button>
+				<button
+					class="btn btn-ghost transition-transform btn-sm hover:scale-110"
+					onclick={closeVersionManager}>✕</button
+				>
 			</div>
 
 			<ModuleVersionManager module={selectedModule} context="admin" />

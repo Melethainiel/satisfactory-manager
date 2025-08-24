@@ -78,6 +78,13 @@
       "when": 1755871019022,
       "tag": "0010_add_selected_version_to_module_games",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1756034475359,
+      "tag": "0011_fix_module_relationships",
+      "breakpoints": true
     }
   ]
 }

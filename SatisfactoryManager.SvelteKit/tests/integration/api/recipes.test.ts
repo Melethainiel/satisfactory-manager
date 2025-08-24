@@ -22,6 +22,7 @@ describe('/api/recipes', () => {
 	let testModuleVersionId: string;
 	let testItemId: string;
 	let testBuildingId: string;
+	let testModuleId: string;
 
 	beforeEach(async () => {
 		const db = getTestDb();
@@ -46,11 +47,13 @@ describe('/api/recipes', () => {
 			.returning();
 
 		testModuleVersionId = moduleVersion.id;
+		testModuleId = module.id;
 
 		// Create test items for recipe relationships
 		const [item] = await db
 			.insert(items)
 			.values({
+				moduleId: module.id,
 				className: 'Desc_TestItem_C',
 				displayName: 'Test Item',
 				description: 'Test item for recipes',
@@ -63,6 +66,7 @@ describe('/api/recipes', () => {
 		const [building] = await db
 			.insert(buildings)
 			.values({
+				moduleId: module.id,
 				className: 'Build_TestBuilding_C',
 				name: 'Test Building',
 				type: 'Constructor'
@@ -74,6 +78,7 @@ describe('/api/recipes', () => {
 		const [recipe] = await db
 			.insert(recipes)
 			.values({
+				moduleId: module.id,
 				className: 'Recipe_TestRecipe_C',
 				displayName: 'Test Recipe'
 			})
@@ -612,6 +617,7 @@ describe('/api/recipes', () => {
 			const [inputItem1] = await db
 				.insert(items)
 				.values({
+					moduleId: testModuleId,
 					className: 'Desc_InputItem1_C',
 					displayName: 'Input Item 1',
 					form: 'RF_SOLID'
@@ -621,6 +627,7 @@ describe('/api/recipes', () => {
 			const [inputItem2] = await db
 				.insert(items)
 				.values({
+					moduleId: testModuleId,
 					className: 'Desc_InputItem2_C',
 					displayName: 'Input Item 2',
 					form: 'RF_LIQUID'
@@ -630,6 +637,7 @@ describe('/api/recipes', () => {
 			const [outputItem1] = await db
 				.insert(items)
 				.values({
+					moduleId: testModuleId,
 					className: 'Desc_OutputItem1_C',
 					displayName: 'Output Item 1',
 					form: 'RF_SOLID'
@@ -639,6 +647,7 @@ describe('/api/recipes', () => {
 			const [outputItem2] = await db
 				.insert(items)
 				.values({
+					moduleId: testModuleId,
 					className: 'Desc_OutputItem2_C',
 					displayName: 'Output Item 2',
 					form: 'RF_GAS'
@@ -699,14 +708,17 @@ describe('/api/recipes', () => {
 			// Create additional recipes for search testing
 			await db.insert(recipes).values([
 				{
+					moduleId: testModuleId,
 					className: 'Recipe_IronPlate_C',
 					displayName: 'Iron Plate Recipe'
 				},
 				{
+					moduleId: testModuleId,
 					className: 'Recipe_SteelPlate_C',
 					displayName: 'Steel Plate Recipe'
 				},
 				{
+					moduleId: testModuleId,
 					className: 'Recipe_Concrete_C',
 					displayName: 'Concrete Recipe'
 				}
@@ -772,6 +784,7 @@ describe('/api/recipes', () => {
 				const [recipe] = await db
 					.insert(recipes)
 					.values({
+						moduleId: testModuleId,
 						className: `Recipe_${edgeCase.desc.replace(/\s+/g, '')}_C`,
 						displayName: `Recipe for ${edgeCase.desc}`
 					})
@@ -823,6 +836,7 @@ describe('/api/recipes', () => {
 		it('should handle large batch recipe imports efficiently', async () => {
 			const batchSize = 100;
 			const recipeData = Array.from({ length: batchSize }, (_, i) => ({
+				moduleId: testModuleId,
 				className: `Recipe_Batch${i}_C`,
 				displayName: `Batch Recipe ${i}`
 			}));
@@ -849,6 +863,7 @@ describe('/api/recipes', () => {
 			const [ironIngot] = await db
 				.insert(items)
 				.values({
+					moduleId: testModuleId,
 					className: 'Desc_IronIngot_C',
 					displayName: 'Iron Ingot',
 					form: 'RF_SOLID'
@@ -858,6 +873,7 @@ describe('/api/recipes', () => {
 			const [ironPlate] = await db
 				.insert(items)
 				.values({
+					moduleId: testModuleId,
 					className: 'Desc_IronPlate_C',
 					displayName: 'Iron Plate',
 					form: 'RF_SOLID'
@@ -867,6 +883,7 @@ describe('/api/recipes', () => {
 			const [constructorBuilding] = await db
 				.insert(buildings)
 				.values({
+					moduleId: testModuleId,
 					className: 'Build_ConstructorMk1_C',
 					name: 'Constructor',
 					type: 'Constructor'

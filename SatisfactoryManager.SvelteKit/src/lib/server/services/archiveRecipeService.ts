@@ -2,6 +2,9 @@
 import { archiveService, type IArchiveService } from './archiveService';
 import { recipeService } from './recipeService';
 import { yamlValidationService } from './yamlValidationService';
+import { db } from '../db';
+import { moduleVersions } from '../db/schema';
+import { eq } from 'drizzle-orm';
 
 // Interface for recipes as they appear in the Satisfactory mod archive YAML files
 interface ArchiveRecipeData {
@@ -396,6 +399,16 @@ class ArchiveRecipeService implements IArchiveRecipeService {
 			errors: [] as string[]
 		};
 
+		// Get the moduleId from moduleVersionId
+		const [moduleVersion] = await db
+			.select()
+			.from(moduleVersions)
+			.where(eq(moduleVersions.id, moduleVersionId));
+
+		if (!moduleVersion) {
+			throw new Error(`Module version ${moduleVersionId} not found`);
+		}
+
 		// Process recipes in batches to avoid overwhelming the database
 		const batchSize = 50; // Smaller batch size for recipes due to complexity
 		for (let i = 0; i < recipes.length; i += batchSize) {
@@ -409,6 +422,7 @@ class ArchiveRecipeService implements IArchiveRecipeService {
 					if (!recipe) {
 						// Create new recipe
 						recipe = await recipeService.createRecipe({
+							moduleId: moduleVersion.moduleId,
 							className: recipeData.className,
 							displayName: recipeData.displayName
 						});

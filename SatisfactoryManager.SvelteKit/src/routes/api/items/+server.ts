@@ -32,7 +32,11 @@ export const GET: RequestHandler = async ({ url }) => {
 // POST /api/items - Create a new item
 export const POST: RequestHandler = async ({ request }) => {
 	try {
-		const { className, displayName, description, form } = await request.json();
+		const { moduleId, className, displayName, description, form } = await request.json();
+
+		if (!moduleId || typeof moduleId !== 'string' || !moduleId.trim()) {
+			return json({ error: 'Module ID is required' }, { status: 400 });
+		}
 
 		if (!className || typeof className !== 'string' || !className.trim()) {
 			return json({ error: 'Item className is required' }, { status: 400 });
@@ -56,6 +60,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 
 		const item = await itemService.createItem({
+			moduleId: moduleId.trim(),
 			className: className.trim(),
 			displayName: displayName.trim(),
 			description: description?.trim() || null,

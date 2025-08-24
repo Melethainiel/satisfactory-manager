@@ -124,6 +124,7 @@ export const POST: RequestHandler = async ({ request }) => {
 				if (!building) {
 					// Create new building
 					building = await buildingService.createBuilding({
+						moduleId: moduleVersion.moduleId,
 						className: buildingData.className.trim(),
 						name: buildingData.name.trim(),
 						type: buildingData.type

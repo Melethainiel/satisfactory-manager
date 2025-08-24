@@ -34,6 +34,63 @@ export interface GameSite {
 	updatedAt: Date;
 }
 
+export interface RecipeInstanceData {
+	id: string;
+	siteId: string;
+	recipeVersionId: string;
+	buildingId: string;
+	buildingCount: number;
+	efficiencyRatio: number;
+	notes?: string;
+	createdAt: Date;
+	updatedAt: Date;
+	// Related data populated from API
+	site?: {
+		id: string;
+		name: string;
+		gameId: string;
+	};
+	recipe?: {
+		id: string;
+		displayName: string;
+		className: string;
+	};
+	recipeVersion?: {
+		id: string;
+		manufacturingDuration: number;
+	};
+	building?: {
+		id: string;
+		name: string;
+		className: string;
+		type: string;
+	};
+	products?: Array<{
+		itemId: string;
+		count: number;
+		item: {
+			displayName: string;
+			className: string;
+			form: string;
+		};
+	}>;
+	ingredients?: Array<{
+		itemId: string;
+		count: number;
+		item: {
+			displayName: string;
+			className: string;
+			form: string;
+		};
+	}>;
+}
+
+export interface ProductionOverview {
+	totalProduction: Array<{ itemId: string; itemName: string; rate: number }>;
+	totalConsumption: Array<{ itemId: string; itemName: string; rate: number }>;
+	netBalance: Array<{ itemId: string; itemName: string; balance: number }>;
+}
+
 export interface GameState {
 	games: GameSummary[];
 	selectedGameId: string | null;
@@ -60,7 +117,29 @@ export interface GameState {
 	gameSites: GameSite[];
 	selectedSiteId: string | null;
 	selectSite: (siteId: string | null) => void;
+	// Recipe instances management
+	siteRecipeInstances: RecipeInstanceData[];
+	loadSiteRecipeInstances: (siteId: string) => Promise<void>;
+	createRecipeInstance: (siteId: string, data: {
+		recipeVersionId: string;
+		buildingId: string;
+		buildingCount: number;
+		efficiencyRatio?: number;
+		notes?: string;
+	}) => Promise<void>;
+	updateRecipeInstance: (instanceId: string, data: {
+		recipeVersionId?: string;
+		buildingId?: string;
+		buildingCount?: number;
+		efficiencyRatio?: number;
+		notes?: string;
+	}) => Promise<void>;
+	deleteRecipeInstance: (instanceId: string) => Promise<void>;
+	// Production calculations
+	siteProductionOverview: ProductionOverview | null;
+	loadSiteProductionOverview: (siteId: string) => Promise<void>;
 	attachAuth: (apiFetch: AuthFetchFn) => void;
+	getApiFetch: () => AuthFetchFn | null;
 	getUserRole: (userEmail: string) => string | null;
 	canManageSettings: (userEmail: string) => boolean;
 	canManageSites: (userEmail: string) => boolean;
@@ -78,6 +157,10 @@ class GameStateClass implements GameState {
 
 	attachAuth(apiFetch: AuthFetchFn) {
 		this.apiFetch = apiFetch;
+	}
+
+	getApiFetch(): AuthFetchFn | null {
+		return this.apiFetch;
 	}
 	async deleteGame(id: string) {
 		if (!id) {
@@ -107,6 +190,9 @@ class GameStateClass implements GameState {
 	gameModules = $state<GameModule[]>([]);
 	gameSites = $state<GameSite[]>([]);
 	selectedSiteId = $state<string | null>(null);
+	// Recipe instances state
+	siteRecipeInstances = $state<RecipeInstanceData[]>([]);
+	siteProductionOverview = $state<ProductionOverview | null>(null);
 
 	async loadGames(userEmail: string) {
 		if (!userEmail) {
@@ -378,6 +464,148 @@ class GameStateClass implements GameState {
 			notificationService.success('Site deleted successfully');
 		} catch (e: any) {
 			notificationService.error(e?.message ?? 'Failed to delete site');
+		}
+	}
+
+	// Recipe instances management
+	async loadSiteRecipeInstances(siteId: string) {
+		if (!siteId || !this.apiFetch) return;
+
+		this.isLoading = true;
+		try {
+			const response = await this.apiFetch(`/api/sites/${siteId}/recipe-instances`);
+			if (!response.ok) throw new Error(`Failed to load recipe instances (${response.status})`);
+			
+			const data = await response.json();
+			if (data.success) {
+				// Convert string dates to Date objects
+				this.siteRecipeInstances = data.data.map((instance: any) => ({
+					...instance,
+					buildingCount: parseFloat(instance.buildingCount),
+					efficiencyRatio: parseFloat(instance.efficiencyRatio),
+					createdAt: new Date(instance.createdAt),
+					updatedAt: new Date(instance.updatedAt)
+				}));
+			}
+		} catch (e: any) {
+			notificationService.error(e?.message ?? 'Failed to load recipe instances');
+		} finally {
+			this.isLoading = false;
+		}
+	}
+
+	async createRecipeInstance(siteId: string, data: {
+		recipeVersionId: string;
+		buildingId: string;
+		buildingCount: number;
+		efficiencyRatio?: number;
+		notes?: string;
+	}) {
+		if (!siteId || !this.apiFetch) return;
+
+		this.isLoading = true;
+		try {
+			const response = await this.apiFetch(`/api/sites/${siteId}/recipe-instances`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(data)
+			});
+			
+			if (!response.ok) throw new Error(`Failed to create recipe instance (${response.status})`);
+			
+			const result = await response.json();
+			if (result.success) {
+				// Reload instances to get the new one with full details
+				await this.loadSiteRecipeInstances(siteId);
+				// Reload production overview
+				await this.loadSiteProductionOverview(siteId);
+				notificationService.success('Recipe instance created successfully');
+			}
+		} catch (e: any) {
+			notificationService.error(e?.message ?? 'Failed to create recipe instance');
+		} finally {
+			this.isLoading = false;
+		}
+	}
+
+	async updateRecipeInstance(instanceId: string, data: {
+		recipeVersionId?: string;
+		buildingId?: string;
+		buildingCount?: number;
+		efficiencyRatio?: number;
+		notes?: string;
+	}) {
+		if (!instanceId || !this.apiFetch) return;
+
+		this.isLoading = true;
+		try {
+			const response = await this.apiFetch(`/api/sites/_/recipe-instances/${instanceId}`, {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(data)
+			});
+			
+			if (!response.ok) throw new Error(`Failed to update recipe instance (${response.status})`);
+			
+			const result = await response.json();
+			if (result.success) {
+				// Find the instance and reload the site's instances
+				const instance = this.siteRecipeInstances.find(i => i.id === instanceId);
+				if (instance) {
+					await this.loadSiteRecipeInstances(instance.siteId);
+					await this.loadSiteProductionOverview(instance.siteId);
+				}
+				notificationService.success('Recipe instance updated successfully');
+			}
+		} catch (e: any) {
+			notificationService.error(e?.message ?? 'Failed to update recipe instance');
+		} finally {
+			this.isLoading = false;
+		}
+	}
+
+	async deleteRecipeInstance(instanceId: string) {
+		if (!instanceId || !this.apiFetch) return;
+
+		this.isLoading = true;
+		try {
+			const response = await this.apiFetch(`/api/sites/_/recipe-instances/${instanceId}`, {
+				method: 'DELETE'
+			});
+			
+			if (!response.ok) throw new Error(`Failed to delete recipe instance (${response.status})`);
+			
+			const result = await response.json();
+			if (result.success) {
+				// Find the instance and reload the site's instances
+				const instance = this.siteRecipeInstances.find(i => i.id === instanceId);
+				if (instance) {
+					await this.loadSiteRecipeInstances(instance.siteId);
+					await this.loadSiteProductionOverview(instance.siteId);
+				}
+				notificationService.success('Recipe instance deleted successfully');
+			}
+		} catch (e: any) {
+			notificationService.error(e?.message ?? 'Failed to delete recipe instance');
+		} finally {
+			this.isLoading = false;
+		}
+	}
+
+	async loadSiteProductionOverview(siteId: string) {
+		if (!siteId || !this.apiFetch) return;
+
+		try {
+			const response = await this.apiFetch(`/api/sites/${siteId}/production-overview`);
+			if (!response.ok) throw new Error(`Failed to load production overview (${response.status})`);
+			
+			const data = await response.json();
+			if (data.success) {
+				this.siteProductionOverview = data.data;
+			}
+		} catch (e: any) {
+			console.error('Failed to load production overview:', e);
+			this.siteProductionOverview = null;
 		}
 	}
 

@@ -5,7 +5,7 @@
  * using the validated server environment variables.
  */
 
-import { getServerConfig, getServerEnvVar } from './env.server.js';
+import { getServerConfig, getServerEnvVar } from './env.server';
 
 /**
  * Database connection configuration

@@ -5,13 +5,17 @@ import { recipeService } from '$lib/server/services/recipeService';
 // GET /api/recipes - List all recipes with optional filtering
 export const GET: RequestHandler = async ({ url }) => {
 	try {
+		const gameId = url.searchParams.get('gameId');
 		const search = url.searchParams.get('search');
 		const ingredient = url.searchParams.get('ingredient');
 		const product = url.searchParams.get('product');
 		const building = url.searchParams.get('building');
 
+		// When gameId is provided, filter recipes by game's configured module versions
 		let recipes;
-		if (search) {
+		if (gameId && search) {
+			recipes = await recipeService.searchRecipesByGameAndName(gameId, search);
+		} else if (search) {
 			recipes = await recipeService.searchRecipesByName(search);
 		} else if (ingredient) {
 			recipes = await recipeService.getRecipesByIngredient(ingredient);

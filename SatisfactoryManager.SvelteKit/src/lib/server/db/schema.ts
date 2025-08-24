@@ -310,12 +310,6 @@ export type UserGame = typeof userGames.$inferSelect;
 export type NewUserGame = typeof userGames.$inferInsert;
 export type GameUserRole = (typeof gameUserRoleEnum.enumValues)[number];
 
-export const sitesRelations = relations(sites, ({ one }) => ({
-	game: one(games, {
-		fields: [sites.gameId],
-		references: [games.id]
-	})
-}));
 
 // Relations (many-to-many) Game/Module
 export const moduleGames = pgTable(
@@ -458,4 +452,49 @@ export const moduleGamesRelations = relations(moduleGames, ({ one }) => ({
 		fields: [moduleGames.selectedVersionId],
 		references: [moduleVersions.id]
 	})
+}));
+
+// Recipe instances table - concrete implementations of recipes in specific sites
+export const recipeInstances = pgTable('recipe_instances', {
+	id: uuid('id').defaultRandom().primaryKey(),
+	siteId: uuid('site_id')
+		.notNull()
+		.references(() => sites.id, { onDelete: 'cascade' }),
+	recipeVersionId: uuid('recipe_version_id')
+		.notNull()
+		.references(() => recipeVersions.id, { onDelete: 'cascade' }),
+	buildingId: uuid('building_id')
+		.notNull()
+		.references(() => buildings.id, { onDelete: 'cascade' }),
+	buildingCount: numeric('building_count', { precision: 10, scale: 2 }).notNull(),
+	efficiencyRatio: numeric('efficiency_ratio', { precision: 10, scale: 3 }).notNull().default('1.000'),
+	notes: varchar('notes', { length: 1000 }),
+	createdAt: timestamp('created_at').defaultNow().notNull(),
+	updatedAt: timestamp('updated_at').defaultNow().notNull()
+});
+
+export type RecipeInstance = typeof recipeInstances.$inferSelect;
+export type NewRecipeInstance = typeof recipeInstances.$inferInsert;
+
+export const recipeInstancesRelations = relations(recipeInstances, ({ one }) => ({
+	site: one(sites, {
+		fields: [recipeInstances.siteId],
+		references: [sites.id]
+	}),
+	recipeVersion: one(recipeVersions, {
+		fields: [recipeInstances.recipeVersionId],
+		references: [recipeVersions.id]
+	}),
+	building: one(buildings, {
+		fields: [recipeInstances.buildingId],
+		references: [buildings.id]
+	})
+}));
+
+export const sitesRelations = relations(sites, ({ one, many }) => ({
+	game: one(games, {
+		fields: [sites.gameId],
+		references: [games.id]
+	}),
+	recipeInstances: many(recipeInstances)
 }));

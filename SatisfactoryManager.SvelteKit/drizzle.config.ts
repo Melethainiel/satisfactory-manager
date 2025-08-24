@@ -1,40 +1,25 @@
 /**
- * Drizzle Kit configuration using centralized environment management
- * 
- * This configuration uses the new centralized database configuration
- * system with proper validation and type safety.
+ * Drizzle Kit configuration
  */
 
 import { defineConfig } from 'drizzle-kit';
-import { getDatabaseConfig, MIGRATION_CONFIG } from './src/lib/config/database.config.js';
-import { getServerEnvVar } from './src/lib/config/env.server.js';
+import * as dotenv from 'dotenv';
 
-// Get validated database configuration
-const dbConfig = getDatabaseConfig();
-const environment = getServerEnvVar('NODE_ENV', 'development');
+// Load environment variables
+dotenv.config();
 
 export default defineConfig({
   // Database connection
   dialect: 'postgresql',
-  dbCredentials: { url: dbConfig.url },
+  dbCredentials: { 
+    url: process.env.DATABASE_URL || 'postgres://app:app@localhost:5432/satisfactory'
+  },
   
   // Schema and migrations
   schema: './src/lib/server/db/schema.ts',
-  out: MIGRATION_CONFIG.migrationsFolder,
-  tablesFilter: MIGRATION_CONFIG.schemaFilter,
+  out: './drizzle',
   
   // Development options
-  verbose: environment === 'development',
-  strict: true,
-  
-  // Migration configuration
-  migrations: {
-    table: MIGRATION_CONFIG.migrationsTable,
-    schema: 'public'
-  },
-  
-  // Introspection options
-  introspect: {
-    casing: 'camel'
-  }
+  verbose: true,
+  strict: true
 });

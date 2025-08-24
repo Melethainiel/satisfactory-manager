@@ -11,6 +11,7 @@
 	import type { RenameSiteDialogHandle } from '$lib/dialogs/RenameSiteDialogHandle';
 	import ConfirmDialog from '$lib/dialogs/ConfirmDialog.svelte';
 	import type { ConfirmDialogHandle } from '$lib/dialogs/ConfirmDialogHandle';
+	import SiteProductionOverview from './SiteProductionOverview.svelte';
 
 	const gameState = getGameState();
 	const authState = getAuthState();
@@ -131,8 +132,10 @@
 
 							<!-- Site Content -->
 							<div in:fade={{ duration: 250, delay: 200 }}>
-								<h2 class="mb-4 pr-16 text-xl font-semibold">{selectedSite.name}</h2>
-								<p class="text-base-content/70">{$t('sites.content_placeholder')}</p>
+								<SiteProductionOverview 
+									siteId={selectedSite.id} 
+									siteName={selectedSite.name}
+								/>
 							</div>
 						</div>
 					{/key}

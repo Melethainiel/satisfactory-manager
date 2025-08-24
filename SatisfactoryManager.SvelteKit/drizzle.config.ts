@@ -1,25 +1,40 @@
+/**
+ * Drizzle Kit configuration using centralized environment management
+ * 
+ * This configuration uses the new centralized database configuration
+ * system with proper validation and type safety.
+ */
+
 import { defineConfig } from 'drizzle-kit';
-import { config as loadEnv } from 'dotenv';
-import { existsSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { getDatabaseConfig, MIGRATION_CONFIG } from './src/lib/config/database.config.js';
+import { getServerEnvVar } from './src/lib/config/env.server.js';
 
-// Load .env.local first (override), then fallback to .env
-const root = process.cwd();
-for (const file of ['.env.local', '.env']) {
-	const p = resolve(root, file);
-	if (existsSync(p)) {
-		loadEnv({ path: p, override: false });
-	}
-}
-
-if (!process.env.DATABASE_URL) {
-	throw new Error('DATABASE_URL is not set (checked .env.local and .env)');
-}
+// Get validated database configuration
+const dbConfig = getDatabaseConfig();
+const environment = getServerEnvVar('NODE_ENV', 'development');
 
 export default defineConfig({
-	schema: './src/lib/server/db/schema.ts',
-	dialect: 'postgresql',
-	dbCredentials: { url: process.env.DATABASE_URL },
-	verbose: true,
-	strict: true
+  // Database connection
+  dialect: 'postgresql',
+  dbCredentials: { url: dbConfig.url },
+  
+  // Schema and migrations
+  schema: './src/lib/server/db/schema.ts',
+  out: MIGRATION_CONFIG.migrationsFolder,
+  tablesFilter: MIGRATION_CONFIG.schemaFilter,
+  
+  // Development options
+  verbose: environment === 'development',
+  strict: true,
+  
+  // Migration configuration
+  migrations: {
+    table: MIGRATION_CONFIG.migrationsTable,
+    schema: 'public'
+  },
+  
+  // Introspection options
+  introspect: {
+    casing: 'camel'
+  }
 });

@@ -346,14 +346,12 @@ class ItemService implements IItemService {
 
 		// Calculate burn time and consumption per minute for each generator
 		const generators: Building[] = results.map((result) => {
-			const energyProductionGJ = parseFloat(result.energyProduction || '0');
+			const energyProductionMW = parseFloat(result.energyProduction || '0'); // Already in MW
 			const energyValueGJ = parseFloat(result.energyValue || '0');
+			const energyValueMJ = energyValueGJ * 1000; // GJ → MJ
 
-			// Convert units for calculations and display
-			const energyProductionMW = energyProductionGJ * 1000; // GJ → MW (1 GJ = 1000 MW)
-			
-			// burnTime = energyValue(GJ) / energyProduction(GJ) (en secondes)
-			const burnTime = energyValueGJ / energyProductionGJ;
+			// burnTime = energyValue(MJ) / energyProduction(MW) (en secondes)
+			const burnTime = energyValueMJ / energyProductionMW;
 
 			// consommation par minute = 60 / burnTime
 			const consumptionPerMinute = 60 / burnTime;

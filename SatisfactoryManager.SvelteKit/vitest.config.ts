@@ -42,7 +42,7 @@ export default defineConfig(({ mode }) => {
 				...env, // Spread loaded environment variables
 				NODE_ENV: 'test', // Ensure test environment
 				// Test-specific overrides
-				DATABASE_URL: env.DATABASE_URL || env.TEST_DATABASE_URL,
+				DATABASE_URL: env.TEST_DATABASE_URL || env.DATABASE_URL,
 				// Disable verbose logging in tests unless explicitly enabled
 				VITE_LOG_LEVEL: env.VITE_TEST_LOG_LEVEL || 'warn'
 			},

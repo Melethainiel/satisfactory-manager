@@ -115,6 +115,9 @@ export async function clearTestData() {
 		// Clear all tables in reverse dependency order to respect foreign key constraints
 		console.log('🧹 Clearing test data...');
 
+		// Production instances (most dependent - references sites, recipes, buildings, items)
+		await testDb.delete(schema.productionInstances);
+
 		// Recipe-related tables (most dependent first)
 		await testDb.delete(schema.recipeBuildings);
 		await testDb.delete(schema.recipeProducts);
@@ -130,7 +133,8 @@ export async function clearTestData() {
 		await testDb.delete(schema.itemVersions);
 		await testDb.delete(schema.items);
 
-		// Module-related tables
+		// Module-related tables (moduleGames before moduleVersions)
+		await testDb.delete(schema.moduleGames);
 		await testDb.delete(schema.moduleVersions);
 		await testDb.delete(schema.modules);
 

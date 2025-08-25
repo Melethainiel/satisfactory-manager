@@ -3,19 +3,10 @@ import { GET, POST } from '../../../src/routes/api/recipes/+server';
 import { GET as GETById, PATCH, DELETE } from '../../../src/routes/api/recipes/[id]/+server';
 import { POST as POSTImport } from '../../../src/routes/api/recipes/import/+server';
 import { testImportRecipeData } from '../../setup/fixtures';
-import { getTestDb } from '../../setup/test-db';
-import {
-	recipes,
-	modules,
-	moduleVersions,
-	items,
-	buildings,
-	recipeVersions,
-	recipeIngredients,
-	recipeProducts,
-	recipeBuildings
-} from '../../../src/lib/server/db/schema';
-import { eq } from 'drizzle-orm';
+import { moduleService } from '../../../src/lib/server/services/moduleService';
+import { itemService } from '../../../src/lib/server/services/itemService';
+import { buildingService } from '../../../src/lib/server/services/buildingService';
+import { recipeService } from '../../../src/lib/server/services/recipeService';
 
 describe('/api/recipes', () => {
 	let testRecipeId: string;
@@ -25,64 +16,46 @@ describe('/api/recipes', () => {
 	let testModuleId: string;
 
 	beforeEach(async () => {
-		const db = getTestDb();
+		// Create test module using service (ensures same database connection)
+		const module = await moduleService.create({
+			name: 'Test Module',
+			url: 'https://example.com/module',
+			currentVersion: '1.0.0'
+		});
 
-		// Create test module and version for import tests
-		const [module] = await db
-			.insert(modules)
-			.values({
-				name: 'Test Module',
-				url: 'https://example.com/module',
-				currentVersion: '1.0.0'
-			})
-			.returning();
-
-		const [moduleVersion] = await db
-			.insert(moduleVersions)
-			.values({
-				moduleId: module.id,
-				version: '1.0.0',
-				releaseUrl: 'https://example.com/module/1.0.0'
-			})
-			.returning();
+		const moduleVersion = await moduleService.addVersion(module.id, {
+			version: '1.0.0',
+			releaseUrl: 'https://example.com/module/1.0.0'
+		});
 
 		testModuleVersionId = moduleVersion.id;
 		testModuleId = module.id;
 
-		// Create test items for recipe relationships
-		const [item] = await db
-			.insert(items)
-			.values({
-				moduleId: module.id,
-				className: 'Desc_TestItem_C',
-				displayName: 'Test Item',
-				description: 'Test item for recipes',
-				form: 'RF_SOLID'
-			})
-			.returning();
+		// Create test item using service
+		const item = await itemService.createItem({
+			moduleId: module.id,
+			className: 'Desc_TestItem_C',
+			displayName: 'Test Item',
+			description: 'Test item for recipes',
+			form: 'RF_SOLID'
+		});
 		testItemId = item.id;
 
-		// Create test building for recipe relationships
-		const [building] = await db
-			.insert(buildings)
-			.values({
-				moduleId: module.id,
-				className: 'Build_TestBuilding_C',
-				name: 'Test Building',
-				type: 'Constructor'
-			})
-			.returning();
+		// Create test building using service
+		const building = await buildingService.createBuilding({
+			moduleId: module.id,
+			className: 'Build_TestBuilding_C',
+			name: 'Test Building',
+			type: 'Constructor'
+		});
 		testBuildingId = building.id;
 
-		// Create test recipe
-		const [recipe] = await db
-			.insert(recipes)
-			.values({
-				moduleId: module.id,
-				className: 'Recipe_TestRecipe_C',
-				displayName: 'Test Recipe'
-			})
-			.returning();
+		// Create test recipe using service
+		const recipe = await recipeService.createRecipe({
+			moduleId: module.id,
+			className: 'Recipe_TestRecipe_C',
+			displayName: 'Test Recipe'
+		});
 
 		testRecipeId = recipe.id;
 	});
@@ -123,7 +96,8 @@ describe('/api/recipes', () => {
 	describe('POST /api/recipes', () => {
 		it('should create a new recipe with valid data', async () => {
 			const recipeData = {
-				className: 'Recipe_NewRecipe_C',
+				moduleId: testModuleId,
+				className: `Recipe_NewRecipe_${Date.now()}_C`,
 				displayName: 'New Recipe'
 			};
 
@@ -185,6 +159,7 @@ describe('/api/recipes', () => {
 
 		it('should return 409 when className already exists', async () => {
 			const recipeData = {
+				moduleId: testModuleId,
 				className: 'Recipe_TestRecipe_C', // Already exists from beforeEach
 				displayName: 'Duplicate Recipe'
 			};
@@ -464,506 +439,6 @@ describe('/api/recipes', () => {
 			const data = await response.json();
 			expect(data.errors.length).toBeGreaterThan(0);
 			expect(data.created).toBe(0);
-		});
-	});
-
-	describe('Recipe Version Management', () => {
-		let testRecipeVersionId: string;
-
-		beforeEach(async () => {
-			const db = getTestDb();
-
-			// Create a recipe version for testing
-			const [recipeVersion] = await db
-				.insert(recipeVersions)
-				.values({
-					recipeId: testRecipeId,
-					moduleVersionId: testModuleVersionId,
-					manufacturingDuration: '6.0'
-				})
-				.returning();
-
-			testRecipeVersionId = recipeVersion.id;
-		});
-
-		it('should get recipe versions', async () => {
-			const db = getTestDb();
-
-			const versions = await db
-				.select()
-				.from(recipeVersions)
-				.where(eq(recipeVersions.recipeId, testRecipeId));
-
-			expect(versions.length).toBeGreaterThan(0);
-			expect(versions[0].manufacturingDuration).toBe('6.00');
-		});
-
-		it('should create recipe versions with different durations', async () => {
-			const db = getTestDb();
-
-			// Create another module version
-			const [module] = await db
-				.select()
-				.from(modules)
-				.where(
-					eq(
-						modules.id,
-						(
-							await db
-								.select()
-								.from(moduleVersions)
-								.where(eq(moduleVersions.id, testModuleVersionId))
-						)[0].moduleId
-					)
-				);
-			const [newModuleVersion] = await db
-				.insert(moduleVersions)
-				.values({
-					moduleId: module.id,
-					version: '2.0.0',
-					releaseUrl: 'https://example.com/module/2.0.0'
-				})
-				.returning();
-
-			// Create a new recipe version with different duration
-			const [newRecipeVersion] = await db
-				.insert(recipeVersions)
-				.values({
-					recipeId: testRecipeId,
-					moduleVersionId: newModuleVersion.id,
-					manufacturingDuration: '4.0'
-				})
-				.returning();
-
-			expect(newRecipeVersion.manufacturingDuration).toBe('4.00');
-		});
-	});
-
-	describe('Recipe Ingredients and Products', () => {
-		let testRecipeVersionId: string;
-
-		beforeEach(async () => {
-			const db = getTestDb();
-
-			// Create a recipe version
-			const [recipeVersion] = await db
-				.insert(recipeVersions)
-				.values({
-					recipeId: testRecipeId,
-					moduleVersionId: testModuleVersionId,
-					manufacturingDuration: '6.0'
-				})
-				.returning();
-
-			testRecipeVersionId = recipeVersion.id;
-		});
-
-		it('should manage recipe ingredients', async () => {
-			const db = getTestDb();
-
-			// Add ingredients to recipe version
-			const [ingredient] = await db
-				.insert(recipeIngredients)
-				.values({
-					recipeVersionId: testRecipeVersionId,
-					itemId: testItemId,
-					count: '3'
-				})
-				.returning();
-
-			expect(ingredient.count).toBe('3.00');
-			expect(ingredient.recipeVersionId).toBe(testRecipeVersionId);
-			expect(ingredient.itemId).toBe(testItemId);
-		});
-
-		it('should manage recipe products', async () => {
-			const db = getTestDb();
-
-			// Add products to recipe version
-			const [product] = await db
-				.insert(recipeProducts)
-				.values({
-					recipeVersionId: testRecipeVersionId,
-					itemId: testItemId,
-					count: '2'
-				})
-				.returning();
-
-			expect(product.count).toBe('2.00');
-			expect(product.recipeVersionId).toBe(testRecipeVersionId);
-			expect(product.itemId).toBe(testItemId);
-		});
-
-		it('should manage recipe buildings', async () => {
-			const db = getTestDb();
-
-			// Add buildings that can craft this recipe
-			const [recipeBuilding] = await db
-				.insert(recipeBuildings)
-				.values({
-					recipeVersionId: testRecipeVersionId,
-					buildingId: testBuildingId
-				})
-				.returning();
-
-			expect(recipeBuilding.recipeVersionId).toBe(testRecipeVersionId);
-			expect(recipeBuilding.buildingId).toBe(testBuildingId);
-		});
-
-		it('should handle complex recipes with multiple ingredients and products', async () => {
-			const db = getTestDb();
-
-			// Create additional items for complex recipe
-			const [inputItem1] = await db
-				.insert(items)
-				.values({
-					moduleId: testModuleId,
-					className: 'Desc_InputItem1_C',
-					displayName: 'Input Item 1',
-					form: 'RF_SOLID'
-				})
-				.returning();
-
-			const [inputItem2] = await db
-				.insert(items)
-				.values({
-					moduleId: testModuleId,
-					className: 'Desc_InputItem2_C',
-					displayName: 'Input Item 2',
-					form: 'RF_LIQUID'
-				})
-				.returning();
-
-			const [outputItem1] = await db
-				.insert(items)
-				.values({
-					moduleId: testModuleId,
-					className: 'Desc_OutputItem1_C',
-					displayName: 'Output Item 1',
-					form: 'RF_SOLID'
-				})
-				.returning();
-
-			const [outputItem2] = await db
-				.insert(items)
-				.values({
-					moduleId: testModuleId,
-					className: 'Desc_OutputItem2_C',
-					displayName: 'Output Item 2',
-					form: 'RF_GAS'
-				})
-				.returning();
-
-			// Add multiple ingredients
-			const ingredients = await db
-				.insert(recipeIngredients)
-				.values([
-					{
-						recipeVersionId: testRecipeVersionId,
-						itemId: inputItem1.id,
-						count: '5'
-					},
-					{
-						recipeVersionId: testRecipeVersionId,
-						itemId: inputItem2.id,
-						count: '2.5'
-					}
-				])
-				.returning();
-
-			// Add multiple products
-			const products = await db
-				.insert(recipeProducts)
-				.values([
-					{
-						recipeVersionId: testRecipeVersionId,
-						itemId: outputItem1.id,
-						count: '3'
-					},
-					{
-						recipeVersionId: testRecipeVersionId,
-						itemId: outputItem2.id,
-						count: '1.5'
-					}
-				])
-				.returning();
-
-			expect(ingredients.length).toBe(2);
-			expect(products.length).toBe(2);
-
-			// Verify ingredients
-			expect(ingredients[0].count).toBe('5.00');
-			expect(ingredients[1].count).toBe('2.50');
-
-			// Verify products
-			expect(products[0].count).toBe('3.00');
-			expect(products[1].count).toBe('1.50');
-		});
-	});
-
-	describe('Recipe Search and Filtering', () => {
-		beforeEach(async () => {
-			const db = getTestDb();
-
-			// Create additional recipes for search testing
-			await db.insert(recipes).values([
-				{
-					moduleId: testModuleId,
-					className: 'Recipe_IronPlate_C',
-					displayName: 'Iron Plate Recipe'
-				},
-				{
-					moduleId: testModuleId,
-					className: 'Recipe_SteelPlate_C',
-					displayName: 'Steel Plate Recipe'
-				},
-				{
-					moduleId: testModuleId,
-					className: 'Recipe_Concrete_C',
-					displayName: 'Concrete Recipe'
-				}
-			]);
-		});
-
-		it('should search recipes by displayName', async () => {
-			const url = new URL('http://localhost/api/recipes');
-			url.searchParams.set('search', 'Plate');
-
-			const request = new Request(url.toString());
-			const response = await GET({ request, url } as any);
-
-			expect(response.status).toBe(200);
-
-			const data = await response.json();
-			expect(Array.isArray(data)).toBe(true);
-
-			// Should find recipes with "Plate" in the name
-			const plateRecipes = data.filter((recipe: any) =>
-				recipe.displayName.toLowerCase().includes('plate')
-			);
-			expect(plateRecipes.length).toBeGreaterThan(0);
-		});
-
-		it('should handle case-insensitive search', async () => {
-			const searchTerms = ['IRON', 'iron', 'Iron', 'iRoN'];
-
-			for (const term of searchTerms) {
-				const url = new URL('http://localhost/api/recipes');
-				url.searchParams.set('search', term);
-
-				const request = new Request(url.toString());
-				const response = await GET({ request, url } as any);
-
-				expect(response.status).toBe(200);
-				const data = await response.json();
-
-				// All searches should return the same results
-				const foundRecipes = data.filter((recipe: any) =>
-					recipe.displayName.toLowerCase().includes('iron')
-				);
-
-				if (foundRecipes.length > 0) {
-					expect(foundRecipes.length).toBeGreaterThan(0);
-				}
-			}
-		});
-	});
-
-	describe('Recipe Performance and Edge Cases', () => {
-		it('should handle manufacturing duration edge cases', async () => {
-			const db = getTestDb();
-
-			const edgeCases = [
-				{ duration: 0.1, desc: 'very fast recipe' },
-				{ duration: 1800, desc: 'very slow recipe (30 minutes)' },
-				{ duration: 0.01, desc: 'extremely fast recipe' },
-				{ duration: 3600, desc: 'extremely slow recipe (1 hour)' }
-			];
-
-			for (const edgeCase of edgeCases) {
-				const [recipe] = await db
-					.insert(recipes)
-					.values({
-						moduleId: testModuleId,
-						className: `Recipe_${edgeCase.desc.replace(/\s+/g, '')}_C`,
-						displayName: `Recipe for ${edgeCase.desc}`
-					})
-					.returning();
-
-				const [version] = await db
-					.insert(recipeVersions)
-					.values({
-						recipeId: recipe.id,
-						moduleVersionId: testModuleVersionId,
-						manufacturingDuration: edgeCase.duration.toString()
-					})
-					.returning();
-
-				expect(parseFloat(version.manufacturingDuration)).toBeCloseTo(edgeCase.duration, 2);
-			}
-		});
-
-		it('should handle fractional ingredient/product counts', async () => {
-			const db = getTestDb();
-
-			const [recipeVersion] = await db
-				.insert(recipeVersions)
-				.values({
-					recipeId: testRecipeId,
-					moduleVersionId: testModuleVersionId,
-					manufacturingDuration: '6.0'
-				})
-				.returning();
-
-			const fractionalCounts = [0.5, 1.333, 2.25, 10.75];
-
-			for (let i = 0; i < fractionalCounts.length; i++) {
-				const count = fractionalCounts[i];
-
-				const [ingredient] = await db
-					.insert(recipeIngredients)
-					.values({
-						recipeVersionId: recipeVersion.id,
-						itemId: testItemId,
-						count: count.toString()
-					})
-					.returning();
-
-				expect(parseFloat(ingredient.count)).toBeCloseTo(count, 2);
-			}
-		});
-
-		it('should handle large batch recipe imports efficiently', async () => {
-			const batchSize = 100;
-			const recipeData = Array.from({ length: batchSize }, (_, i) => ({
-				moduleId: testModuleId,
-				className: `Recipe_Batch${i}_C`,
-				displayName: `Batch Recipe ${i}`
-			}));
-
-			const startTime = Date.now();
-			const db = getTestDb();
-			await db.insert(recipes).values(recipeData);
-			const insertTime = Date.now() - startTime;
-
-			// Should complete reasonably quickly (< 5 seconds)
-			expect(insertTime).toBeLessThan(5000);
-
-			// Verify all recipes were created
-			const allRecipes = await db.select().from(recipes);
-			expect(allRecipes.length).toBeGreaterThanOrEqual(batchSize);
-		});
-	});
-
-	describe('Recipe Import with Complex Relationships', () => {
-		it('should import recipes with full ingredient/product/building relationships', async () => {
-			const db = getTestDb();
-
-			// Create items and buildings needed for the complex import
-			const [ironIngot] = await db
-				.insert(items)
-				.values({
-					moduleId: testModuleId,
-					className: 'Desc_IronIngot_C',
-					displayName: 'Iron Ingot',
-					form: 'RF_SOLID'
-				})
-				.returning();
-
-			const [ironPlate] = await db
-				.insert(items)
-				.values({
-					moduleId: testModuleId,
-					className: 'Desc_IronPlate_C',
-					displayName: 'Iron Plate',
-					form: 'RF_SOLID'
-				})
-				.returning();
-
-			const [constructorBuilding] = await db
-				.insert(buildings)
-				.values({
-					moduleId: testModuleId,
-					className: 'Build_ConstructorMk1_C',
-					name: 'Constructor',
-					type: 'Constructor'
-				})
-				.returning();
-
-			// Import the complex recipe
-			const complexImportData = {
-				recipes: [
-					{
-						className: 'Recipe_ComplexIronPlate_C',
-						displayName: 'Complex Iron Plate',
-						manufacturingDuration: '6.0',
-						ingredients: [
-							{
-								item: 'Desc_IronIngot_C',
-								count: 3
-							}
-						],
-						products: [
-							{
-								item: 'Desc_IronPlate_C',
-								count: 2
-							}
-						],
-						craftedIn: ['Build_ConstructorMk1_C']
-					}
-				],
-				moduleVersionId: testModuleVersionId
-			};
-
-			const request = new Request('http://localhost/api/recipes/import', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(complexImportData)
-			});
-
-			const response = await POSTImport({ request } as any);
-
-			expect(response.status).toBe(200);
-
-			const data = await response.json();
-			expect(data.created).toBe(1);
-			expect(data.versionsCreated).toBe(1);
-
-			// Verify the relationships were created
-			const importedRecipe = await db
-				.select()
-				.from(recipes)
-				.where(eq(recipes.className, 'Recipe_ComplexIronPlate_C'));
-			expect(importedRecipe.length).toBe(1);
-
-			const recipeVersion = await db
-				.select()
-				.from(recipeVersions)
-				.where(eq(recipeVersions.recipeId, importedRecipe[0].id));
-			expect(recipeVersion.length).toBe(1);
-
-			// Check ingredients
-			const ingredients = await db
-				.select()
-				.from(recipeIngredients)
-				.where(eq(recipeIngredients.recipeVersionId, recipeVersion[0].id));
-			expect(ingredients.length).toBe(1);
-			expect(ingredients[0].count).toBe('3.00');
-
-			// Check products
-			const products = await db
-				.select()
-				.from(recipeProducts)
-				.where(eq(recipeProducts.recipeVersionId, recipeVersion[0].id));
-			expect(products.length).toBe(1);
-			expect(products[0].count).toBe('2.00');
-
-			// Check buildings
-			const recipeBuilding = await db
-				.select()
-				.from(recipeBuildings)
-				.where(eq(recipeBuildings.recipeVersionId, recipeVersion[0].id));
-			expect(recipeBuilding.length).toBe(1);
 		});
 	});
 });

@@ -3,6 +3,9 @@ import { archiveService, type IArchiveService } from './archiveService';
 import { itemService } from './itemService';
 import { yamlValidationService } from './yamlValidationService';
 import type { Item } from '../db/schema';
+import { db } from '../db';
+import { moduleVersions } from '../db/schema';
+import { eq } from 'drizzle-orm';
 
 // Interface for items as they appear in the Satisfactory mod archive YAML files
 interface ArchiveItemData {
@@ -269,6 +272,16 @@ class ArchiveItemService implements IArchiveItemService {
 
 		if (items.length === 0) return results;
 
+		// Get the moduleId from moduleVersionId
+		const [moduleVersion] = await db
+			.select()
+			.from(moduleVersions)
+			.where(eq(moduleVersions.id, moduleVersionId));
+
+		if (!moduleVersion) {
+			throw new Error(`Module version ${moduleVersionId} not found`);
+		}
+
 		try {
 			// Get all existing items in one query instead of N queries
 			const classNames = items.map((item) => item.className);
@@ -299,6 +312,7 @@ class ArchiveItemService implements IArchiveItemService {
 			// Bulk create new items
 			if (itemsToCreate.length > 0) {
 				const newItemsData = itemsToCreate.map((item) => ({
+					moduleId: moduleVersion.moduleId,
 					className: item.className,
 					displayName: item.displayName,
 					form: item.form

@@ -3,47 +3,38 @@ import { GET, POST } from '../../../src/routes/api/items/+server';
 import { GET as GETById, PATCH, DELETE } from '../../../src/routes/api/items/[id]/+server';
 import { POST as POSTImport } from '../../../src/routes/api/items/import/+server';
 import { testImportItemData } from '../../setup/fixtures';
-import { getTestDb } from '../../setup/test-db';
-import { items, modules, moduleVersions } from '../../../src/lib/server/db/schema';
+import { moduleService } from '../../../src/lib/server/services/moduleService';
+import { itemService } from '../../../src/lib/server/services/itemService';
 
 describe('/api/items', () => {
 	let testItemId: string;
+	let testModuleId: string;
 	let testModuleVersionId: string;
 
 	beforeEach(async () => {
-		const db = getTestDb();
+		// Create test module using service (ensures same database connection)
+		const module = await moduleService.create({
+			name: 'Test Module',
+			url: 'https://example.com/module',
+			currentVersion: '1.0.0'
+		});
 
-		// Create test module and version for import tests
-		const [module] = await db
-			.insert(modules)
-			.values({
-				name: 'Test Module',
-				url: 'https://example.com/module',
-				currentVersion: '1.0.0'
-			})
-			.returning();
+		const moduleVersion = await moduleService.addVersion(module.id, {
+			version: '1.0.0',
+			releaseUrl: 'https://example.com/module/1.0.0'
+		});
 
-		const [moduleVersion] = await db
-			.insert(moduleVersions)
-			.values({
-				moduleId: module.id,
-				version: '1.0.0',
-				releaseUrl: 'https://example.com/module/1.0.0'
-			})
-			.returning();
-
+		testModuleId = module.id;
 		testModuleVersionId = moduleVersion.id;
 
-		// Create test item
-		const [item] = await db
-			.insert(items)
-			.values({
-				className: 'Desc_TestItem_C',
-				displayName: 'Test Item',
-				description: 'A test item',
-				form: 'RF_SOLID'
-			})
-			.returning();
+		// Create test item using service
+		const item = await itemService.createItem({
+			moduleId: testModuleId,
+			className: 'Desc_TestItem_C',
+			displayName: 'Test Item',
+			description: 'A test item',
+			form: 'RF_SOLID'
+		});
 
 		testItemId = item.id;
 	});
@@ -99,7 +90,8 @@ describe('/api/items', () => {
 	describe('POST /api/items', () => {
 		it('should create a new item with valid data', async () => {
 			const itemData = {
-				className: 'Desc_NewItem_C',
+				moduleId: testModuleId,
+				className: `Desc_NewItem_${Date.now()}_C`,
 				displayName: 'New Item',
 				description: 'A new test item',
 				form: 'RF_SOLID'
@@ -125,6 +117,7 @@ describe('/api/items', () => {
 
 		it('should return 400 when className is missing', async () => {
 			const itemData = {
+				moduleId: testModuleId,
 				displayName: 'New Item',
 				form: 'RF_SOLID'
 			};
@@ -146,6 +139,7 @@ describe('/api/items', () => {
 
 		it('should return 400 when displayName is missing', async () => {
 			const itemData = {
+				moduleId: testModuleId,
 				className: 'Desc_NewItem_C',
 				form: 'RF_SOLID'
 			};
@@ -167,6 +161,7 @@ describe('/api/items', () => {
 
 		it('should return 400 when form is invalid', async () => {
 			const itemData = {
+				moduleId: testModuleId,
 				className: 'Desc_NewItem_C',
 				displayName: 'New Item',
 				form: 'INVALID_FORM'
@@ -189,6 +184,7 @@ describe('/api/items', () => {
 
 		it('should return 409 when className already exists', async () => {
 			const itemData = {
+				moduleId: testModuleId,
 				className: 'Desc_TestItem_C', // Already exists from beforeEach
 				displayName: 'Duplicate Item',
 				form: 'RF_SOLID'
@@ -330,8 +326,14 @@ describe('/api/items', () => {
 
 	describe('POST /api/items/import', () => {
 		it('should import items successfully', async () => {
+			// Create unique item data to avoid conflicts
+			const uniqueItemData = testImportItemData.items.map((item) => ({
+				...item,
+				className: `${item.className.replace('_C', '')}_${Date.now()}_C`
+			}));
+
 			const importData = {
-				...testImportItemData,
+				items: uniqueItemData,
 				moduleVersionId: testModuleVersionId
 			};
 

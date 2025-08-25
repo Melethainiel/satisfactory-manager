@@ -3,52 +3,42 @@ import { GET, POST } from '../../../src/routes/api/buildings/+server';
 import { GET as GETById, PATCH, DELETE } from '../../../src/routes/api/buildings/[id]/+server';
 import { POST as POSTImport } from '../../../src/routes/api/buildings/import/+server';
 import { testImportBuildingData } from '../../setup/fixtures';
-import { getTestDb } from '../../setup/test-db';
-import { buildings, modules, moduleVersions } from '../../../src/lib/server/db/schema';
+import { moduleService } from '../../../src/lib/server/services/moduleService';
+import { buildingService } from '../../../src/lib/server/services/buildingService';
 
 describe('/api/buildings', () => {
 	let testBuildingId: string;
+	let testModuleId: string;
 	let testModuleVersionId: string;
 
 	beforeEach(async () => {
-		const db = getTestDb();
+		// Create test module using service (ensures same database connection)
+		const module = await moduleService.create({
+			name: 'Test Module',
+			url: 'https://example.com/module',
+			currentVersion: '1.0.0'
+		});
 
-		// Create test module and version for import tests
-		const [module] = await db
-			.insert(modules)
-			.values({
-				name: 'Test Module',
-				url: 'https://example.com/module',
-				currentVersion: '1.0.0'
-			})
-			.returning();
+		const moduleVersion = await moduleService.addVersion(module.id, {
+			version: '1.0.0',
+			releaseUrl: 'https://example.com/module/1.0.0'
+		});
 
-		const [moduleVersion] = await db
-			.insert(moduleVersions)
-			.values({
-				moduleId: module.id,
-				version: '1.0.0',
-				releaseUrl: 'https://example.com/module/1.0.0'
-			})
-			.returning();
-
+		testModuleId = module.id;
 		testModuleVersionId = moduleVersion.id;
-
-		// Create test building
-		const [building] = await db
-			.insert(buildings)
-			.values({
-				className: 'Build_TestBuilding_C',
-				name: 'Test Building',
-				type: 'Constructor'
-			})
-			.returning();
-
-		testBuildingId = building.id;
+		// No building created in beforeEach to avoid conflicts
 	});
 
 	describe('GET /api/buildings', () => {
 		it('should return all buildings', async () => {
+			// Create a building for this test
+			await buildingService.createBuilding({
+				moduleId: testModuleId,
+				className: 'Build_GetTestBuilding_C',
+				name: 'Get Test Building',
+				type: 'Constructor'
+			});
+
 			const url = new URL('http://localhost/api/buildings');
 			const request = new Request(url.toString());
 			const response = await GET({ request, url } as any);
@@ -64,6 +54,14 @@ describe('/api/buildings', () => {
 		});
 
 		it('should filter buildings by type', async () => {
+			// Create a building for this test
+			await buildingService.createBuilding({
+				moduleId: testModuleId,
+				className: 'Build_FilterTestBuilding_C',
+				name: 'Filter Test Building',
+				type: 'Constructor'
+			});
+
 			const url = new URL('http://localhost/api/buildings');
 			url.searchParams.set('type', 'Constructor');
 
@@ -83,7 +81,8 @@ describe('/api/buildings', () => {
 	describe('POST /api/buildings', () => {
 		it('should create a new building with valid data', async () => {
 			const buildingData = {
-				className: 'Build_NewBuilding_C',
+				moduleId: testModuleId,
+				className: `Build_NewBuilding_${Date.now()}_C`,
 				name: 'New Building',
 				type: 'Miner'
 			};
@@ -107,6 +106,7 @@ describe('/api/buildings', () => {
 
 		it('should return 400 when className is missing', async () => {
 			const buildingData = {
+				moduleId: testModuleId,
 				name: 'New Building',
 				type: 'Generator'
 			};
@@ -128,6 +128,7 @@ describe('/api/buildings', () => {
 
 		it('should return 400 when name is missing', async () => {
 			const buildingData = {
+				moduleId: testModuleId,
 				className: 'Build_NewBuilding_C',
 				type: 'Constructor'
 			};
@@ -149,6 +150,7 @@ describe('/api/buildings', () => {
 
 		it('should return 409 when className already exists', async () => {
 			const buildingData = {
+				moduleId: testModuleId,
 				className: 'Build_TestBuilding_C', // Already exists from beforeEach
 				name: 'Duplicate Building',
 				type: 'Generator'
@@ -172,19 +174,27 @@ describe('/api/buildings', () => {
 
 	describe('GET /api/buildings/[id]', () => {
 		it('should return building by id', async () => {
-			const request = new Request(`http://localhost/api/buildings/${testBuildingId}`);
+			// Create a building for this test
+			const building = await buildingService.createBuilding({
+				moduleId: testModuleId,
+				className: 'Build_GetByIdTestBuilding_C',
+				name: 'GetById Test Building',
+				type: 'Constructor'
+			});
+
+			const request = new Request(`http://localhost/api/buildings/${building.id}`);
 			const response = await GETById({
 				request,
-				params: { id: testBuildingId },
+				params: { id: building.id },
 				url: new URL(request.url)
 			} as any);
 
 			expect(response.status).toBe(200);
 
 			const data = await response.json();
-			expect(data.id).toBe(testBuildingId);
-			expect(data.className).toBe('Build_TestBuilding_C');
-			expect(data.name).toBe('Test Building');
+			expect(data.id).toBe(building.id);
+			expect(data.className).toBe('Build_GetByIdTestBuilding_C');
+			expect(data.name).toBe('GetById Test Building');
 		});
 
 		it('should return 404 for non-existent building', async () => {
@@ -202,12 +212,20 @@ describe('/api/buildings', () => {
 
 	describe('PATCH /api/buildings/[id]', () => {
 		it('should update building with valid data', async () => {
+			// Create a building for this test
+			const building = await buildingService.createBuilding({
+				moduleId: testModuleId,
+				className: 'Build_PatchTestBuilding_C',
+				name: 'Patch Test Building',
+				type: 'Constructor'
+			});
+
 			const updateData = {
 				name: 'Updated Building Name',
 				type: 'Generator'
 			};
 
-			const request = new Request(`http://localhost/api/buildings/${testBuildingId}`, {
+			const request = new Request(`http://localhost/api/buildings/${building.id}`, {
 				method: 'PATCH',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(updateData)
@@ -215,7 +233,7 @@ describe('/api/buildings', () => {
 
 			const response = await PATCH({
 				request,
-				params: { id: testBuildingId }
+				params: { id: building.id }
 			} as any);
 
 			expect(response.status).toBe(200);
@@ -248,13 +266,21 @@ describe('/api/buildings', () => {
 
 	describe('DELETE /api/buildings/[id]', () => {
 		it('should delete building successfully', async () => {
-			const request = new Request(`http://localhost/api/buildings/${testBuildingId}`, {
+			// Create a building for this test
+			const building = await buildingService.createBuilding({
+				moduleId: testModuleId,
+				className: 'Build_DeleteTestBuilding_C',
+				name: 'Delete Test Building',
+				type: 'Constructor'
+			});
+
+			const request = new Request(`http://localhost/api/buildings/${building.id}`, {
 				method: 'DELETE'
 			});
 
 			const response = await DELETE({
 				request,
-				params: { id: testBuildingId }
+				params: { id: building.id }
 			} as any);
 
 			expect(response.status).toBe(200);
@@ -279,9 +305,15 @@ describe('/api/buildings', () => {
 
 	describe('POST /api/buildings/import', () => {
 		it('should import buildings successfully', async () => {
+			// Create unique building data to avoid conflicts
+			const uniqueBuildingData = testImportBuildingData.map((building) => ({
+				...building,
+				className: `${building.className.replace('_C', '')}_${Date.now()}_C`
+			}));
+
 			const importData = {
 				moduleVersionId: testModuleVersionId,
-				buildings: testImportBuildingData
+				buildings: uniqueBuildingData
 			};
 
 			const request = new Request('http://localhost/api/buildings/import', {

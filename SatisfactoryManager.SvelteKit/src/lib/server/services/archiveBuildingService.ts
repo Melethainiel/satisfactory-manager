@@ -2,6 +2,9 @@ import * as yaml from 'js-yaml';
 import { archiveService, type IArchiveService } from './archiveService';
 import { buildingService } from './buildingService';
 import { yamlValidationService } from './yamlValidationService';
+import { db } from '../db';
+import { moduleVersions } from '../db/schema';
+import { eq } from 'drizzle-orm';
 
 // Interface for buildings as they appear in the Satisfactory mod archive YAML files
 interface ArchiveBuildingData {
@@ -326,6 +329,16 @@ class ArchiveBuildingService implements IArchiveBuildingService {
 			errors: [] as string[]
 		};
 
+		// Get the moduleId from moduleVersionId
+		const [moduleVersion] = await db
+			.select()
+			.from(moduleVersions)
+			.where(eq(moduleVersions.id, moduleVersionId));
+
+		if (!moduleVersion) {
+			throw new Error(`Module version ${moduleVersionId} not found`);
+		}
+
 		// Process buildings in batches to avoid overwhelming the database
 		const batchSize = 100;
 		for (let i = 0; i < buildings.length; i += batchSize) {
@@ -339,6 +352,7 @@ class ArchiveBuildingService implements IArchiveBuildingService {
 					if (!building) {
 						// Create new building
 						building = await buildingService.createBuilding({
+							moduleId: moduleVersion.moduleId,
 							className: buildingData.className,
 							name: buildingData.name,
 							type: buildingData.type

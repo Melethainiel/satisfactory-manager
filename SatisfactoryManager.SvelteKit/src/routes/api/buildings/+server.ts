@@ -32,7 +32,11 @@ export const GET: RequestHandler = async ({ url }) => {
 // POST /api/buildings - Create a new building
 export const POST: RequestHandler = async ({ request }) => {
 	try {
-		const { className, name, type } = await request.json();
+		const { moduleId, className, name, type } = await request.json();
+
+		if (!moduleId || typeof moduleId !== 'string' || !moduleId.trim()) {
+			return json({ error: 'Module ID is required' }, { status: 400 });
+		}
 
 		if (!className || typeof className !== 'string' || !className.trim()) {
 			return json({ error: 'Building className is required' }, { status: 400 });
@@ -56,6 +60,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 
 		const building = await buildingService.createBuilding({
+			moduleId: moduleId.trim(),
 			className: className.trim(),
 			name: name.trim(),
 			type

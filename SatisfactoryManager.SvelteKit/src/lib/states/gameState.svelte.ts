@@ -34,6 +34,97 @@ export interface GameSite {
 	updatedAt: Date;
 }
 
+export interface ProductionInstanceData {
+	id: string;
+	siteId: string;
+	recipeVersionId: string | null;
+	buildingId: string;
+	extractedItemId: string | null;
+	buildingCount: string;
+	efficiencyRatio: string;
+	notes: string | null;
+	createdAt: Date;
+	updatedAt: Date;
+	// Calculated production metrics
+	production: {
+		itemsPerMinute: number;
+		totalProduction: number;
+		buildingUtilization: number;
+		powerConsumption: number;
+		powerProduction: number;
+	};
+	// Related data populated from API
+	site: {
+		id: string;
+		name: string;
+		gameId: string;
+	};
+	recipe: {
+		id: string;
+		displayName: string;
+		className: string;
+	} | null;
+	recipeVersion: {
+		id: string;
+		manufacturingDuration: string;
+	} | null;
+	building: {
+		id: string;
+		name: string;
+		className: string;
+		type: string;
+	};
+	buildingVersion: {
+		id: string;
+		output: string | null;
+		energyConsumption: string | null;
+		energyProduction: string | null;
+	} | null;
+	products: Array<{
+		itemId: string;
+		count: string;
+		actualRate: number;
+		item: {
+			displayName: string;
+			className: string;
+			form: string;
+		};
+	}>;
+	ingredients: Array<{
+		itemId: string;
+		count: string;
+		actualRate: number;
+		item: {
+			displayName: string;
+			className: string;
+			form: string;
+		};
+	}>;
+}
+
+export interface ProductionOverview {
+	totalProduction: Array<{ itemId: string; itemName: string; rate: number }>;
+	totalConsumption: Array<{ itemId: string; itemName: string; rate: number }>;
+	netBalance: Array<{ itemId: string; itemName: string; balance: number }>;
+	totalPowerConsumption: number;
+	totalPowerProduction: number;
+	netPowerBalance: number;
+}
+
+export interface ProductionMetrics {
+	totalInstances: number;
+	totalBuildings: number;
+	averageEfficiency: number;
+	uniqueItems: number;
+	lastUpdated: Date;
+}
+
+export interface ProductionSummary {
+	instances: ProductionInstanceData[];
+	overview: ProductionOverview;
+	metrics: ProductionMetrics;
+}
+
 export interface GameState {
 	games: GameSummary[];
 	selectedGameId: string | null;
@@ -60,7 +151,37 @@ export interface GameState {
 	gameSites: GameSite[];
 	selectedSiteId: string | null;
 	selectSite: (siteId: string | null) => void;
+	// Production management - consolidated
+	siteProductionSummary: ProductionSummary | null;
+	loadSiteProductionSummary: (siteId: string, fresh?: boolean) => Promise<void>;
+	createProductionInstance: (
+		siteId: string,
+		data: {
+			recipeVersionId?: string;
+			buildingId: string;
+			buildingCount: number;
+			efficiencyRatio?: number;
+			notes?: string;
+			extractedItemId?: string;
+			fuelItemId?: string;
+		}
+	) => Promise<void>;
+	updateProductionInstance: (
+		instanceId: string,
+		data: {
+			recipeVersionId?: string;
+			buildingId?: string;
+			buildingCount?: number;
+			efficiencyRatio?: number;
+			notes?: string;
+		}
+	) => Promise<void>;
+	deleteProductionInstance: (instanceId: string) => Promise<void>;
+	// Backward compatibility getters
+	get siteProductionInstances(): ProductionInstanceData[];
+	get siteProductionOverview(): ProductionOverview | null;
 	attachAuth: (apiFetch: AuthFetchFn) => void;
+	getApiFetch: () => AuthFetchFn | null;
 	getUserRole: (userEmail: string) => string | null;
 	canManageSettings: (userEmail: string) => boolean;
 	canManageSites: (userEmail: string) => boolean;
@@ -78,6 +199,10 @@ class GameStateClass implements GameState {
 
 	attachAuth(apiFetch: AuthFetchFn) {
 		this.apiFetch = apiFetch;
+	}
+
+	getApiFetch(): AuthFetchFn | null {
+		return this.apiFetch;
 	}
 	async deleteGame(id: string) {
 		if (!id) {
@@ -107,6 +232,17 @@ class GameStateClass implements GameState {
 	gameModules = $state<GameModule[]>([]);
 	gameSites = $state<GameSite[]>([]);
 	selectedSiteId = $state<string | null>(null);
+	// Production state - consolidated
+	siteProductionSummary = $state<ProductionSummary | null>(null);
+
+	// Backward compatibility getters
+	get siteProductionInstances(): ProductionInstanceData[] {
+		return this.siteProductionSummary?.instances || [];
+	}
+
+	get siteProductionOverview(): ProductionOverview | null {
+		return this.siteProductionSummary?.overview || null;
+	}
 
 	async loadGames(userEmail: string) {
 		if (!userEmail) {
@@ -378,6 +514,159 @@ class GameStateClass implements GameState {
 			notificationService.success('Site deleted successfully');
 		} catch (e: any) {
 			notificationService.error(e?.message ?? 'Failed to delete site');
+		}
+	}
+
+	// Production management - consolidated
+	async loadSiteProductionSummary(siteId: string, fresh: boolean = false) {
+		if (!siteId || !this.apiFetch) return;
+
+		this.isLoading = true;
+		try {
+			const url = `/api/sites/${siteId}/production-summary${fresh ? '?fresh=true' : ''}`;
+			const response = await this.apiFetch(url);
+			if (!response.ok) throw new Error(`Failed to load production summary (${response.status})`);
+
+			const data = await response.json();
+			if (data.success) {
+				// Convert string dates to Date objects in the data
+				const summary = data.data as ProductionSummary;
+				summary.instances = summary.instances.map((instance: any) => ({
+					...instance,
+					createdAt: new Date(instance.createdAt),
+					updatedAt: new Date(instance.updatedAt)
+				}));
+				summary.metrics.lastUpdated = new Date(summary.metrics.lastUpdated);
+
+				this.siteProductionSummary = summary;
+			}
+		} catch (e: any) {
+			notificationService.error(e?.message ?? 'Failed to load production summary');
+		} finally {
+			this.isLoading = false;
+		}
+	}
+
+	async createProductionInstance(
+		siteId: string,
+		data: {
+			recipeVersionId?: string;
+			buildingId: string;
+			buildingCount: number;
+			efficiencyRatio?: number;
+			notes?: string;
+			extractedItemId?: string;
+			fuelItemId?: string;
+		}
+	) {
+		if (!siteId || !this.apiFetch) return;
+
+		this.isLoading = true;
+		try {
+			const response = await this.apiFetch(`/api/sites/${siteId}/production-instances`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(data)
+			});
+
+			if (!response.ok)
+				throw new Error(`Failed to create production instance (${response.status})`);
+
+			const result = await response.json();
+			if (result.success) {
+				// Reload production summary to get updated data
+				await this.loadSiteProductionSummary(siteId, true);
+				notificationService.success('Production instance created successfully');
+			}
+		} catch (e: any) {
+			notificationService.error(e?.message ?? 'Failed to create production instance');
+		} finally {
+			this.isLoading = false;
+		}
+	}
+
+	async updateProductionInstance(
+		instanceId: string,
+		data: {
+			recipeVersionId?: string;
+			buildingId?: string;
+			buildingCount?: number;
+			efficiencyRatio?: number;
+			notes?: string;
+		}
+	) {
+		if (!instanceId || !this.apiFetch) return;
+
+		// Find the instance to get its siteId
+		const instance = this.siteProductionInstances.find(
+			(i: ProductionInstanceData) => i.id === instanceId
+		);
+		if (!instance) {
+			notificationService.error('Production instance not found');
+			return;
+		}
+
+		this.isLoading = true;
+		try {
+			const response = await this.apiFetch(
+				`/api/sites/${instance.siteId}/production-instances/${instanceId}`,
+				{
+					method: 'PATCH',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify(data)
+				}
+			);
+
+			if (!response.ok)
+				throw new Error(`Failed to update production instance (${response.status})`);
+
+			const result = await response.json();
+			if (result.success) {
+				// Reload production summary to get updated data
+				await this.loadSiteProductionSummary(instance.siteId, true);
+				notificationService.success('Production instance updated successfully');
+			}
+		} catch (e: any) {
+			notificationService.error(e?.message ?? 'Failed to update production instance');
+		} finally {
+			this.isLoading = false;
+		}
+	}
+
+	async deleteProductionInstance(instanceId: string) {
+		if (!instanceId || !this.apiFetch) return;
+
+		// Find the instance to get its siteId
+		const instance = this.siteProductionInstances.find(
+			(i: ProductionInstanceData) => i.id === instanceId
+		);
+		if (!instance) {
+			notificationService.error('Production instance not found');
+			return;
+		}
+
+		this.isLoading = true;
+		try {
+			const response = await this.apiFetch(
+				`/api/sites/${instance.siteId}/production-instances/${instanceId}`,
+				{
+					method: 'DELETE'
+				}
+			);
+
+			if (!response.ok)
+				throw new Error(`Failed to delete production instance (${response.status})`);
+
+			const result = await response.json();
+			if (result.success) {
+				// Reload production summary to get updated data
+				await this.loadSiteProductionSummary(instance.siteId, true);
+				notificationService.success('Production instance deleted successfully');
+			}
+		} catch (e: any) {
+			notificationService.error(e?.message ?? 'Failed to delete production instance');
+		} finally {
+			this.isLoading = false;
 		}
 	}
 

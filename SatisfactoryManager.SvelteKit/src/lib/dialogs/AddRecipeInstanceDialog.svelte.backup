@@ -1,0 +1,389 @@
+<script lang="ts">
+	import { getGameState } from '$lib/states/gameState.svelte';
+	import { getRecipeState } from '$lib/states/recipeState.svelte';
+	import { t } from '$lib/i18n';
+	import type { AddRecipeInstanceDialogHandle } from './AddRecipeInstanceDialogHandle';
+
+	const gameState = getGameState();
+	const recipeState = getRecipeState();
+
+	// Dialog state
+	let dialog: HTMLDialogElement | null = null;
+	let currentSiteId: string | null = null;
+
+	// Form state
+	let selectedBuildingId = $state('');
+	let buildingCount = $state(1);
+	let efficiencyRatio = $state(1.0);
+	let notes = $state('');
+
+	// Search state - now using recipeState
+	let searchQuery = $state('');
+	let showSearchResults = $state(false);
+	let searchTimeout: NodeJS.Timeout | null = null;
+	
+	// Connect authentication when gameState apiFetch is available
+	$effect(() => {
+		const apiFetch = gameState.getApiFetch();
+		console.log('🔍 $effect running, apiFetch:', !!apiFetch);
+		if (apiFetch) {
+			console.log('🔍 Attaching auth to recipeState');
+			recipeState.attachAuth(apiFetch);
+			console.log('🔍 Auth attached to recipeState');
+		} else {
+			console.log('🔍 No apiFetch available from gameState');
+		}
+	});
+
+	// Search functionality using recipeState
+	async function searchRecipes(query: string) {
+		if (!query.trim() || !gameState.selectedGameId) {
+			showSearchResults = false;
+			return;
+		}
+
+		// Show dropdown while searching
+		showSearchResults = true;
+		
+		try {
+			await recipeState.searchRecipes(gameState.selectedGameId, query);
+			// Keep dropdown visible if we have a query, regardless of results
+			showSearchResults = true;
+		} catch (error) {
+			console.error('Error searching recipes:', error);
+			// Still show dropdown to display error state
+			showSearchResults = true;
+		}
+	}
+
+	function handleSearchInput() {
+		if (searchTimeout) {
+			clearTimeout(searchTimeout);
+		}
+		
+		// Show dropdown immediately when user starts typing
+		if (searchQuery.trim().length > 0) {
+			showSearchResults = true;
+		} else {
+			showSearchResults = false;
+		}
+		
+		searchTimeout = setTimeout(() => {
+			searchRecipes(searchQuery);
+		}, 300);
+	}
+
+	function handleKeydown(event: KeyboardEvent) {
+		if (event.key === 'Escape') {
+			showSearchResults = false;
+		}
+	}
+
+
+	async function selectRecipe(recipe: typeof recipeState.selectedRecipe) {
+		recipeState.selectedRecipe = recipe;
+		searchQuery = recipe?.displayName || '';
+		showSearchResults = false;
+		
+		// Reset previous selections
+		selectedBuildingId = '';
+		
+		// Load compatible buildings for this recipe version
+		if (recipe?.recipeVersionId) {
+			await recipeState.loadCompatibleBuildings(recipe.recipeVersionId);
+		}
+	}
+
+	function resetForm() {
+		searchQuery = '';
+		selectedBuildingId = '';
+		buildingCount = 1;
+		efficiencyRatio = 1.0;
+		notes = '';
+		// Note: currentSiteId is NOT cleared here - it should persist during dialog session
+		showSearchResults = false;
+		
+		// Clear recipeState data
+		recipeState.clearResults();
+		
+		// Clear any pending search
+		if (searchTimeout) {
+			clearTimeout(searchTimeout);
+			searchTimeout = null;
+		}
+	}
+
+	function fullReset() {
+		// Reset all form fields including currentSiteId
+		resetForm();
+		currentSiteId = null;
+	}
+
+	async function handleSubmit(e?: Event) {
+		console.log('🔍 handleSubmit called with event:', e);
+		e?.preventDefault();
+		console.log('🔍 preventDefault() called');
+		
+		// Debug logging
+		console.log('🔍 Form validation data:', {
+			currentSiteId,
+			recipeVersionId: recipeState.selectedRecipe?.recipeVersionId,
+			selectedBuildingId,
+			buildingCount,
+			selectedRecipe: recipeState.selectedRecipe,
+			gameStateLoading: gameState.isLoading
+		});
+		
+		if (!currentSiteId) {
+			console.log('❌ No current site ID');
+			return;
+		}
+		
+		if (!recipeState.selectedRecipe?.recipeVersionId) {
+			console.log('❌ No recipe or recipe version ID');
+			return;
+		}
+		
+		if (!selectedBuildingId) {
+			console.log('❌ No building selected');
+			return;
+		}
+		
+		if (buildingCount <= 0) {
+			console.log('❌ Invalid building count:', buildingCount);
+			return;
+		}
+
+		console.log('✅ Validation passed, creating recipe instance...');
+
+		try {
+			await gameState.createRecipeInstance(currentSiteId, {
+				recipeVersionId: recipeState.selectedRecipe.recipeVersionId,
+				buildingId: selectedBuildingId,
+				buildingCount: buildingCount,
+				efficiencyRatio: efficiencyRatio,
+				notes: notes.trim() || undefined
+			});
+			
+			console.log('✅ Recipe instance created successfully');
+			fullReset();
+			dialog?.close();
+		} catch (error) {
+			console.error('❌ Failed to create recipe instance:', error);
+		}
+	}
+
+	// Expose methods for external use using Svelte 5 syntax
+	export function open(siteId: string) {
+		console.log('🔍 AddRecipeInstanceDialog.open() called with siteId:', siteId);
+		currentSiteId = siteId;
+		resetForm();
+		dialog?.showModal();
+		console.log('🔍 Dialog should now be open, dialog element:', dialog);
+	}
+</script>
+
+<dialog bind:this={dialog} id="add_recipe_instance_modal" class="modal">
+	<div class="modal-box w-11/12 max-w-2xl">
+		<h3 class="mb-4 text-lg font-bold">{$t('recipeInstances.add_recipe')}</h3>
+		
+		<form onsubmit={handleSubmit} class="flex flex-col gap-4">
+			<!-- Recipe Search -->
+			<div class="form-control">
+				<label class="label" for="recipe-search">
+					<span class="label-text">{$t('recipeInstances.recipe')}<span class="text-error">*</span></span>
+				</label>
+				<div class="relative">
+					<input
+						id="recipe-search"
+						type="text"
+						class="input input-bordered w-full"
+						placeholder={$t('recipeInstances.search_recipes')}
+						bind:value={searchQuery}
+						oninput={handleSearchInput}
+						onfocus={() => showSearchResults = searchQuery.trim().length > 0 || recipeState.searchResults.length > 0}
+						onkeydown={handleKeydown}
+						autocomplete="off"
+					/>
+					
+					{#if recipeState.isSearching}
+						<div class="absolute right-3 top-1/2 transform -translate-y-1/2">
+							<span class="loading loading-spinner loading-sm"></span>
+						</div>
+					{/if}
+					
+					<!-- Search Results Dropdown -->
+					{#if showSearchResults}
+						<div class="absolute z-10 w-full mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+							{#if recipeState.isSearching}
+								<div class="p-3 text-center text-base-content/70">
+									<div class="flex items-center justify-center gap-2">
+										<span class="loading loading-spinner loading-sm"></span>
+										{$t('recipeInstances.searching')}...
+									</div>
+								</div>
+							{:else if searchQuery.trim().length === 0}
+								<div class="p-3 text-center text-base-content/70">
+									{$t('recipeInstances.start_typing_to_search')}
+								</div>
+							{:else if recipeState.searchResults.length === 0}
+								<div class="p-3 text-center text-base-content/70">
+									{$t('recipeInstances.no_recipes_found')}
+								</div>
+							{:else}
+								{#each recipeState.searchResults as recipe}
+									<button
+										type="button"
+										class="w-full p-3 text-left hover:bg-base-200 border-b border-base-300 last:border-b-0"
+										onclick={() => selectRecipe(recipe)}
+									>
+										<div class="font-medium">{recipe.displayName}</div>
+										<div class="text-sm text-base-content/70">
+											{recipe.moduleVersion.module.name} v{recipe.moduleVersion.version}
+										</div>
+									</button>
+								{/each}
+							{/if}
+						</div>
+					{/if}
+				</div>
+			</div>
+
+			<!-- Selected Recipe Display -->
+			{#if recipeState.selectedRecipe}
+				<div class="form-control">
+					<div class="bg-base-200 rounded-lg p-3">
+						<div class="font-medium">{recipeState.selectedRecipe.displayName}</div>
+						<div class="text-sm text-base-content/70">
+							{recipeState.selectedRecipe.moduleVersion.module.name} v{recipeState.selectedRecipe.moduleVersion.version}
+						</div>
+						<div class="text-sm text-base-content/60">
+							{$t('recipeInstances.manufacturing_duration')}: {recipeState.selectedRecipe.manufacturingDuration}s
+						</div>
+					</div>
+				</div>
+			{/if}
+
+			<!-- Building Selection -->
+			<div class="form-control">
+				<label class="label" for="building-select">
+					<span class="label-text">{$t('recipeInstances.building')}<span class="text-error">*</span></span>
+				</label>
+				<select 
+					id="building-select"
+					class="select select-bordered w-full"
+					bind:value={selectedBuildingId}
+					disabled={recipeState.availableBuildings.length === 0}
+					required
+				>
+					<option value="">{$t('recipeInstances.select_building')}</option>
+					{#each recipeState.availableBuildings as building}
+						<option value={building.id}>
+							{building.name} ({building.type})
+						</option>
+					{/each}
+				</select>
+				{#if recipeState.selectedRecipe && recipeState.availableBuildings.length === 0 && !recipeState.isLoadingBuildings}
+					<div class="label">
+						<span class="label-text-alt text-warning">No compatible buildings for this recipe</span>
+					</div>
+				{/if}
+				{#if recipeState.isLoadingBuildings}
+					<div class="label">
+						<span class="label-text-alt">{$t('recipeInstances.searching')}...</span>
+					</div>
+				{/if}
+			</div>
+
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+				<!-- Building Count -->
+				<div class="form-control">
+					<label class="label" for="building-count">
+						<span class="label-text">{$t('recipeInstances.building_count')}<span class="text-error">*</span></span>
+					</label>
+					<input
+						id="building-count"
+						type="number"
+						class="input input-bordered w-full"
+						bind:value={buildingCount}
+						min="0.1"
+						max="1000"
+						step="0.1"
+						required
+					/>
+				</div>
+
+				<!-- Efficiency Ratio -->
+				<div class="form-control">
+					<label class="label" for="efficiency-ratio">
+						<span class="label-text">{$t('recipeInstances.efficiency_ratio')}</span>
+					</label>
+					<input
+						id="efficiency-ratio"
+						type="number"
+						class="input input-bordered w-full"
+						bind:value={efficiencyRatio}
+						min="0.1"
+						max="2.5"
+						step="0.01"
+						placeholder="1.00"
+					/>
+					<div class="label">
+						<span class="label-text-alt">0.1 - 2.5 (1.0 = 100%)</span>
+					</div>
+				</div>
+			</div>
+
+			<!-- Notes -->
+			<div class="form-control">
+				<label class="label" for="notes">
+					<span class="label-text">{$t('recipeInstances.notes')}</span>
+				</label>
+				<textarea
+					id="notes"
+					class="textarea textarea-bordered"
+					placeholder={$t('recipeInstances.notes_placeholder')}
+					bind:value={notes}
+					rows="3"
+					maxlength="1000"
+				></textarea>
+				<div class="label">
+					<span class="label-text-alt">{notes.length}/1000 characters</span>
+				</div>
+			</div>
+
+			<div class="modal-action">
+				<button 
+					type="button" 
+					class="btn" 
+					onclick={() => {
+						fullReset();
+						dialog?.close();
+					}}
+				>
+					{$t('common.cancel')}
+				</button>
+				<button 
+					type="submit" 
+					class="btn btn-primary"
+					disabled={gameState.isLoading || !recipeState.selectedRecipe?.recipeVersionId || !selectedBuildingId || buildingCount <= 0}
+				>
+					{#if gameState.isLoading}
+						<span class="loading loading-spinner loading-xs"></span>
+					{/if}
+					{$t('recipeInstances.add_recipe')}
+				</button>
+			</div>
+		</form>
+	</div>
+	
+	<form method="dialog" class="modal-backdrop">
+		<button aria-label={$t('common.close')} onclick={() => fullReset()}>{$t('common.close')}</button>
+	</form>
+</dialog>
+
+<style>
+	dialog:not([open]) {
+		display: none;
+	}
+</style>

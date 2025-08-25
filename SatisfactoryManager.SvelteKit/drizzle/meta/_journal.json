@@ -78,6 +78,34 @@
       "when": 1755871019022,
       "tag": "0010_add_selected_version_to_module_games",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1756034475359,
+      "tag": "0011_fix_module_relationships",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1756057953409,
+      "tag": "0012_add_recipe_instances_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1756123163523,
+      "tag": "0013_refactor_recipe_instances_to_production_instances",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1756126229284,
+      "tag": "0014_add_fuel_item_id_to_production_instances",
+      "breakpoints": true
     }
   ]
 }

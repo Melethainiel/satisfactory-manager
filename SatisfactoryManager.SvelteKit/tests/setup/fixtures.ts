@@ -84,26 +84,30 @@ export const testModuleVersions: (moduleId: string) => NewModuleVersion[] = (mod
 	}
 ];
 
-export const testItems: NewItem[] = [
+export const testItems: (moduleId: string) => NewItem[] = (moduleId: string) => [
 	{
+		moduleId,
 		className: 'Desc_IronIngot_C',
 		displayName: 'Iron Ingot',
 		description: 'Basic iron ingot for crafting',
 		form: 'RF_SOLID'
 	},
 	{
+		moduleId,
 		className: 'Desc_IronPlate_C',
 		displayName: 'Iron Plate',
 		description: 'Processed iron plate',
 		form: 'RF_SOLID'
 	},
 	{
+		moduleId,
 		className: 'Desc_Water_C',
 		displayName: 'Water',
 		description: 'Pure H2O',
 		form: 'RF_LIQUID'
 	},
 	{
+		moduleId,
 		className: 'Desc_NitrogenGas_C',
 		displayName: 'Nitrogen Gas',
 		description: 'Compressed nitrogen gas',
@@ -111,34 +115,40 @@ export const testItems: NewItem[] = [
 	}
 ];
 
-export const testBuildings: NewBuilding[] = [
+export const testBuildings: (moduleId: string) => NewBuilding[] = (moduleId: string) => [
 	{
+		moduleId,
 		className: 'Build_ConstructorMk1_C',
 		name: 'Constructor',
 		type: 'Constructor'
 	},
 	{
+		moduleId,
 		className: 'Build_MinerMk1_C',
 		name: 'Miner Mk.1',
 		type: 'Miner'
 	},
 	{
+		moduleId,
 		className: 'Build_GeneratorCoal_C',
 		name: 'Coal Generator',
 		type: 'Generator'
 	}
 ];
 
-export const testRecipes: NewRecipe[] = [
+export const testRecipes: (moduleId: string) => NewRecipe[] = (moduleId: string) => [
 	{
+		moduleId,
 		className: 'Recipe_IronPlate_C',
 		displayName: 'Iron Plate'
 	},
 	{
+		moduleId,
 		className: 'Recipe_IronIngot_C',
 		displayName: 'Iron Ingot'
 	},
 	{
+		moduleId,
 		className: 'Recipe_Concrete_C',
 		displayName: 'Concrete'
 	}

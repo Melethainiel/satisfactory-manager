@@ -125,7 +125,10 @@ export const items = pgTable(
 	'items',
 	{
 		id: uuid('id').defaultRandom().primaryKey(),
-		className: varchar('class_name', { length: 100 }).notNull().unique(),
+		moduleId: uuid('module_id')
+			.notNull()
+			.references(() => modules.id, { onDelete: 'cascade' }),
+		className: varchar('class_name', { length: 100 }).notNull(),
 		displayName: varchar('display_name', { length: 200 }).notNull(),
 		description: varchar('description', { length: 1000 }),
 		form: itemFormEnum('form').notNull(),
@@ -133,7 +136,8 @@ export const items = pgTable(
 		updatedAt: timestamp('updated_at').defaultNow().notNull()
 	},
 	(table) => ({
-		classNameIdx: index('items_class_name_idx').on(table.className)
+		classNameIdx: index('items_class_name_idx').on(table.className),
+		moduleClassNameUnique: unique().on(table.moduleId, table.className)
 	})
 );
 
@@ -162,13 +166,17 @@ export const recipes = pgTable(
 	'recipes',
 	{
 		id: uuid('id').defaultRandom().primaryKey(),
-		className: varchar('class_name', { length: 100 }).notNull().unique(),
+		moduleId: uuid('module_id')
+			.notNull()
+			.references(() => modules.id, { onDelete: 'cascade' }),
+		className: varchar('class_name', { length: 100 }).notNull(),
 		displayName: varchar('display_name', { length: 200 }).notNull(),
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 		updatedAt: timestamp('updated_at').defaultNow().notNull()
 	},
 	(table) => ({
-		classNameIdx: index('recipes_class_name_idx').on(table.className)
+		classNameIdx: index('recipes_class_name_idx').on(table.className),
+		moduleClassNameUnique: unique().on(table.moduleId, table.className)
 	})
 );
 
@@ -243,14 +251,18 @@ export const buildings = pgTable(
 	'buildings',
 	{
 		id: uuid('id').defaultRandom().primaryKey(),
-		className: varchar('class_name', { length: 100 }).notNull().unique(),
+		moduleId: uuid('module_id')
+			.notNull()
+			.references(() => modules.id, { onDelete: 'cascade' }),
+		className: varchar('class_name', { length: 100 }).notNull(),
 		name: varchar('name', { length: 200 }).notNull(),
 		type: buildingTypeEnum('type').notNull(),
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 		updatedAt: timestamp('updated_at').defaultNow().notNull()
 	},
 	(table) => ({
-		classNameIdx: index('buildings_class_name_idx').on(table.className)
+		classNameIdx: index('buildings_class_name_idx').on(table.className),
+		moduleClassNameUnique: unique().on(table.moduleId, table.className)
 	})
 );
 
@@ -298,13 +310,6 @@ export type UserGame = typeof userGames.$inferSelect;
 export type NewUserGame = typeof userGames.$inferInsert;
 export type GameUserRole = (typeof gameUserRoleEnum.enumValues)[number];
 
-export const sitesRelations = relations(sites, ({ one }) => ({
-	game: one(games, {
-		fields: [sites.gameId],
-		references: [games.id]
-	})
-}));
-
 // Relations (many-to-many) Game/Module
 export const moduleGames = pgTable(
 	'module_games',
@@ -324,7 +329,10 @@ export const moduleGames = pgTable(
 
 export const modulesRelation = relations(modules, ({ many }) => ({
 	moduleGame: many(moduleGames),
-	versions: many(moduleVersions)
+	versions: many(moduleVersions),
+	items: many(items),
+	recipes: many(recipes),
+	buildings: many(buildings)
 }));
 
 export const moduleVersionsRelations = relations(moduleVersions, ({ one, many }) => ({
@@ -337,7 +345,11 @@ export const moduleVersionsRelations = relations(moduleVersions, ({ one, many })
 	recipeVersions: many(recipeVersions)
 }));
 
-export const buildingsRelations = relations(buildings, ({ many }) => ({
+export const buildingsRelations = relations(buildings, ({ one, many }) => ({
+	module: one(modules, {
+		fields: [buildings.moduleId],
+		references: [modules.id]
+	}),
 	versions: many(buildingVersions)
 }));
 
@@ -352,7 +364,11 @@ export const buildingVersionsRelations = relations(buildingVersions, ({ one }) =
 	})
 }));
 
-export const itemsRelations = relations(items, ({ many }) => ({
+export const itemsRelations = relations(items, ({ one, many }) => ({
+	module: one(modules, {
+		fields: [items.moduleId],
+		references: [modules.id]
+	}),
 	versions: many(itemVersions)
 }));
 
@@ -367,7 +383,11 @@ export const itemVersionsRelations = relations(itemVersions, ({ one }) => ({
 	})
 }));
 
-export const recipesRelations = relations(recipes, ({ many }) => ({
+export const recipesRelations = relations(recipes, ({ one, many }) => ({
+	module: one(modules, {
+		fields: [recipes.moduleId],
+		references: [modules.id]
+	}),
 	versions: many(recipeVersions)
 }));
 
@@ -431,4 +451,61 @@ export const moduleGamesRelations = relations(moduleGames, ({ one }) => ({
 		fields: [moduleGames.selectedVersionId],
 		references: [moduleVersions.id]
 	})
+}));
+
+// Production instances table - concrete implementations of recipes or extraction in specific sites
+export const productionInstances = pgTable('production_instances', {
+	id: uuid('id').defaultRandom().primaryKey(),
+	siteId: uuid('site_id')
+		.notNull()
+		.references(() => sites.id, { onDelete: 'cascade' }),
+	recipeVersionId: uuid('recipe_version_id').references(() => recipeVersions.id, {
+		onDelete: 'cascade'
+	}),
+	buildingId: uuid('building_id')
+		.notNull()
+		.references(() => buildings.id, { onDelete: 'cascade' }),
+	extractedItemId: uuid('extracted_item_id').references(() => items.id, { onDelete: 'cascade' }),
+	fuelItemId: uuid('fuel_item_id').references(() => items.id, { onDelete: 'cascade' }),
+	buildingCount: numeric('building_count', { precision: 10, scale: 2 }).notNull(),
+	efficiencyRatio: numeric('efficiency_ratio', { precision: 10, scale: 3 })
+		.notNull()
+		.default('1.000'),
+	notes: varchar('notes', { length: 1000 }),
+	createdAt: timestamp('created_at').defaultNow().notNull(),
+	updatedAt: timestamp('updated_at').defaultNow().notNull()
+});
+
+export type ProductionInstance = typeof productionInstances.$inferSelect;
+export type NewProductionInstance = typeof productionInstances.$inferInsert;
+
+export const productionInstancesRelations = relations(productionInstances, ({ one }) => ({
+	site: one(sites, {
+		fields: [productionInstances.siteId],
+		references: [sites.id]
+	}),
+	recipeVersion: one(recipeVersions, {
+		fields: [productionInstances.recipeVersionId],
+		references: [recipeVersions.id]
+	}),
+	building: one(buildings, {
+		fields: [productionInstances.buildingId],
+		references: [buildings.id]
+	}),
+	extractedItem: one(items, {
+		fields: [productionInstances.extractedItemId],
+		references: [items.id]
+	}),
+	fuelItem: one(items, {
+		fields: [productionInstances.fuelItemId],
+		references: [items.id]
+	})
+}));
+
+export const sitesRelations = relations(sites, ({ one, many }) => ({
+	game: one(games, {
+		fields: [sites.gameId],
+		references: [games.id]
+	}),
+	productionInstances: many(productionInstances)
 }));

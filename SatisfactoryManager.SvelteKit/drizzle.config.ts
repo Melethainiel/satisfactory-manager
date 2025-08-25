@@ -1,25 +1,25 @@
+/**
+ * Drizzle Kit configuration
+ */
+
 import { defineConfig } from 'drizzle-kit';
-import { config as loadEnv } from 'dotenv';
-import { existsSync } from 'node:fs';
-import { resolve } from 'node:path';
+import * as dotenv from 'dotenv';
 
-// Load .env.local first (override), then fallback to .env
-const root = process.cwd();
-for (const file of ['.env.local', '.env']) {
-	const p = resolve(root, file);
-	if (existsSync(p)) {
-		loadEnv({ path: p, override: false });
-	}
-}
-
-if (!process.env.DATABASE_URL) {
-	throw new Error('DATABASE_URL is not set (checked .env.local and .env)');
-}
+// Load environment variables
+dotenv.config();
 
 export default defineConfig({
-	schema: './src/lib/server/db/schema.ts',
+	// Database connection
 	dialect: 'postgresql',
-	dbCredentials: { url: process.env.DATABASE_URL },
+	dbCredentials: {
+		url: process.env.DATABASE_URL || 'postgres://app:app@localhost:5432/satisfactory'
+	},
+
+	// Schema and migrations
+	schema: './src/lib/server/db/schema.ts',
+	out: './drizzle',
+
+	// Development options
 	verbose: true,
 	strict: true
 });

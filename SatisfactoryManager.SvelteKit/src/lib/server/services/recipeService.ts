@@ -7,6 +7,9 @@ import {
 	recipeBuildings,
 	items,
 	buildings,
+	moduleGames,
+	moduleVersions,
+	modules,
 	type Recipe,
 	type NewRecipe,
 	type RecipeVersion,
@@ -18,7 +21,7 @@ import {
 	type RecipeBuilding,
 	type NewRecipeBuilding
 } from '../db/schema';
-import { eq, desc, ilike, inArray, and } from 'drizzle-orm';
+import { eq, desc, ilike, inArray, and, isNotNull, sql } from 'drizzle-orm';
 
 export interface RecipeVersionWithDetails extends RecipeVersion {
 	ingredients: RecipeIngredient[];
@@ -68,6 +71,7 @@ export interface IRecipeService {
 
 	// Query helpers
 	searchRecipesByName(searchTerm: string): Promise<Recipe[]>;
+	searchRecipesByGameAndName(gameId: string, searchTerm: string): Promise<any[]>;
 	getRecipesByIngredient(itemClassName: string): Promise<Recipe[]>;
 	getRecipesByProduct(itemClassName: string): Promise<Recipe[]>;
 	getRecipesByBuilding(buildingClassName: string): Promise<Recipe[]>;
@@ -300,6 +304,40 @@ class RecipeService implements IRecipeService {
 			.from(recipes)
 			.where(ilike(recipes.displayName, `%${searchTerm}%`))
 			.orderBy(recipes.displayName);
+	}
+
+	async searchRecipesByGameAndName(gameId: string, searchTerm: string): Promise<any[]> {
+		// Get recipes filtered by game's configured module versions
+		// This returns recipes with their version info and module details
+		const results = await db
+			.select({
+				id: recipes.id,
+				displayName: recipes.displayName,
+				className: recipes.className,
+				recipeVersionId: recipeVersions.id,
+				manufacturingDuration: recipeVersions.manufacturingDuration,
+				moduleVersion: sql<{
+					version: string;
+					module: { name: string };
+				}>`json_build_object('version', ${moduleVersions.version}, 'module', json_build_object('name', ${modules.name}))`
+			})
+			.from(recipes)
+			.innerJoin(recipeVersions, eq(recipes.id, recipeVersions.recipeId))
+			.innerJoin(moduleVersions, eq(recipeVersions.moduleVersionId, moduleVersions.id))
+			.innerJoin(modules, eq(moduleVersions.moduleId, modules.id))
+			.innerJoin(
+				moduleGames,
+				and(
+					eq(moduleGames.gameId, gameId),
+					eq(moduleGames.moduleId, modules.id),
+					isNotNull(moduleGames.selectedVersionId),
+					eq(moduleGames.selectedVersionId, moduleVersions.id)
+				)
+			)
+			.where(ilike(recipes.displayName, `%${searchTerm}%`))
+			.orderBy(recipes.displayName);
+
+		return results;
 	}
 
 	async getRecipesByIngredient(itemClassName: string): Promise<Recipe[]> {

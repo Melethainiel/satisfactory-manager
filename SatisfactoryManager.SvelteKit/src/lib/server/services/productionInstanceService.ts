@@ -316,7 +316,7 @@ class ProductionInstanceService implements IProductionInstanceService {
 			}
 
 			const buildingOutput = parseFloat(buildingVersionResult[0].output || '0');
-			const baseRatePerMinute = buildingOutput * 60; // Convert to per minute
+			const baseRatePerMinute = buildingOutput; // Convert to per minute
 			const totalRate = baseRatePerMinute * buildingCount * efficiency;
 
 			return {
@@ -332,9 +332,9 @@ class ProductionInstanceService implements IProductionInstanceService {
 
 		// Calculate items per minute for each product
 		const productionRates = instance.products.map(product => {
-			const baseRate = parseFloat(product.count) / manufacturingDuration * 60; // items per minute for 1 building
+			const baseRate = parseFloat(product.count) / manufacturingDuration; // items per minute for 1 building
 			const totalRate = baseRate * buildingCount * efficiency;
-			
+
 			return {
 				itemId: product.itemId,
 				itemName: product.item.displayName,
@@ -344,7 +344,7 @@ class ProductionInstanceService implements IProductionInstanceService {
 
 		// For now, return the first product's rate (in a real scenario, you might want to return all products)
 		const primaryProduct = productionRates[0];
-		
+
 		return {
 			itemsPerMinute: primaryProduct?.rate || 0,
 			totalProduction: primaryProduct?.rate || 0,
@@ -359,7 +359,7 @@ class ProductionInstanceService implements IProductionInstanceService {
 		netBalance: Array<{ itemId: string; itemName: string; balance: number }>;
 	}> {
 		const instances = await this.getProductionInstancesBySite(siteId);
-		
+
 		const productionMap = new Map<string, { itemName: string; rate: number }>();
 		const consumptionMap = new Map<string, { itemName: string; rate: number }>();
 
@@ -380,7 +380,7 @@ class ProductionInstanceService implements IProductionInstanceService {
 
 				if (buildingVersionResult.length > 0 && instance.products.length > 0) {
 					const buildingOutput = parseFloat(buildingVersionResult[0].output || '0');
-					const baseRatePerMinute = buildingOutput * 60; // Convert to per minute
+					const baseRatePerMinute = buildingOutput;
 					const totalRate = baseRatePerMinute * buildingCount * efficiency;
 
 					// Use the first (and typically only) product for extraction
@@ -399,9 +399,9 @@ class ProductionInstanceService implements IProductionInstanceService {
 
 			// Calculate production
 			for (const product of instance.products) {
-				const baseRate = parseFloat(product.count) / manufacturingDuration * 60;
+				const baseRate = parseFloat(product.count) / manufacturingDuration;
 				const totalRate = baseRate * buildingCount * efficiency;
-				
+
 				const existing = productionMap.get(product.itemId);
 				productionMap.set(product.itemId, {
 					itemName: product.item.displayName,
@@ -411,9 +411,9 @@ class ProductionInstanceService implements IProductionInstanceService {
 
 			// Calculate consumption
 			for (const ingredient of instance.ingredients) {
-				const baseRate = parseFloat(ingredient.count) / manufacturingDuration * 60;
+				const baseRate = parseFloat(ingredient.count) / manufacturingDuration;
 				const totalRate = baseRate * buildingCount * efficiency;
-				
+
 				const existing = consumptionMap.get(ingredient.itemId);
 				consumptionMap.set(ingredient.itemId, {
 					itemName: ingredient.item.displayName,
@@ -441,7 +441,7 @@ class ProductionInstanceService implements IProductionInstanceService {
 			const production = productionMap.get(itemId)?.rate || 0;
 			const consumption = consumptionMap.get(itemId)?.rate || 0;
 			const itemName = productionMap.get(itemId)?.itemName || consumptionMap.get(itemId)?.itemName || '';
-			
+
 			return {
 				itemId,
 				itemName,
@@ -469,7 +469,7 @@ class ProductionInstanceService implements IProductionInstanceService {
 				.from(sites)
 				.where(eq(sites.id, data.siteId))
 				.limit(1);
-			
+
 			if (site.length === 0) {
 				errors.push('Site does not exist');
 			}
@@ -482,7 +482,7 @@ class ProductionInstanceService implements IProductionInstanceService {
 				.from(recipeVersions)
 				.where(eq(recipeVersions.id, data.recipeVersionId))
 				.limit(1);
-			
+
 			if (recipeVersion.length === 0) {
 				errors.push('Recipe version does not exist');
 			}
@@ -495,7 +495,7 @@ class ProductionInstanceService implements IProductionInstanceService {
 				.from(buildings)
 				.where(eq(buildings.id, data.buildingId))
 				.limit(1);
-			
+
 			if (building.length === 0) {
 				errors.push('Building does not exist');
 			}

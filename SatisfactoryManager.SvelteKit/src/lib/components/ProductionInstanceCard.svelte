@@ -26,7 +26,7 @@
 		if (!instance.products || instance.products.length === 0) return null;
 		
 		const primaryProduct = instance.products[0];
-		const baseRate = primaryProduct.count / (instance.recipeVersion?.manufacturingDuration || 1) * 60;
+		const baseRate = primaryProduct.count / (instance.recipeVersion?.manufacturingDuration || 1) ;
 		const actualRate = baseRate * instance.buildingCount * instance.efficiencyRatio;
 		
 		return {

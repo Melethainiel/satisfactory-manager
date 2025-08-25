@@ -34,7 +34,7 @@ export interface GameSite {
 	updatedAt: Date;
 }
 
-export interface RecipeInstanceData {
+export interface ProductionInstanceData {
 	id: string;
 	siteId: string;
 	recipeVersionId: string;
@@ -118,23 +118,23 @@ export interface GameState {
 	selectedSiteId: string | null;
 	selectSite: (siteId: string | null) => void;
 	// Recipe instances management
-	siteRecipeInstances: RecipeInstanceData[];
-	loadSiteRecipeInstances: (siteId: string) => Promise<void>;
-	createRecipeInstance: (siteId: string, data: {
+	siteProductionInstances: ProductionInstanceData[];
+	loadSiteProductionInstances: (siteId: string) => Promise<void>;
+	createProductionInstance: (siteId: string, data: {
 		recipeVersionId: string;
 		buildingId: string;
 		buildingCount: number;
 		efficiencyRatio?: number;
 		notes?: string;
 	}) => Promise<void>;
-	updateRecipeInstance: (instanceId: string, data: {
+	updateProductionInstance: (instanceId: string, data: {
 		recipeVersionId?: string;
 		buildingId?: string;
 		buildingCount?: number;
 		efficiencyRatio?: number;
 		notes?: string;
 	}) => Promise<void>;
-	deleteRecipeInstance: (instanceId: string) => Promise<void>;
+	deleteProductionInstance: (instanceId: string) => Promise<void>;
 	// Production calculations
 	siteProductionOverview: ProductionOverview | null;
 	loadSiteProductionOverview: (siteId: string) => Promise<void>;
@@ -191,7 +191,7 @@ class GameStateClass implements GameState {
 	gameSites = $state<GameSite[]>([]);
 	selectedSiteId = $state<string | null>(null);
 	// Recipe instances state
-	siteRecipeInstances = $state<RecipeInstanceData[]>([]);
+	siteProductionInstances = $state<ProductionInstanceData[]>([]);
 	siteProductionOverview = $state<ProductionOverview | null>(null);
 
 	async loadGames(userEmail: string) {
@@ -467,19 +467,19 @@ class GameStateClass implements GameState {
 		}
 	}
 
-	// Recipe instances management
-	async loadSiteRecipeInstances(siteId: string) {
+	// Production instances management
+	async loadSiteProductionInstances(siteId: string) {
 		if (!siteId || !this.apiFetch) return;
 
 		this.isLoading = true;
 		try {
-			const response = await this.apiFetch(`/api/sites/${siteId}/recipe-instances`);
-			if (!response.ok) throw new Error(`Failed to load recipe instances (${response.status})`);
+			const response = await this.apiFetch(`/api/sites/${siteId}/production-instances`);
+			if (!response.ok) throw new Error(`Failed to load production instances (${response.status})`);
 			
 			const data = await response.json();
 			if (data.success) {
 				// Convert string dates to Date objects
-				this.siteRecipeInstances = data.data.map((instance: any) => ({
+				this.siteProductionInstances = data.data.map((instance: any) => ({
 					...instance,
 					buildingCount: parseFloat(instance.buildingCount),
 					efficiencyRatio: parseFloat(instance.efficiencyRatio),
@@ -488,13 +488,13 @@ class GameStateClass implements GameState {
 				}));
 			}
 		} catch (e: any) {
-			notificationService.error(e?.message ?? 'Failed to load recipe instances');
+			notificationService.error(e?.message ?? 'Failed to load production instances');
 		} finally {
 			this.isLoading = false;
 		}
 	}
 
-	async createRecipeInstance(siteId: string, data: {
+	async createProductionInstance(siteId: string, data: {
 		recipeVersionId: string;
 		buildingId: string;
 		buildingCount: number;
@@ -505,30 +505,30 @@ class GameStateClass implements GameState {
 
 		this.isLoading = true;
 		try {
-			const response = await this.apiFetch(`/api/sites/${siteId}/recipe-instances`, {
+			const response = await this.apiFetch(`/api/sites/${siteId}/production-instances`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(data)
 			});
 			
-			if (!response.ok) throw new Error(`Failed to create recipe instance (${response.status})`);
+			if (!response.ok) throw new Error(`Failed to create production instance (${response.status})`);
 			
 			const result = await response.json();
 			if (result.success) {
 				// Reload instances to get the new one with full details
-				await this.loadSiteRecipeInstances(siteId);
+				await this.loadSiteProductionInstances(siteId);
 				// Reload production overview
 				await this.loadSiteProductionOverview(siteId);
-				notificationService.success('Recipe instance created successfully');
+				notificationService.success('Production instance created successfully');
 			}
 		} catch (e: any) {
-			notificationService.error(e?.message ?? 'Failed to create recipe instance');
+			notificationService.error(e?.message ?? 'Failed to create production instance');
 		} finally {
 			this.isLoading = false;
 		}
 	}
 
-	async updateRecipeInstance(instanceId: string, data: {
+	async updateProductionInstance(instanceId: string, data: {
 		recipeVersionId?: string;
 		buildingId?: string;
 		buildingCount?: number;
@@ -539,54 +539,54 @@ class GameStateClass implements GameState {
 
 		this.isLoading = true;
 		try {
-			const response = await this.apiFetch(`/api/sites/_/recipe-instances/${instanceId}`, {
+			const response = await this.apiFetch(`/api/sites/_/production-instances/${instanceId}`, {
 				method: 'PATCH',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(data)
 			});
 			
-			if (!response.ok) throw new Error(`Failed to update recipe instance (${response.status})`);
+			if (!response.ok) throw new Error(`Failed to update production instance (${response.status})`);
 			
 			const result = await response.json();
 			if (result.success) {
 				// Find the instance and reload the site's instances
-				const instance = this.siteRecipeInstances.find(i => i.id === instanceId);
+				const instance = this.siteProductionInstances.find((i: ProductionInstanceData) => i.id === instanceId);
 				if (instance) {
-					await this.loadSiteRecipeInstances(instance.siteId);
+					await this.loadSiteProductionInstances(instance.siteId);
 					await this.loadSiteProductionOverview(instance.siteId);
 				}
-				notificationService.success('Recipe instance updated successfully');
+				notificationService.success('Production instance updated successfully');
 			}
 		} catch (e: any) {
-			notificationService.error(e?.message ?? 'Failed to update recipe instance');
+			notificationService.error(e?.message ?? 'Failed to update production instance');
 		} finally {
 			this.isLoading = false;
 		}
 	}
 
-	async deleteRecipeInstance(instanceId: string) {
+	async deleteProductionInstance(instanceId: string) {
 		if (!instanceId || !this.apiFetch) return;
 
 		this.isLoading = true;
 		try {
-			const response = await this.apiFetch(`/api/sites/_/recipe-instances/${instanceId}`, {
+			const response = await this.apiFetch(`/api/sites/_/production-instances/${instanceId}`, {
 				method: 'DELETE'
 			});
 			
-			if (!response.ok) throw new Error(`Failed to delete recipe instance (${response.status})`);
+			if (!response.ok) throw new Error(`Failed to delete production instance (${response.status})`);
 			
 			const result = await response.json();
 			if (result.success) {
 				// Find the instance and reload the site's instances
-				const instance = this.siteRecipeInstances.find(i => i.id === instanceId);
+				const instance = this.siteProductionInstances.find((i: ProductionInstanceData) => i.id === instanceId);
 				if (instance) {
-					await this.loadSiteRecipeInstances(instance.siteId);
+					await this.loadSiteProductionInstances(instance.siteId);
 					await this.loadSiteProductionOverview(instance.siteId);
 				}
-				notificationService.success('Recipe instance deleted successfully');
+				notificationService.success('Production instance deleted successfully');
 			}
 		} catch (e: any) {
-			notificationService.error(e?.message ?? 'Failed to delete recipe instance');
+			notificationService.error(e?.message ?? 'Failed to delete production instance');
 		} finally {
 			this.isLoading = false;
 		}

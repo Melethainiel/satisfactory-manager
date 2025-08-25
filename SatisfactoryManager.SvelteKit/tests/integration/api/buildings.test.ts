@@ -8,6 +8,7 @@ import { buildings, modules, moduleVersions } from '../../../src/lib/server/db/s
 
 describe('/api/buildings', () => {
 	let testBuildingId: string;
+	let testModuleId: string;
 	let testModuleVersionId: string;
 
 	beforeEach(async () => {
@@ -32,12 +33,14 @@ describe('/api/buildings', () => {
 			})
 			.returning();
 
+		testModuleId = module.id;
 		testModuleVersionId = moduleVersion.id;
 
 		// Create test building
 		const [building] = await db
 			.insert(buildings)
 			.values({
+				moduleId: testModuleId,
 				className: 'Build_TestBuilding_C',
 				name: 'Test Building',
 				type: 'Constructor'

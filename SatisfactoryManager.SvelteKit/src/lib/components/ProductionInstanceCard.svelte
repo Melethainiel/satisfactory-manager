@@ -1,13 +1,13 @@
 <script lang="ts">
-	import { getGameState, type RecipeInstanceData } from '$lib/states/gameState.svelte';
+	import { getGameState, type ProductionInstanceData } from '$lib/states/gameState.svelte';
 	import { getAuthState } from '$lib/states/authState.svelte';
 	import { Icon, PencilSquare, Trash, Cog6Tooth } from 'svelte-hero-icons';
 	import { t } from '$lib/i18n';
 
 	interface Props {
-		instance: RecipeInstanceData;
-		onEdit?: (instance: RecipeInstanceData) => void;
-		onDelete?: (instance: RecipeInstanceData) => void;
+		instance: ProductionInstanceData;
+		onEdit?: (instance: ProductionInstanceData) => void;
+		onDelete?: (instance: ProductionInstanceData) => void;
 	}
 
 	let { instance, onEdit, onDelete }: Props = $props();
@@ -47,6 +47,26 @@
 		return 'text-error';
 	});
 
+	// Display name logic: item name + recipe name if exists, or just item/building name for extraction
+	let displayName = $derived(() => {
+		// If we have products (either from recipe or extraction)
+		if (instance.products && instance.products.length > 0) {
+			const primaryProduct = instance.products[0];
+			const itemName = primaryProduct.item.displayName;
+			
+			// If we have a recipe, show "Item (Recipe)"
+			if (instance.recipe?.displayName) {
+				return `${itemName} (${instance.recipe.displayName})`;
+			}
+			
+			// For extraction, just show the item name
+			return itemName;
+		}
+		
+		// Fallback: show recipe name or building name
+		return instance.recipe?.displayName || instance.building?.name || 'Unknown Production';
+	});
+
 	function formatRate(rate: number): string {
 		return rate < 10 ? rate.toFixed(2) : rate.toFixed(1);
 	}
@@ -70,7 +90,7 @@
 		<div class="flex items-start justify-between gap-2">
 			<div class="flex-1 min-w-0">
 				<h4 class="font-semibold text-base truncate">
-					{instance.recipe?.displayName || 'Unknown Recipe'}
+					{displayName()}
 				</h4>
 				<div class="text-sm opacity-70 flex items-center gap-2">
 					<Icon src={Cog6Tooth} class="size-4 flex-shrink-0" />
@@ -85,14 +105,14 @@
 					<button
 						class="btn btn-ghost btn-xs btn-square"
 						onclick={handleEdit}
-						title={$t('recipeInstances.edit_instance')}
+						title={$t('productionInstances.edit_instance')}
 					>
 						<Icon src={PencilSquare} class="size-3" />
 					</button>
 					<button
 						class="btn btn-ghost btn-xs btn-square text-error hover:bg-error hover:text-error-content"
 						onclick={handleDelete}
-						title={$t('recipeInstances.delete_instance')}
+						title={$t('productionInstances.delete_instance')}
 					>
 						<Icon src={Trash} class="size-3" />
 					</button>
@@ -106,7 +126,7 @@
 				<!-- Primary Production -->
 				<div class="bg-base-200 rounded p-3">
 					<div class="text-xs font-medium opacity-70 mb-1">
-						{$t('recipeInstances.production_rate')}
+						{$t('productionInstances.production_rate')}
 					</div>
 					<div class="font-mono text-sm">
 						<span class="font-semibold">{formatRate(productionInfo()?.actualRate || 0)}</span>
@@ -121,7 +141,7 @@
 				<div class="grid grid-cols-2 gap-3">
 					<div>
 						<div class="text-xs font-medium opacity-70">
-							{$t('recipeInstances.building_count')}
+							{$t('productionInstances.building_count')}
 						</div>
 						<div class="font-mono text-sm font-semibold">
 							{instance.buildingCount}
@@ -129,7 +149,7 @@
 					</div>
 					<div>
 						<div class="text-xs font-medium opacity-70">
-							{$t('recipeInstances.efficiency')}
+							{$t('productionInstances.efficiency')}
 						</div>
 						<div class="font-mono text-sm font-semibold {utilizationColor()}">
 							{efficiencyPercent()}%
@@ -143,7 +163,7 @@
 		{#if instance.ingredients && instance.ingredients.length > 0}
 			<div class="mt-3">
 				<div class="text-xs font-medium opacity-70 mb-2">
-					{$t('recipeInstances.ingredients')}
+					{$t('productionInstances.ingredients')}
 				</div>
 				<div class="flex flex-wrap gap-1">
 					{#each instance.ingredients as ingredient}
@@ -158,7 +178,7 @@
 		{#if instance.products && instance.products.length > 1}
 			<div class="mt-2">
 				<div class="text-xs font-medium opacity-70 mb-2">
-					{$t('recipeInstances.products')}
+					{$t('productionInstances.products')}
 				</div>
 				<div class="flex flex-wrap gap-1">
 					{#each instance.products as product}
@@ -174,7 +194,7 @@
 		{#if instance.notes}
 			<div class="mt-3 pt-3 border-t border-base-300">
 				<div class="text-xs font-medium opacity-70 mb-1">
-					{$t('recipeInstances.notes')}
+					{$t('productionInstances.notes')}
 				</div>
 				<div class="text-sm opacity-80 break-words">
 					{instance.notes}

@@ -260,5 +260,26 @@
 		"searching": "Searching...",
 		"selected_recipe": "Selected Recipe",
 		"manufacturing_duration": "Manufacturing Duration"
+	},
+	"production": {
+		"add_production_instance": "Add Production Instance",
+		"item_to_produce": "Item to Produce",
+		"item_search_placeholder": "Search for items to produce (e.g., Iron Ore, Iron Ingot)",
+		"how_to_produce": "How do you want to produce this item?",
+		"craft_via_recipe": "Craft via Recipe",
+		"extract_from_deposits": "Extract from deposits",
+		"generate_power": "Generate Power",
+		"select_recipe": "Select Recipe",
+		"building_for_recipe": "Building for Recipe",
+		"extractor": "Extractor",
+		"generator": "Generator",
+		"recipes_available": "recipes available",
+		"extractors_available": "extractors available",
+		"generators_available": "generators available",
+		"coming_soon": "Coming soon",
+		"no_production_methods": "No production methods available for this item in the current game configuration.",
+		"loading_production_options": "Loading production options...",
+		"no_compatible_buildings": "No compatible buildings available",
+		"loading_buildings": "Loading buildings..."
 	}
 }

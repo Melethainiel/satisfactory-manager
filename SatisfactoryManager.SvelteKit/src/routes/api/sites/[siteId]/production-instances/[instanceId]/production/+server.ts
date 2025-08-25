@@ -1,17 +1,17 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { recipeInstanceService } from '$lib/server/services/recipeInstanceService';
+import { productionInstanceService } from '$lib/server/services/productionInstanceService';
 
 export const GET: RequestHandler = async ({ params }) => {
 	try {
 		const { instanceId } = params;
-		const production = await recipeInstanceService.calculateInstanceProduction(instanceId);
+		const production = await productionInstanceService.calculateInstanceProduction(instanceId);
 		
 		if (!production) {
 			return json(
 				{
 					success: false,
-					error: 'Recipe instance not found or production could not be calculated'
+					error: 'Production instance not found or production could not be calculated'
 				},
 				{ status: 404 }
 			);

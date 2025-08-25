@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { getGameState, type RecipeInstanceData } from '$lib/states/gameState.svelte';
+	import { getGameState, type ProductionInstanceData } from '$lib/states/gameState.svelte';
 	import { getAuthState } from '$lib/states/authState.svelte';
 	import { Icon, Plus, ChartBarSquare } from 'svelte-hero-icons';
 	import { t } from '$lib/i18n';
 	import { onMount } from 'svelte';
-	import RecipeInstanceCard from './RecipeInstanceCard.svelte';
-	import AddRecipeInstanceDialog from '$lib/dialogs/AddRecipeInstanceDialog.svelte';
-	import type { AddRecipeInstanceDialogHandle } from '$lib/dialogs/AddRecipeInstanceDialogHandle';
+	import ProductionInstanceCard from './ProductionInstanceCard.svelte';
+	import AddProductionInstanceDialog from '$lib/dialogs/AddProductionInstanceDialog.svelte';
+	import type { AddProductionInstanceDialogHandle } from '$lib/dialogs/AddProductionInstanceDialogHandle';
 	import ConfirmDialog from '$lib/dialogs/ConfirmDialog.svelte';
 	import type { ConfirmDialogHandle } from '$lib/dialogs/ConfirmDialogHandle';
 
@@ -21,7 +21,7 @@
 	const authState = getAuthState();
 
 	// Dialog refs
-	let addRecipeDialogRef: AddRecipeInstanceDialogHandle | null = $state(null);
+	let addRecipeDialogRef: AddProductionInstanceDialogHandle | null = $state(null);
 	let confirmDialogRef: ConfirmDialogHandle | null = $state(null);
 
 	// Check permissions
@@ -49,7 +49,7 @@
 	onMount(async () => {
 		// Load recipe instances and production overview for this site
 		await Promise.all([
-			gameState.loadSiteRecipeInstances(siteId),
+			gameState.loadSiteProductionInstances(siteId),
 			gameState.loadSiteProductionOverview(siteId)
 		]);
 	});
@@ -57,43 +57,32 @@
 	// Watch for site changes and reload data
 	$effect(() => {
 		if (siteId) {
-			gameState.loadSiteRecipeInstances(siteId);
+			gameState.loadSiteProductionInstances(siteId);
 			gameState.loadSiteProductionOverview(siteId);
 		}
 	});
 
-	function handleAddRecipe() {
-		console.log('🔍 handleAddRecipe called with siteId:', siteId);
-		console.log('🔍 addRecipeDialogRef:', addRecipeDialogRef);
-		console.log('🔍 addRecipeDialogRef type:', typeof addRecipeDialogRef);
-		console.log('🔍 addRecipeDialogRef.open:', addRecipeDialogRef?.open);
-		console.log('🔍 addRecipeDialogRef.open type:', typeof addRecipeDialogRef?.open);
-		
+	function handleAddRecipe() {		
 		if (addRecipeDialogRef?.open) {
-			console.log('🔍 Calling addRecipeDialogRef.open() with siteId:', siteId);
 			addRecipeDialogRef.open(siteId);
-			console.log('🔍 addRecipeDialogRef.open() call completed');
-		} else {
-			console.error('❌ addRecipeDialogRef.open is not available');
-			console.error('❌ addRecipeDialogRef is:', addRecipeDialogRef);
 		}
 	}
 
-	function handleEditInstance(instance: RecipeInstanceData) {
+	function handleEditInstance(instance: ProductionInstanceData) {
 		// TODO: Open edit dialog
 		console.log('Edit instance:', instance);
 	}
 
-	function handleDeleteInstance(instance: RecipeInstanceData) {
+	function handleDeleteInstance(instance: ProductionInstanceData) {
 		confirmDialogRef?.open({
-			title: $t('recipeInstances.delete_instance'),
-			message: $t('recipeInstances.delete_instance_confirm', { 
+			title: $t('productionInstances.delete_instance'),
+			message: $t('productionInstances.delete_instance_confirm', { 
 				values: { name: instance.recipe?.displayName || 'Unknown Recipe' }
 			}),
-			confirmText: $t('recipeInstances.delete_instance'),
+			confirmText: $t('productionInstances.delete_instance'),
 			type: 'danger',
 			onConfirm: async () => {
-				await gameState.deleteRecipeInstance(instance.id);
+				await gameState.deleteProductionInstance(instance.id);
 			}
 		});
 	}
@@ -109,10 +98,10 @@
 		<div>
 			<h2 class="text-xl font-semibold">{siteName}</h2>
 			<p class="text-base-content/70 text-sm mt-1">
-				{gameState.siteRecipeInstances.length} 
-				{gameState.siteRecipeInstances.length === 1 ? 
-					$t('recipeInstances.recipe_instance') : 
-					$t('recipeInstances.recipe_instances')
+				{gameState.siteProductionInstances.length} 
+				{gameState.siteProductionInstances.length === 1 ? 
+					$t('productionInstances.recipe_instance') : 
+					$t('productionInstances.recipe_instances')
 				}
 			</p>
 		</div>
@@ -127,7 +116,7 @@
 				disabled={gameState.isLoading}
 			>
 				<Icon src={Plus} class="size-4" />
-				{$t('recipeInstances.add_recipe')}
+				{$t('productionInstances.add_recipe')}
 			</button>
 		{/if}
 	</div>
@@ -139,7 +128,7 @@
 				<div class="stat-figure text-primary">
 					<Icon src={ChartBarSquare} class="size-8" />
 				</div>
-				<div class="stat-title text-xs">{$t('recipeInstances.total_inputs')}</div>
+				<div class="stat-title text-xs">{$t('productionInstances.total_inputs')}</div>
 				<div class="stat-value text-2xl">{productionStats()?.inputs || 0}</div>
 			</div>
 
@@ -147,7 +136,7 @@
 				<div class="stat-figure text-secondary">
 					<Icon src={ChartBarSquare} class="size-8" />
 				</div>
-				<div class="stat-title text-xs">{$t('recipeInstances.total_outputs')}</div>
+				<div class="stat-title text-xs">{$t('productionInstances.total_outputs')}</div>
 				<div class="stat-value text-2xl">{productionStats()?.outputs || 0}</div>
 			</div>
 
@@ -155,7 +144,7 @@
 				<div class="stat-figure {(productionStats()?.imbalances || 0) > 0 ? 'text-warning' : 'text-success'}">
 					<Icon src={ChartBarSquare} class="size-8" />
 				</div>
-				<div class="stat-title text-xs">{$t('recipeInstances.imbalances')}</div>
+				<div class="stat-title text-xs">{$t('productionInstances.imbalances')}</div>
 				<div class="stat-value text-2xl">{productionStats()?.imbalances || 0}</div>
 			</div>
 		</div>
@@ -169,7 +158,7 @@
 				<div class="bg-success/10 rounded-lg p-4">
 					<h3 class="font-medium text-success mb-3 flex items-center gap-2">
 						<div class="size-3 bg-success rounded-full"></div>
-						{$t('recipeInstances.total_production')}
+						{$t('productionInstances.total_production')}
 					</h3>
 					<div class="space-y-2">
 						{#each gameState.siteProductionOverview.totalProduction as item}
@@ -189,7 +178,7 @@
 				<div class="bg-warning/10 rounded-lg p-4">
 					<h3 class="font-medium text-warning mb-3 flex items-center gap-2">
 						<div class="size-3 bg-warning rounded-full"></div>
-						{$t('recipeInstances.total_consumption')}
+						{$t('productionInstances.total_consumption')}
 					</h3>
 					<div class="space-y-2">
 						{#each gameState.siteProductionOverview.totalConsumption as item}
@@ -209,7 +198,7 @@
 	<!-- Net Balance -->
 	{#if gameState.siteProductionOverview?.netBalance && gameState.siteProductionOverview.netBalance.length > 0}
 		<div class="bg-base-200 rounded-lg p-4">
-			<h3 class="font-medium mb-3">{$t('recipeInstances.net_balance')}</h3>
+			<h3 class="font-medium mb-3">{$t('productionInstances.net_balance')}</h3>
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-2">
 				{#each gameState.siteProductionOverview.netBalance as item}
 					<div class="flex justify-between items-center text-sm p-2 rounded {item.balance > 0 ? 'bg-success/20' : 'bg-error/20'}">
@@ -228,26 +217,26 @@
 		<div class="flex items-center justify-center py-8">
 			<span class="loading loading-spinner loading-lg"></span>
 		</div>
-	{:else if gameState.siteRecipeInstances.length === 0}
+	{:else if gameState.siteProductionInstances.length === 0}
 		<div class="text-center py-12">
 			<div class="mb-4 opacity-50">
 				<Icon src={ChartBarSquare} class="size-16 mx-auto" />
 			</div>
-			<h3 class="font-semibold mb-2">{$t('recipeInstances.no_instances')}</h3>
-			<p class="text-base-content/70 mb-6">{$t('recipeInstances.no_instances_description')}</p>
+			<h3 class="font-semibold mb-2">{$t('productionInstances.no_instances')}</h3>
+			<p class="text-base-content/70 mb-6">{$t('productionInstances.no_instances_description')}</p>
 			{#if canManage()}
 				<button class="btn btn-primary" onclick={handleAddRecipe}>
 					<Icon src={Plus} class="size-4" />
-					{$t('recipeInstances.add_first_recipe')}
+					{$t('productionInstances.add_first_recipe')}
 				</button>
 			{/if}
 		</div>
 	{:else}
 		<div>
-			<h3 class="font-medium mb-4">{$t('recipeInstances.recipe_instances')}</h3>
+			<h3 class="font-medium mb-4">{$t('productionInstances.recipe_instances')}</h3>
 			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-				{#each gameState.siteRecipeInstances as instance (instance.id)}
-					<RecipeInstanceCard 
+				{#each gameState.siteProductionInstances as instance (instance.id)}
+					<ProductionInstanceCard 
 						{instance}
 						onEdit={handleEditInstance}
 						onDelete={handleDeleteInstance}
@@ -259,5 +248,5 @@
 </div>
 
 <!-- Dialogs -->
-<AddRecipeInstanceDialog bind:this={addRecipeDialogRef} />
+<AddProductionInstanceDialog bind:this={addRecipeDialogRef} />
 <ConfirmDialog bind:this={confirmDialogRef} />

@@ -220,6 +220,11 @@
 				instanceData.recipeVersionId = recipeVersionId;
 			}
 
+			// For extraction, include the extracted item ID
+			if (itemState.selectedProductionType === 'extract' && itemState.selectedItem?.id) {
+				instanceData.extractedItemId = itemState.selectedItem.id;
+			}
+
 			await gameState.createProductionInstance(currentSiteId, instanceData);
 			
 			console.log('✅ Production instance created successfully');

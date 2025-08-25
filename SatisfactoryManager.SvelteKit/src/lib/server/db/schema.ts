@@ -454,18 +454,19 @@ export const moduleGamesRelations = relations(moduleGames, ({ one }) => ({
 	})
 }));
 
-// Recipe instances table - concrete implementations of recipes in specific sites
-export const recipeInstances = pgTable('recipe_instances', {
+// Production instances table - concrete implementations of recipes or extraction in specific sites
+export const productionInstances = pgTable('production_instances', {
 	id: uuid('id').defaultRandom().primaryKey(),
 	siteId: uuid('site_id')
 		.notNull()
 		.references(() => sites.id, { onDelete: 'cascade' }),
 	recipeVersionId: uuid('recipe_version_id')
-		.notNull()
 		.references(() => recipeVersions.id, { onDelete: 'cascade' }),
 	buildingId: uuid('building_id')
 		.notNull()
 		.references(() => buildings.id, { onDelete: 'cascade' }),
+	extractedItemId: uuid('extracted_item_id')
+		.references(() => items.id, { onDelete: 'cascade' }),
 	buildingCount: numeric('building_count', { precision: 10, scale: 2 }).notNull(),
 	efficiencyRatio: numeric('efficiency_ratio', { precision: 10, scale: 3 }).notNull().default('1.000'),
 	notes: varchar('notes', { length: 1000 }),
@@ -473,21 +474,25 @@ export const recipeInstances = pgTable('recipe_instances', {
 	updatedAt: timestamp('updated_at').defaultNow().notNull()
 });
 
-export type RecipeInstance = typeof recipeInstances.$inferSelect;
-export type NewRecipeInstance = typeof recipeInstances.$inferInsert;
+export type ProductionInstance = typeof productionInstances.$inferSelect;
+export type NewProductionInstance = typeof productionInstances.$inferInsert;
 
-export const recipeInstancesRelations = relations(recipeInstances, ({ one }) => ({
+export const productionInstancesRelations = relations(productionInstances, ({ one }) => ({
 	site: one(sites, {
-		fields: [recipeInstances.siteId],
+		fields: [productionInstances.siteId],
 		references: [sites.id]
 	}),
 	recipeVersion: one(recipeVersions, {
-		fields: [recipeInstances.recipeVersionId],
+		fields: [productionInstances.recipeVersionId],
 		references: [recipeVersions.id]
 	}),
 	building: one(buildings, {
-		fields: [recipeInstances.buildingId],
+		fields: [productionInstances.buildingId],
 		references: [buildings.id]
+	}),
+	extractedItem: one(items, {
+		fields: [productionInstances.extractedItemId],
+		references: [items.id]
 	})
 }));
 
@@ -496,5 +501,5 @@ export const sitesRelations = relations(sites, ({ one, many }) => ({
 		fields: [sites.gameId],
 		references: [games.id]
 	}),
-	recipeInstances: many(recipeInstances)
+	productionInstances: many(productionInstances)
 }));

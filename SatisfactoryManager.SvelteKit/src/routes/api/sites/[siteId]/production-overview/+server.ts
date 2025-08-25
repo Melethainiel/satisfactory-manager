@@ -1,11 +1,11 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { recipeInstanceService } from '$lib/server/services/recipeInstanceService';
+import { productionInstanceService } from '$lib/server/services/productionInstanceService';
 
 export const GET: RequestHandler = async ({ params }) => {
 	try {
 		const { siteId } = params;
-		const productionOverview = await recipeInstanceService.calculateSiteProduction(siteId);
+		const productionOverview = await productionInstanceService.calculateSiteProduction(siteId);
 		
 		return json({
 			success: true,

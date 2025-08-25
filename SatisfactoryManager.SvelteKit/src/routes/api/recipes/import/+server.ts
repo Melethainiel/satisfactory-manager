@@ -162,6 +162,7 @@ export const POST: RequestHandler = async ({ request }) => {
 				if (!recipe) {
 					// Create new recipe
 					recipe = await recipeService.createRecipe({
+						moduleId: moduleVersion.moduleId,
 						className: recipeData.className.trim(),
 						displayName: recipeData.displayName.trim()
 					});

@@ -1,17 +1,17 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { recipeInstanceService } from '$lib/server/services/recipeInstanceService';
+import { productionInstanceService } from '$lib/server/services/productionInstanceService';
 
 export const GET: RequestHandler = async ({ params }) => {
 	try {
 		const { instanceId } = params;
-		const instance = await recipeInstanceService.getRecipeInstanceById(instanceId);
+		const instance = await productionInstanceService.getProductionInstanceById(instanceId);
 		
 		if (!instance) {
 			return json(
 				{
 					success: false,
-					error: 'Recipe instance not found'
+					error: 'Production instance not found'
 				},
 				{ status: 404 }
 			);
@@ -22,11 +22,11 @@ export const GET: RequestHandler = async ({ params }) => {
 			data: instance
 		});
 	} catch (error) {
-		console.error('Error fetching recipe instance:', error);
+		console.error('Error fetching production instance:', error);
 		return json(
 			{
 				success: false,
-				error: error instanceof Error ? error.message : 'Failed to fetch recipe instance'
+				error: error instanceof Error ? error.message : 'Failed to fetch production instance'
 			},
 			{ status: 500 }
 		);
@@ -70,13 +70,13 @@ export const PATCH: RequestHandler = async ({ request, params }) => {
 		if (data.efficiencyRatio !== undefined) updateData.efficiencyRatio = data.efficiencyRatio.toString();
 		if (data.notes !== undefined) updateData.notes = data.notes || null;
 
-		const instance = await recipeInstanceService.updateRecipeInstance(instanceId, updateData);
+		const instance = await productionInstanceService.updateProductionInstance(instanceId, updateData);
 		
 		if (!instance) {
 			return json(
 				{
 					success: false,
-					error: 'Recipe instance not found'
+					error: 'Production instance not found'
 				},
 				{ status: 404 }
 			);
@@ -87,11 +87,11 @@ export const PATCH: RequestHandler = async ({ request, params }) => {
 			data: instance
 		});
 	} catch (error) {
-		console.error('Error updating recipe instance:', error);
+		console.error('Error updating production instance:', error);
 		return json(
 			{
 				success: false,
-				error: error instanceof Error ? error.message : 'Failed to update recipe instance'
+				error: error instanceof Error ? error.message : 'Failed to update production instance'
 			},
 			{ status: 500 }
 		);
@@ -101,13 +101,13 @@ export const PATCH: RequestHandler = async ({ request, params }) => {
 export const DELETE: RequestHandler = async ({ params }) => {
 	try {
 		const { instanceId } = params;
-		const success = await recipeInstanceService.deleteRecipeInstance(instanceId);
+		const success = await productionInstanceService.deleteProductionInstance(instanceId);
 		
 		if (!success) {
 			return json(
 				{
 					success: false,
-					error: 'Recipe instance not found'
+					error: 'Production instance not found'
 				},
 				{ status: 404 }
 			);
@@ -115,14 +115,14 @@ export const DELETE: RequestHandler = async ({ params }) => {
 
 		return json({
 			success: true,
-			message: 'Recipe instance deleted successfully'
+			message: 'Production instance deleted successfully'
 		});
 	} catch (error) {
-		console.error('Error deleting recipe instance:', error);
+		console.error('Error deleting production instance:', error);
 		return json(
 			{
 				success: false,
-				error: error instanceof Error ? error.message : 'Failed to delete recipe instance'
+				error: error instanceof Error ? error.message : 'Failed to delete production instance'
 			},
 			{ status: 500 }
 		);

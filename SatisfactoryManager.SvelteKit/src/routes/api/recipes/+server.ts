@@ -37,7 +37,7 @@ export const GET: RequestHandler = async ({ url }) => {
 // POST /api/recipes - Create a new recipe
 export const POST: RequestHandler = async ({ request }) => {
 	try {
-		const { className, displayName } = await request.json();
+		const { className, displayName, moduleId } = await request.json();
 
 		if (!className || typeof className !== 'string' || !className.trim()) {
 			return json({ error: 'Recipe className is required' }, { status: 400 });
@@ -47,6 +47,10 @@ export const POST: RequestHandler = async ({ request }) => {
 			return json({ error: 'Recipe displayName is required' }, { status: 400 });
 		}
 
+		if (!moduleId || typeof moduleId !== 'string' || !moduleId.trim()) {
+			return json({ error: 'Recipe moduleId is required' }, { status: 400 });
+		}
+
 		// Check if recipe with this className already exists
 		const existingRecipe = await recipeService.getRecipeByClassName(className.trim());
 		if (existingRecipe) {
@@ -54,6 +58,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 
 		const recipe = await recipeService.createRecipe({
+			moduleId: moduleId.trim(),
 			className: className.trim(),
 			displayName: displayName.trim()
 		});

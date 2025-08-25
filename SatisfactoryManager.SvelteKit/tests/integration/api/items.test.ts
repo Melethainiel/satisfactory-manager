@@ -8,6 +8,7 @@ import { items, modules, moduleVersions } from '../../../src/lib/server/db/schem
 
 describe('/api/items', () => {
 	let testItemId: string;
+	let testModuleId: string;
 	let testModuleVersionId: string;
 
 	beforeEach(async () => {
@@ -32,12 +33,14 @@ describe('/api/items', () => {
 			})
 			.returning();
 
+		testModuleId = module.id;
 		testModuleVersionId = moduleVersion.id;
 
 		// Create test item
 		const [item] = await db
 			.insert(items)
 			.values({
+				moduleId: testModuleId,
 				className: 'Desc_TestItem_C',
 				displayName: 'Test Item',
 				description: 'A test item',

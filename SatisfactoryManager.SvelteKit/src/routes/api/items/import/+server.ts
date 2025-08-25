@@ -104,6 +104,7 @@ export const POST: RequestHandler = async ({ request }) => {
 				if (!item) {
 					// Create new item
 					item = await itemService.createItem({
+						moduleId: moduleVersion.moduleId,
 						className: itemData.className.trim(),
 						displayName: itemData.displayName.trim(),
 						description: itemData.description?.trim() || null,

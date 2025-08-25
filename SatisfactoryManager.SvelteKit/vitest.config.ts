@@ -1,6 +1,6 @@
 /**
  * Vitest configuration with optimized environment variable loading
- * 
+ *
  * This configuration uses Vite's native loadEnv function which is compatible
  * with SvelteKit's environment variable handling.
  */
@@ -21,14 +21,14 @@ export default defineConfig(({ mode }) => {
 			// Test file patterns
 			include: ['src/**/*.{test,spec}.{js,ts}', 'tests/**/*.{test,spec}.{js,ts}'],
 			exclude: ['node_modules/**', 'build/**', 'dist/**'],
-			
+
 			// Test environment configuration
 			environment: 'node', // Node environment for API and server-side tests
 			globals: true, // Enable global test functions (describe, it, expect)
-			
+
 			// Setup files
 			setupFiles: ['./tests/setup/test-setup.ts'],
-			
+
 			// Pool configuration for parallel test execution
 			pool: 'forks',
 			poolOptions: {
@@ -36,7 +36,7 @@ export default defineConfig(({ mode }) => {
 					singleFork: true // Single fork for database connection consistency
 				}
 			},
-			
+
 			// Environment variables for test execution
 			env: {
 				...env, // Spread loaded environment variables
@@ -46,11 +46,11 @@ export default defineConfig(({ mode }) => {
 				// Disable verbose logging in tests unless explicitly enabled
 				VITE_LOG_LEVEL: env.VITE_TEST_LOG_LEVEL || 'warn'
 			},
-			
+
 			// Timeout configuration for database operations
 			testTimeout: 30000, // 30 seconds for individual tests
 			hookTimeout: 30000, // 30 seconds for setup/teardown hooks
-			
+
 			// Coverage configuration
 			coverage: {
 				provider: 'v8',
@@ -65,7 +65,7 @@ export default defineConfig(({ mode }) => {
 				]
 			}
 		},
-		
+
 		// Vite configuration specific to testing
 		define: {
 			// Ensure compatibility with the new environment system

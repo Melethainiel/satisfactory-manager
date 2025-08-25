@@ -6,7 +6,7 @@ export const GET: RequestHandler = async ({ params }) => {
 	try {
 		const { instanceId } = params;
 		const instance = await productionInstanceService.getProductionInstanceById(instanceId);
-		
+
 		if (!instance) {
 			return json(
 				{
@@ -37,7 +37,7 @@ export const PATCH: RequestHandler = async ({ request, params }) => {
 	try {
 		const { instanceId } = params;
 		const data = await request.json();
-		
+
 		// Validate numeric fields if provided
 		if (data.buildingCount !== undefined && parseFloat(data.buildingCount) <= 0) {
 			return json(
@@ -63,15 +63,19 @@ export const PATCH: RequestHandler = async ({ request, params }) => {
 		}
 
 		const updateData: any = {};
-		
+
 		if (data.recipeVersionId) updateData.recipeVersionId = data.recipeVersionId;
 		if (data.buildingId) updateData.buildingId = data.buildingId;
 		if (data.buildingCount !== undefined) updateData.buildingCount = data.buildingCount.toString();
-		if (data.efficiencyRatio !== undefined) updateData.efficiencyRatio = data.efficiencyRatio.toString();
+		if (data.efficiencyRatio !== undefined)
+			updateData.efficiencyRatio = data.efficiencyRatio.toString();
 		if (data.notes !== undefined) updateData.notes = data.notes || null;
 
-		const instance = await productionInstanceService.updateProductionInstance(instanceId, updateData);
-		
+		const instance = await productionInstanceService.updateProductionInstance(
+			instanceId,
+			updateData
+		);
+
 		if (!instance) {
 			return json(
 				{
@@ -102,7 +106,7 @@ export const DELETE: RequestHandler = async ({ params }) => {
 	try {
 		const { instanceId } = params;
 		const success = await productionInstanceService.deleteProductionInstance(instanceId);
-		
+
 		if (!success) {
 			return json(
 				{

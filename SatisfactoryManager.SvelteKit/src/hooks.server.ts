@@ -1,6 +1,6 @@
 /**
  * SvelteKit hooks for server-side request handling
- * 
+ *
  * This module handles authentication, internationalization, and request processing
  * using the centralized configuration system.
  */
@@ -14,60 +14,62 @@ import { getServerEnvVar } from '$lib/config/env.server.js';
 
 // Initialize authentication configuration asynchronously
 let authConfigPromise: Promise<{
-  authConfig: any;
-  authorityUrl: URL;
-  TENANT_DOMAIN: string;
-  CLIENT_ID: string;
-  TENANT_DOMAIN_ID: string;
-  REQUIRED_SCOPE: string;
-  POLICY: string;
-  jwks: any;
+	authConfig: any;
+	authorityUrl: URL;
+	TENANT_DOMAIN: string;
+	CLIENT_ID: string;
+	TENANT_DOMAIN_ID: string;
+	REQUIRED_SCOPE: string;
+	POLICY: string;
+	jwks: any;
 }> | null = null;
 
 async function initAuthConfig() {
-  if (authConfigPromise) return authConfigPromise;
-  
-  authConfigPromise = (async () => {
-    // Get Azure B2C configuration using the centralized system
-    const authConfig = await getAzureB2CConfig();
-    
-    // Parse configuration values
-    const authorityUrl = new URL(authConfig.authority);
-    const TENANT_DOMAIN = authConfig.knownAuthorities[0] || authorityUrl.hostname;
-    const CLIENT_ID = authConfig.clientId;
-    
-    // Extract tenant ID - use explicit configuration or fallback to known value
-    // The tenant ID is the GUID, not the domain name (satisfactorymanager.onmicrosoft.com)
-    const TENANT_DOMAIN_ID = getServerEnvVar('AZURE_B2C_TENANT_ID') || 
-      '2b83dcfa-e885-4b3d-a9c9-570fae5ab5c7';
-    
-    // API scope configuration
-    const REQUIRED_SCOPE = getServerEnvVar('AZURE_B2C_API_SCOPE') || 'access_users';
-    
-    // Extract policy from authority URL
-    const pathSegments = authorityUrl.pathname.split('/');
-    const POLICY = (getServerEnvVar('AZURE_B2C_POLICY') || 
-      pathSegments[pathSegments.length - 1] || 
-      'B2C_1_SignInSignUp').toLowerCase();
-    
-    // Build JWKS URL for token verification
-    // Format: https://<tenant>.b2clogin.com/<tenant>.onmicrosoft.com/<policy>/discovery/v2.0/keys
-    const jwksUrl = `https://${TENANT_DOMAIN}/${TENANT_DOMAIN.split('.')[0]}.onmicrosoft.com/${POLICY}/discovery/v2.0/keys`;
-    const jwks = createRemoteJWKSet(new URL(jwksUrl));
-    
-    return {
-      authConfig,
-      authorityUrl,
-      TENANT_DOMAIN,
-      CLIENT_ID,
-      TENANT_DOMAIN_ID,
-      REQUIRED_SCOPE,
-      POLICY,
-      jwks
-    };
-  })();
-  
-  return authConfigPromise;
+	if (authConfigPromise) return authConfigPromise;
+
+	authConfigPromise = (async () => {
+		// Get Azure B2C configuration using the centralized system
+		const authConfig = await getAzureB2CConfig();
+
+		// Parse configuration values
+		const authorityUrl = new URL(authConfig.authority);
+		const TENANT_DOMAIN = authConfig.knownAuthorities[0] || authorityUrl.hostname;
+		const CLIENT_ID = authConfig.clientId;
+
+		// Extract tenant ID - use explicit configuration or fallback to known value
+		// The tenant ID is the GUID, not the domain name (satisfactorymanager.onmicrosoft.com)
+		const TENANT_DOMAIN_ID =
+			getServerEnvVar('AZURE_B2C_TENANT_ID') || '2b83dcfa-e885-4b3d-a9c9-570fae5ab5c7';
+
+		// API scope configuration
+		const REQUIRED_SCOPE = getServerEnvVar('AZURE_B2C_API_SCOPE') || 'access_users';
+
+		// Extract policy from authority URL
+		const pathSegments = authorityUrl.pathname.split('/');
+		const POLICY = (
+			getServerEnvVar('AZURE_B2C_POLICY') ||
+			pathSegments[pathSegments.length - 1] ||
+			'B2C_1_SignInSignUp'
+		).toLowerCase();
+
+		// Build JWKS URL for token verification
+		// Format: https://<tenant>.b2clogin.com/<tenant>.onmicrosoft.com/<policy>/discovery/v2.0/keys
+		const jwksUrl = `https://${TENANT_DOMAIN}/${TENANT_DOMAIN.split('.')[0]}.onmicrosoft.com/${POLICY}/discovery/v2.0/keys`;
+		const jwks = createRemoteJWKSet(new URL(jwksUrl));
+
+		return {
+			authConfig,
+			authorityUrl,
+			TENANT_DOMAIN,
+			CLIENT_ID,
+			TENANT_DOMAIN_ID,
+			REQUIRED_SCOPE,
+			POLICY,
+			jwks
+		};
+	})();
+
+	return authConfigPromise;
 }
 
 // Extend locals with auth info

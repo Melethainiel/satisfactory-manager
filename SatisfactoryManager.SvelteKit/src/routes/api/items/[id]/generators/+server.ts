@@ -9,17 +9,11 @@ export const GET: RequestHandler = async ({ params, url }) => {
 		const gameId = url.searchParams.get('gameId');
 
 		if (!gameId || !gameId.trim()) {
-			return json(
-				{ error: 'gameId parameter is required' },
-				{ status: 400 }
-			);
+			return json({ error: 'gameId parameter is required' }, { status: 400 });
 		}
 
 		if (!itemId || !itemId.trim()) {
-			return json(
-				{ error: 'Item ID is required' },
-				{ status: 400 }
-			);
+			return json({ error: 'Item ID is required' }, { status: 400 });
 		}
 
 		const generators = await itemService.getGeneratorsForItem(gameId.trim(), itemId.trim());
@@ -31,10 +25,10 @@ export const GET: RequestHandler = async ({ params, url }) => {
 	} catch (error) {
 		console.error('Error fetching generators for item:', error);
 		return json(
-			{ 
+			{
 				success: false,
-				error: 'Failed to fetch generators for item' 
-			}, 
+				error: 'Failed to fetch generators for item'
+			},
 			{ status: 500 }
 		);
 	}

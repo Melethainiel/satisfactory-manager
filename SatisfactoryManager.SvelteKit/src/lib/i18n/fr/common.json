@@ -255,7 +255,7 @@
 		"select_recipe": "Choisir une recette...",
 		"select_building": "Choisir un bâtiment...",
 		"no_recipes_found": "Aucune recette trouvée",
-		"no_versions_found": "Aucune version trouvée pour cette recette", 
+		"no_versions_found": "Aucune version trouvée pour cette recette",
 		"start_typing_to_search": "Commencez à taper pour rechercher des recettes",
 		"searching": "Recherche...",
 		"selected_recipe": "Recette sélectionnée",

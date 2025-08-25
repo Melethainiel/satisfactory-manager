@@ -6,7 +6,7 @@ export const GET: RequestHandler = async ({ params }) => {
 	try {
 		const { siteId } = params;
 		const instances = await productionInstanceService.getProductionInstancesBySite(siteId);
-		
+
 		return json({
 			success: true,
 			data: instances
@@ -27,11 +27,11 @@ export const POST: RequestHandler = async ({ request, params }) => {
 	try {
 		const { siteId } = params;
 		const data = await request.json();
-		
+
 		// Validate required fields
 		// recipeVersionId is optional for extraction, but required for crafting
 		// We'll let the service layer handle the validation based on building type
-		
+
 		if (!data.buildingId) {
 			return json(
 				{
@@ -41,7 +41,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
 				{ status: 400 }
 			);
 		}
-		
+
 		if (!data.buildingCount || parseFloat(data.buildingCount) <= 0) {
 			return json(
 				{
@@ -63,11 +63,14 @@ export const POST: RequestHandler = async ({ request, params }) => {
 		};
 
 		const instance = await productionInstanceService.createProductionInstance(instanceData);
-		
-		return json({
-			success: true,
-			data: instance
-		}, { status: 201 });
+
+		return json(
+			{
+				success: true,
+				data: instance
+			},
+			{ status: 201 }
+		);
 	} catch (error) {
 		console.error('Error creating production instance:', error);
 		return json(

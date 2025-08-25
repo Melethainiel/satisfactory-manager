@@ -132,10 +132,7 @@
 
 							<!-- Site Content -->
 							<div in:fade={{ duration: 250, delay: 200 }}>
-								<SiteProductionOverview 
-									siteId={selectedSite.id} 
-									siteName={selectedSite.name}
-								/>
+								<SiteProductionOverview siteId={selectedSite.id} siteName={selectedSite.name} />
 							</div>
 						</div>
 					{/key}

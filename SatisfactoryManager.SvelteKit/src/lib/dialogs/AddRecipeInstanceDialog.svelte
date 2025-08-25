@@ -20,7 +20,7 @@
 	let searchQuery = $state('');
 	let showSearchResults = $state(false);
 	let searchTimeout: NodeJS.Timeout | null = null;
-	
+
 	// Connect authentication when gameState apiFetch is available
 	$effect(() => {
 		const apiFetch = gameState.getApiFetch();
@@ -38,7 +38,7 @@
 
 		// Show dropdown while searching
 		showSearchResults = true;
-		
+
 		try {
 			await itemState.searchItems(gameState.selectedGameId, query);
 			// Keep dropdown visible if we have a query, regardless of results
@@ -54,14 +54,14 @@
 		if (searchTimeout) {
 			clearTimeout(searchTimeout);
 		}
-		
+
 		// Show dropdown immediately when user starts typing
 		if (searchQuery.trim().length > 0) {
 			showSearchResults = true;
 		} else {
 			showSearchResults = false;
 		}
-		
+
 		searchTimeout = setTimeout(() => {
 			searchItems(searchQuery);
 		}, 300);
@@ -73,18 +73,17 @@
 		}
 	}
 
-
 	async function selectItem(item: typeof itemState.selectedItem) {
 		itemState.selectedItem = item;
 		searchQuery = item?.displayName || '';
 		showSearchResults = false;
-		
+
 		// Reset previous selections
 		selectedBuildingId = '';
 		itemState.selectedProductionType = null;
 		itemState.selectedRecipe = null;
 		itemState.availableBuildings = [];
-		
+
 		// Load production options for this item
 		if (item?.id && gameState.selectedGameId) {
 			await itemState.loadProductionOptions(gameState.selectedGameId, item.id);
@@ -96,9 +95,9 @@
 		selectedBuildingId = '';
 		itemState.selectedRecipe = null;
 		itemState.availableBuildings = [];
-		
+
 		if (!itemState.selectedItem?.id || !gameState.selectedGameId) return;
-		
+
 		// Load buildings based on production type
 		if (type === 'extract' || type === 'power') {
 			// For extraction or power generation, load buildings directly
@@ -114,9 +113,10 @@
 	async function selectRecipe(recipe: typeof itemState.selectedRecipe) {
 		itemState.selectedRecipe = recipe;
 		selectedBuildingId = '';
-		
-		if (!recipe?.recipeVersionId || !itemState.selectedItem?.id || !gameState.selectedGameId) return;
-		
+
+		if (!recipe?.recipeVersionId || !itemState.selectedItem?.id || !gameState.selectedGameId)
+			return;
+
 		// Load buildings for this recipe
 		await itemState.loadBuildingsForProduction(
 			gameState.selectedGameId,
@@ -134,10 +134,10 @@
 		notes = '';
 		// Note: currentSiteId is NOT cleared here - it should persist during dialog session
 		showSearchResults = false;
-		
+
 		// Clear itemState data
 		itemState.clearResults();
-		
+
 		// Clear any pending search
 		if (searchTimeout) {
 			clearTimeout(searchTimeout);
@@ -152,12 +152,12 @@
 	}
 
 	async function handleSubmit(e?: Event) {
-		e?.preventDefault();	
+		e?.preventDefault();
 		if (!currentSiteId) {
 			console.log('❌ No current site ID');
 			return;
 		}
-		
+
 		if (!itemState.selectedItem) {
 			console.log('❌ No item selected');
 			return;
@@ -167,12 +167,12 @@
 			console.log('❌ No production type selected');
 			return;
 		}
-		
+
 		if (!selectedBuildingId) {
 			console.log('❌ No building selected');
 			return;
 		}
-		
+
 		if (buildingCount <= 0) {
 			console.log('❌ Invalid building count:', buildingCount);
 			return;
@@ -180,7 +180,7 @@
 
 		// Determine recipeVersionId based on production type
 		let recipeVersionId: string | null = null;
-		
+
 		switch (itemState.selectedProductionType) {
 			case 'craft':
 				if (!itemState.selectedRecipe?.recipeVersionId) {
@@ -189,17 +189,17 @@
 				}
 				recipeVersionId = itemState.selectedRecipe.recipeVersionId;
 				break;
-				
+
 			case 'extract':
 				console.log('✅ Setting up extraction for:', itemState.selectedItem.displayName);
 				recipeVersionId = null;
 				break;
-				
+
 			case 'power':
-				// For now, power generation is not fully implemented
-				console.log('🚧 Power generation not fully implemented yet');
-				return;
-				
+				console.log('✅ Setting up power generation for:', itemState.selectedItem.displayName);
+				recipeVersionId = null;
+				break;
+
 			default:
 				console.log('❌ Unknown production type:', itemState.selectedProductionType);
 				return;
@@ -220,8 +220,18 @@
 				instanceData.recipeVersionId = recipeVersionId;
 			}
 
+			// For extraction, include the extracted item ID
+			if (itemState.selectedProductionType === 'extract' && itemState.selectedItem?.id) {
+				instanceData.extractedItemId = itemState.selectedItem.id;
+			}
+
+			// For power generation, include the fuel item ID
+			if (itemState.selectedProductionType === 'power' && itemState.selectedItem?.id) {
+				instanceData.fuelItemId = itemState.selectedItem.id;
+			}
+
 			await gameState.createProductionInstance(currentSiteId, instanceData);
-			
+
 			console.log('✅ Production instance created successfully');
 			fullReset();
 			dialog?.close();
@@ -243,39 +253,45 @@
 <dialog bind:this={dialog} id="add_recipe_instance_modal" class="modal">
 	<div class="modal-box w-11/12 max-w-2xl">
 		<h3 class="mb-4 text-lg font-bold">{$t('production.add_production_instance')}</h3>
-		
+
 		<form onsubmit={handleSubmit} class="flex flex-col gap-4">
 			<!-- Item Search -->
 			<div class="form-control">
 				<label class="label" for="item-search">
-					<span class="label-text">{$t('production.item_to_produce')}<span class="text-error">*</span></span>
+					<span class="label-text"
+						>{$t('production.item_to_produce')}<span class="text-error">*</span></span
+					>
 				</label>
 				<div class="relative">
 					<input
 						id="item-search"
 						type="text"
-						class="input input-bordered w-full"
+						class="input-bordered input w-full"
 						placeholder={$t('production.item_search_placeholder')}
 						bind:value={searchQuery}
 						oninput={handleSearchInput}
-						onfocus={() => showSearchResults = searchQuery.trim().length > 0 || itemState.searchResults.length > 0}
+						onfocus={() =>
+							(showSearchResults =
+								searchQuery.trim().length > 0 || itemState.searchResults.length > 0)}
 						onkeydown={handleKeydown}
 						autocomplete="off"
 					/>
-					
+
 					{#if itemState.isSearching}
-						<div class="absolute right-3 top-1/2 transform -translate-y-1/2">
-							<span class="loading loading-spinner loading-sm"></span>
+						<div class="absolute top-1/2 right-3 -translate-y-1/2 transform">
+							<span class="loading loading-sm loading-spinner"></span>
 						</div>
 					{/if}
-					
+
 					<!-- Search Results Dropdown -->
 					{#if showSearchResults}
-						<div class="absolute z-10 w-full mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+						<div
+							class="absolute z-10 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border border-base-300 bg-base-100 shadow-lg"
+						>
 							{#if itemState.isSearching}
 								<div class="p-3 text-center text-base-content/70">
 									<div class="flex items-center justify-center gap-2">
-										<span class="loading loading-spinner loading-sm"></span>
+										<span class="loading loading-sm loading-spinner"></span>
 										Searching items...
 									</div>
 								</div>
@@ -284,22 +300,20 @@
 									Start typing to search for items
 								</div>
 							{:else if itemState.searchResults.length === 0}
-								<div class="p-3 text-center text-base-content/70">
-									No items found
-								</div>
+								<div class="p-3 text-center text-base-content/70">No items found</div>
 							{:else}
 								{#each itemState.searchResults as item}
 									<button
 										type="button"
-										class="w-full p-3 text-left hover:bg-base-200 border-b border-base-300 last:border-b-0"
+										class="w-full border-b border-base-300 p-3 text-left last:border-b-0 hover:bg-base-200"
 										onclick={() => selectItem(item)}
 									>
 										<div class="font-medium">{item.displayName}</div>
-										<div class="text-sm text-base-content/70 flex items-center gap-2">
-											<span class="badge badge-xs badge-outline">{item.form}</span>
+										<div class="flex items-center gap-2 text-sm text-base-content/70">
+											<span class="badge badge-outline badge-xs">{item.form}</span>
 											{item.moduleVersion.module.name} v{item.moduleVersion.version}
 											{#if parseFloat(item.energyValue) > 0}
-												<span class="badge badge-xs badge-secondary">⚡ {item.energyValue} MJ</span>
+												<span class="badge badge-xs badge-secondary">⚡ {(parseFloat(item.energyValue) * 1000).toFixed(0)} MJ</span>
 											{/if}
 										</div>
 									</button>
@@ -313,16 +327,19 @@
 			<!-- Selected Item Display -->
 			{#if itemState.selectedItem}
 				<div class="form-control">
-					<div class="bg-base-200 rounded-lg p-3">
-						<div class="font-medium flex items-center gap-2">
+					<div class="rounded-lg bg-base-200 p-3">
+						<div class="flex items-center gap-2 font-medium">
 							{itemState.selectedItem.displayName}
-							<span class="badge badge-xs badge-outline">{itemState.selectedItem.form}</span>
+							<span class="badge badge-outline badge-xs">{itemState.selectedItem.form}</span>
 							{#if parseFloat(itemState.selectedItem.energyValue) > 0}
-								<span class="badge badge-xs badge-secondary">⚡ {itemState.selectedItem.energyValue} MJ</span>
+								<span class="badge badge-xs badge-secondary"
+									>⚡ {(parseFloat(itemState.selectedItem.energyValue) * 1000).toFixed(0)} MJ</span
+								>
 							{/if}
 						</div>
 						<div class="text-sm text-base-content/70">
-							{itemState.selectedItem.moduleVersion.module.name} v{itemState.selectedItem.moduleVersion.version}
+							{itemState.selectedItem.moduleVersion.module.name} v{itemState.selectedItem
+								.moduleVersion.version}
 						</div>
 					</div>
 				</div>
@@ -333,55 +350,68 @@
 				<div class="form-control">
 					{#if itemState.isLoadingProductionOptions}
 						<div class="flex items-center justify-center p-4">
-							<span class="loading loading-spinner loading-sm"></span>
+							<span class="loading loading-sm loading-spinner"></span>
 							<span class="ml-2">{$t('production.loading_production_options')}</span>
 						</div>
 					{:else}
 						<fieldset>
-							<legend class="label-text font-medium mb-2">{$t('production.how_to_produce')}<span class="text-error">*</span></legend>
+							<legend class="label-text mb-2 font-medium"
+								>{$t('production.how_to_produce')}<span class="text-error">*</span></legend
+							>
 							<div class="flex flex-col gap-2">
 								{#if itemState.productionOptions.canCraft}
 									<label class="cursor-pointer">
-										<input 
-											type="radio" 
-											class="radio radio-primary" 
+										<input
+											type="radio"
+											class="radio radio-primary"
 											bind:group={itemState.selectedProductionType}
 											value="craft"
 											onchange={() => selectProductionType('craft')}
+										/>
+										<span class="ml-2"
+											>🏭 {$t('production.craft_via_recipe')} ({itemState.productionOptions.recipes
+												.length}
+											{$t('production.recipes_available')})</span
 										>
-										<span class="ml-2">🏭 {$t('production.craft_via_recipe')} ({itemState.productionOptions.recipes.length} {$t('production.recipes_available')})</span>
 									</label>
 								{/if}
-								
+
 								{#if itemState.productionOptions.canExtract}
 									<label class="cursor-pointer">
-										<input 
-											type="radio" 
-											class="radio radio-primary" 
+										<input
+											type="radio"
+											class="radio radio-primary"
 											bind:group={itemState.selectedProductionType}
 											value="extract"
 											onchange={() => selectProductionType('extract')}
+										/>
+										<span class="ml-2"
+											>⛏️ {$t('production.extract_from_deposits')} ({itemState.productionOptions
+												.extractors.length}
+											{$t('production.extractors_available')})</span
 										>
-										<span class="ml-2">⛏️ {$t('production.extract_from_deposits')} ({itemState.productionOptions.extractors.length} {$t('production.extractors_available')})</span>
 									</label>
 								{/if}
-								
+
 								{#if itemState.productionOptions.canGeneratePower}
 									<label class="cursor-pointer">
-										<input 
-											type="radio" 
-											class="radio radio-primary" 
+										<input
+											type="radio"
+											class="radio radio-primary"
 											bind:group={itemState.selectedProductionType}
 											value="power"
 											onchange={() => selectProductionType('power')}
-											disabled
+										/>
+										<span class="ml-2"
+											>⚡ {$t('production.generate_power')} ({itemState.productionOptions.generators
+												.length}
+											{$t('production.generators_available')})</span
 										>
-										<span class="ml-2 text-base-content/50">⚡ {$t('production.generate_power')} ({itemState.productionOptions.generators.length} {$t('production.generators_available')}) - {$t('production.coming_soon')}</span>
 									</label>
 								{/if}
-								
+
 								{#if !itemState.productionOptions.canCraft && !itemState.productionOptions.canExtract && !itemState.productionOptions.canGeneratePower}
-									<div class="text-center text-base-content/70 p-4">
+									<div class="p-4 text-center text-base-content/70">
 										{$t('production.no_production_methods')}
 									</div>
 								{/if}
@@ -395,21 +425,26 @@
 			{#if itemState.selectedProductionType === 'craft' && itemState.productionOptions?.recipes}
 				<div class="form-control">
 					<label class="label" for="recipe-select">
-						<span class="label-text">{$t('production.select_recipe')}<span class="text-error">*</span></span>
+						<span class="label-text"
+							>{$t('production.select_recipe')}<span class="text-error">*</span></span
+						>
 					</label>
-					<select 
+					<select
 						id="recipe-select"
-						class="select select-bordered w-full"
+						class="select-bordered select w-full"
 						onchange={(e) => {
 							const recipeId = (e.target as HTMLSelectElement)?.value;
-							const recipe = itemState.productionOptions?.recipes.find(r => r.id === recipeId) || null;
+							const recipe =
+								itemState.productionOptions?.recipes.find((r) => r.id === recipeId) || null;
 							selectRecipe(recipe);
 						}}
 						required
 					>
 						<option value="">Select a recipe...</option>
 						{#each itemState.productionOptions.recipes as recipe}
-							<option value={recipe.id}>{recipe.displayName} ({recipe.manufacturingDuration}s)</option>
+							<option value={recipe.id}
+								>{recipe.displayName} ({recipe.manufacturingDuration}s)</option
+							>
 						{/each}
 					</select>
 				</div>
@@ -429,9 +464,9 @@
 							{/if}
 						</span>
 					</label>
-					<select 
+					<select
 						id="building-select"
-						class="select select-bordered w-full"
+						class="select-bordered select w-full"
 						bind:value={selectedBuildingId}
 						disabled={itemState.availableBuildings.length === 0}
 						required
@@ -440,12 +475,17 @@
 						{#each itemState.availableBuildings as building}
 							<option value={building.id}>
 								{building.name} ({building.type})
+								{#if building.energyProductionMW && building.consumptionPerMinute}
+									- {building.energyProductionMW.toFixed(0)} MW - {building.consumptionPerMinute.toFixed(2)} items/min
+								{/if}
 							</option>
 						{/each}
 					</select>
 					{#if itemState.selectedProductionType && itemState.availableBuildings.length === 0 && !itemState.isLoadingBuildings}
 						<div class="label">
-							<span class="label-text-alt text-warning">{$t('production.no_compatible_buildings')}</span>
+							<span class="label-text-alt text-warning"
+								>{$t('production.no_compatible_buildings')}</span
+							>
 						</div>
 					{/if}
 					{#if itemState.isLoadingBuildings}
@@ -456,16 +496,18 @@
 				</div>
 			{/if}
 
-			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+			<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 				<!-- Building Count -->
 				<div class="form-control">
 					<label class="label" for="building-count">
-						<span class="label-text">{$t('recipeInstances.building_count')}<span class="text-error">*</span></span>
+						<span class="label-text"
+							>{$t('recipeInstances.building_count')}<span class="text-error">*</span></span
+						>
 					</label>
 					<input
 						id="building-count"
 						type="number"
-						class="input input-bordered w-full"
+						class="input-bordered input w-full"
 						bind:value={buildingCount}
 						min="0.1"
 						max="1000"
@@ -482,7 +524,7 @@
 					<input
 						id="efficiency-ratio"
 						type="number"
-						class="input input-bordered w-full"
+						class="input-bordered input w-full"
 						bind:value={efficiencyRatio}
 						min="0.1"
 						max="2.5"
@@ -502,7 +544,7 @@
 				</label>
 				<textarea
 					id="notes"
-					class="textarea textarea-bordered"
+					class="textarea-bordered textarea"
 					placeholder={$t('recipeInstances.notes_placeholder')}
 					bind:value={notes}
 					rows="3"
@@ -514,9 +556,9 @@
 			</div>
 
 			<div class="modal-action">
-				<button 
-					type="button" 
-					class="btn" 
+				<button
+					type="button"
+					class="btn"
 					onclick={() => {
 						fullReset();
 						dialog?.close();
@@ -524,22 +566,28 @@
 				>
 					{$t('common.cancel')}
 				</button>
-				<button 
-					type="submit" 
+				<button
+					type="submit"
 					class="btn btn-primary"
-					disabled={gameState.isLoading || !itemState.selectedItem || !itemState.selectedProductionType || !selectedBuildingId || buildingCount <= 0 || (itemState.selectedProductionType === 'craft' && !itemState.selectedRecipe)}
+					disabled={gameState.isLoading ||
+						!itemState.selectedItem ||
+						!itemState.selectedProductionType ||
+						!selectedBuildingId ||
+						buildingCount <= 0 ||
+						(itemState.selectedProductionType === 'craft' && !itemState.selectedRecipe)}
 				>
 					{#if gameState.isLoading}
-						<span class="loading loading-spinner loading-xs"></span>
+						<span class="loading loading-xs loading-spinner"></span>
 					{/if}
 					{$t('production.add_production_instance')}
 				</button>
 			</div>
 		</form>
 	</div>
-	
+
 	<form method="dialog" class="modal-backdrop">
-		<button aria-label={$t('common.close')} onclick={() => fullReset()}>{$t('common.close')}</button>
+		<button aria-label={$t('common.close')} onclick={() => fullReset()}>{$t('common.close')}</button
+		>
 	</form>
 </dialog>
 

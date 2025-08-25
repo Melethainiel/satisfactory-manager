@@ -316,18 +316,24 @@ class RecipeService implements IRecipeService {
 				className: recipes.className,
 				recipeVersionId: recipeVersions.id,
 				manufacturingDuration: recipeVersions.manufacturingDuration,
-				moduleVersion: sql<{version: string, module: {name: string}}>`json_build_object('version', ${moduleVersions.version}, 'module', json_build_object('name', ${modules.name}))`
+				moduleVersion: sql<{
+					version: string;
+					module: { name: string };
+				}>`json_build_object('version', ${moduleVersions.version}, 'module', json_build_object('name', ${modules.name}))`
 			})
 			.from(recipes)
 			.innerJoin(recipeVersions, eq(recipes.id, recipeVersions.recipeId))
 			.innerJoin(moduleVersions, eq(recipeVersions.moduleVersionId, moduleVersions.id))
 			.innerJoin(modules, eq(moduleVersions.moduleId, modules.id))
-			.innerJoin(moduleGames, and(
-				eq(moduleGames.gameId, gameId),
-				eq(moduleGames.moduleId, modules.id),
-				isNotNull(moduleGames.selectedVersionId),
-				eq(moduleGames.selectedVersionId, moduleVersions.id)
-			))
+			.innerJoin(
+				moduleGames,
+				and(
+					eq(moduleGames.gameId, gameId),
+					eq(moduleGames.moduleId, modules.id),
+					isNotNull(moduleGames.selectedVersionId),
+					eq(moduleGames.selectedVersionId, moduleVersions.id)
+				)
+			)
 			.where(ilike(recipes.displayName, `%${searchTerm}%`))
 			.orderBy(recipes.displayName);
 

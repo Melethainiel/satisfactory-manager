@@ -99,6 +99,13 @@
       "when": 1756123163523,
       "tag": "0013_refactor_recipe_instances_to_production_instances",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1756126229284,
+      "tag": "0014_add_fuel_item_id_to_production_instances",
+      "breakpoints": true
     }
   ]
 }

@@ -24,10 +24,10 @@
 	// Calculate production rate
 	let productionInfo = $derived(() => {
 		if (!instance.products || instance.products.length === 0) return null;
-		
+
 		const primaryProduct = instance.products[0];
 		let baseRate: number;
-		
+
 		// Handle extraction instances (no recipe)
 		if (!instance.recipeVersion) {
 			// Use building output rate for extraction
@@ -40,9 +40,9 @@
 			// count is already in items/minute
 			baseRate = parseFloat(primaryProduct.count);
 		}
-		
+
 		const actualRate = baseRate * instance.buildingCount * instance.efficiencyRatio;
-		
+
 		return {
 			item: primaryProduct.item,
 			baseRate,
@@ -67,16 +67,16 @@
 		if (instance.products && instance.products.length > 0) {
 			const primaryProduct = instance.products[0];
 			const itemName = primaryProduct.item.displayName;
-			
+
 			// If we have a recipe, show "Item (Recipe)"
 			if (instance.recipe?.displayName) {
 				return `${itemName} (${instance.recipe.displayName})`;
 			}
-			
+
 			// For extraction, just show the item name
 			return itemName;
 		}
-		
+
 		// Fallback: show recipe name or building name
 		return instance.recipe?.displayName || instance.building?.name || 'Unknown Production';
 	});
@@ -98,15 +98,17 @@
 	}
 </script>
 
-<div class="card card-compact bg-base-100 border border-base-300 shadow-sm hover:shadow-md transition-shadow">
+<div
+	class="card-compact card border border-base-300 bg-base-100 shadow-sm transition-shadow hover:shadow-md"
+>
 	<div class="card-body">
 		<!-- Header with Recipe Name and Actions -->
 		<div class="flex items-start justify-between gap-2">
-			<div class="flex-1 min-w-0">
-				<h4 class="font-semibold text-base truncate">
+			<div class="min-w-0 flex-1">
+				<h4 class="truncate text-base font-semibold">
 					{displayName()}
 				</h4>
-				<div class="text-sm opacity-70 flex items-center gap-2">
+				<div class="flex items-center gap-2 text-sm opacity-70">
 					<Icon src={Cog6Tooth} class="size-4 flex-shrink-0" />
 					<span class="truncate">
 						{instance.building?.name || 'Unknown Building'}
@@ -117,14 +119,14 @@
 			{#if canEdit()}
 				<div class="flex gap-1">
 					<button
-						class="btn btn-ghost btn-xs btn-square"
+						class="btn btn-square btn-ghost btn-xs"
 						onclick={handleEdit}
 						title={$t('productionInstances.edit_instance')}
 					>
 						<Icon src={PencilSquare} class="size-3" />
 					</button>
 					<button
-						class="btn btn-ghost btn-xs btn-square text-error hover:bg-error hover:text-error-content"
+						class="btn btn-square text-error btn-ghost btn-xs hover:bg-error hover:text-error-content"
 						onclick={handleDelete}
 						title={$t('productionInstances.delete_instance')}
 					>
@@ -136,17 +138,17 @@
 
 		<!-- Production Information -->
 		{#if productionInfo}
-			<div class="grid grid-cols-1 gap-3 mt-3">
+			<div class="mt-3 grid grid-cols-1 gap-3">
 				<!-- Primary Production -->
-				<div class="bg-base-200 rounded p-3">
-					<div class="text-xs font-medium opacity-70 mb-1">
+				<div class="rounded bg-base-200 p-3">
+					<div class="mb-1 text-xs font-medium opacity-70">
 						{$t('productionInstances.production_rate')}
 					</div>
 					<div class="font-mono text-sm">
 						<span class="font-semibold">{formatRate(productionInfo()?.actualRate || 0)}</span>
 						<span class="opacity-70">/{$t('common.minute')}</span>
 					</div>
-					<div class="text-xs opacity-60 mt-1">
+					<div class="mt-1 text-xs opacity-60">
 						{productionInfo()?.item.displayName || 'Unknown'}
 					</div>
 				</div>
@@ -176,7 +178,7 @@
 		<!-- Ingredients and Products Summary -->
 		{#if instance.ingredients && instance.ingredients.length > 0}
 			<div class="mt-3">
-				<div class="text-xs font-medium opacity-70 mb-2">
+				<div class="mb-2 text-xs font-medium opacity-70">
 					{$t('productionInstances.ingredients')}
 				</div>
 				<div class="flex flex-wrap gap-1">
@@ -191,12 +193,12 @@
 
 		{#if instance.products && instance.products.length > 1}
 			<div class="mt-2">
-				<div class="text-xs font-medium opacity-70 mb-2">
+				<div class="mb-2 text-xs font-medium opacity-70">
 					{$t('productionInstances.products')}
 				</div>
 				<div class="flex flex-wrap gap-1">
 					{#each instance.products as product}
-						<span class="badge badge-primary badge-sm">
+						<span class="badge badge-sm badge-primary">
 							{product.count}x {product.item.displayName}
 						</span>
 					{/each}
@@ -206,18 +208,18 @@
 
 		<!-- Notes -->
 		{#if instance.notes}
-			<div class="mt-3 pt-3 border-t border-base-300">
-				<div class="text-xs font-medium opacity-70 mb-1">
+			<div class="mt-3 border-t border-base-300 pt-3">
+				<div class="mb-1 text-xs font-medium opacity-70">
 					{$t('productionInstances.notes')}
 				</div>
-				<div class="text-sm opacity-80 break-words">
+				<div class="text-sm break-words opacity-80">
 					{instance.notes}
 				</div>
 			</div>
 		{/if}
 
 		<!-- Timestamp -->
-		<div class="mt-3 pt-3 border-t border-base-300">
+		<div class="mt-3 border-t border-base-300 pt-3">
 			<div class="text-xs opacity-50">
 				{$t('common.created')}: {instance.createdAt.toLocaleDateString()}
 			</div>

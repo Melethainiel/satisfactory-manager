@@ -126,20 +126,26 @@ export interface GameState {
 	// Recipe instances management
 	siteProductionInstances: ProductionInstanceData[];
 	loadSiteProductionInstances: (siteId: string) => Promise<void>;
-	createProductionInstance: (siteId: string, data: {
-		recipeVersionId: string;
-		buildingId: string;
-		buildingCount: number;
-		efficiencyRatio?: number;
-		notes?: string;
-	}) => Promise<void>;
-	updateProductionInstance: (instanceId: string, data: {
-		recipeVersionId?: string;
-		buildingId?: string;
-		buildingCount?: number;
-		efficiencyRatio?: number;
-		notes?: string;
-	}) => Promise<void>;
+	createProductionInstance: (
+		siteId: string,
+		data: {
+			recipeVersionId: string;
+			buildingId: string;
+			buildingCount: number;
+			efficiencyRatio?: number;
+			notes?: string;
+		}
+	) => Promise<void>;
+	updateProductionInstance: (
+		instanceId: string,
+		data: {
+			recipeVersionId?: string;
+			buildingId?: string;
+			buildingCount?: number;
+			efficiencyRatio?: number;
+			notes?: string;
+		}
+	) => Promise<void>;
 	deleteProductionInstance: (instanceId: string) => Promise<void>;
 	// Production calculations
 	siteProductionOverview: ProductionOverview | null;
@@ -481,7 +487,7 @@ class GameStateClass implements GameState {
 		try {
 			const response = await this.apiFetch(`/api/sites/${siteId}/production-instances`);
 			if (!response.ok) throw new Error(`Failed to load production instances (${response.status})`);
-			
+
 			const data = await response.json();
 			if (data.success) {
 				// Convert string dates to Date objects
@@ -500,13 +506,16 @@ class GameStateClass implements GameState {
 		}
 	}
 
-	async createProductionInstance(siteId: string, data: {
-		recipeVersionId: string;
-		buildingId: string;
-		buildingCount: number;
-		efficiencyRatio?: number;
-		notes?: string;
-	}) {
+	async createProductionInstance(
+		siteId: string,
+		data: {
+			recipeVersionId: string;
+			buildingId: string;
+			buildingCount: number;
+			efficiencyRatio?: number;
+			notes?: string;
+		}
+	) {
 		if (!siteId || !this.apiFetch) return;
 
 		this.isLoading = true;
@@ -516,9 +525,10 @@ class GameStateClass implements GameState {
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(data)
 			});
-			
-			if (!response.ok) throw new Error(`Failed to create production instance (${response.status})`);
-			
+
+			if (!response.ok)
+				throw new Error(`Failed to create production instance (${response.status})`);
+
 			const result = await response.json();
 			if (result.success) {
 				// Reload instances to get the new one with full details
@@ -534,17 +544,22 @@ class GameStateClass implements GameState {
 		}
 	}
 
-	async updateProductionInstance(instanceId: string, data: {
-		recipeVersionId?: string;
-		buildingId?: string;
-		buildingCount?: number;
-		efficiencyRatio?: number;
-		notes?: string;
-	}) {
+	async updateProductionInstance(
+		instanceId: string,
+		data: {
+			recipeVersionId?: string;
+			buildingId?: string;
+			buildingCount?: number;
+			efficiencyRatio?: number;
+			notes?: string;
+		}
+	) {
 		if (!instanceId || !this.apiFetch) return;
 
 		// Find the instance to get its siteId
-		const instance = this.siteProductionInstances.find((i: ProductionInstanceData) => i.id === instanceId);
+		const instance = this.siteProductionInstances.find(
+			(i: ProductionInstanceData) => i.id === instanceId
+		);
 		if (!instance) {
 			notificationService.error('Production instance not found');
 			return;
@@ -552,14 +567,18 @@ class GameStateClass implements GameState {
 
 		this.isLoading = true;
 		try {
-			const response = await this.apiFetch(`/api/sites/${instance.siteId}/production-instances/${instanceId}`, {
-				method: 'PATCH',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(data)
-			});
-			
-			if (!response.ok) throw new Error(`Failed to update production instance (${response.status})`);
-			
+			const response = await this.apiFetch(
+				`/api/sites/${instance.siteId}/production-instances/${instanceId}`,
+				{
+					method: 'PATCH',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify(data)
+				}
+			);
+
+			if (!response.ok)
+				throw new Error(`Failed to update production instance (${response.status})`);
+
 			const result = await response.json();
 			if (result.success) {
 				// Reload the site's instances
@@ -578,7 +597,9 @@ class GameStateClass implements GameState {
 		if (!instanceId || !this.apiFetch) return;
 
 		// Find the instance to get its siteId
-		const instance = this.siteProductionInstances.find((i: ProductionInstanceData) => i.id === instanceId);
+		const instance = this.siteProductionInstances.find(
+			(i: ProductionInstanceData) => i.id === instanceId
+		);
 		if (!instance) {
 			notificationService.error('Production instance not found');
 			return;
@@ -586,12 +607,16 @@ class GameStateClass implements GameState {
 
 		this.isLoading = true;
 		try {
-			const response = await this.apiFetch(`/api/sites/${instance.siteId}/production-instances/${instanceId}`, {
-				method: 'DELETE'
-			});
-			
-			if (!response.ok) throw new Error(`Failed to delete production instance (${response.status})`);
-			
+			const response = await this.apiFetch(
+				`/api/sites/${instance.siteId}/production-instances/${instanceId}`,
+				{
+					method: 'DELETE'
+				}
+			);
+
+			if (!response.ok)
+				throw new Error(`Failed to delete production instance (${response.status})`);
+
 			const result = await response.json();
 			if (result.success) {
 				// Reload the site's instances
@@ -612,7 +637,7 @@ class GameStateClass implements GameState {
 		try {
 			const response = await this.apiFetch(`/api/sites/${siteId}/production-overview`);
 			if (!response.ok) throw new Error(`Failed to load production overview (${response.status})`);
-			
+
 			const data = await response.json();
 			if (data.success) {
 				this.siteProductionOverview = data.data;

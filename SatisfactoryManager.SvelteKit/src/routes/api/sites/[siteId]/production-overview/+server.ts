@@ -6,7 +6,7 @@ export const GET: RequestHandler = async ({ params }) => {
 	try {
 		const { siteId } = params;
 		const productionOverview = await productionInstanceService.calculateSiteProduction(siteId);
-		
+
 		return json({
 			success: true,
 			data: productionOverview

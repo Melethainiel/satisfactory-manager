@@ -46,7 +46,10 @@ export async function createTestEnvironment() {
 	// Create basic items, buildings, and recipes using first module
 	const firstModuleId = createdModules[0].id;
 	const createdItems = await db.insert(items).values(testItems(firstModuleId)).returning();
-	const createdBuildings = await db.insert(buildings).values(testBuildings(firstModuleId)).returning();
+	const createdBuildings = await db
+		.insert(buildings)
+		.values(testBuildings(firstModuleId))
+		.returning();
 	const createdRecipes = await db.insert(recipes).values(testRecipes(firstModuleId)).returning();
 
 	// Set up user-game relationships with different roles

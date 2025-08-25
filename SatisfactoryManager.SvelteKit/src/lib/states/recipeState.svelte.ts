@@ -28,16 +28,16 @@ export interface RecipeState {
 	searchResults: Recipe[];
 	selectedRecipe: Recipe | null;
 	availableBuildings: Building[];
-	
+
 	// UI states
 	isSearching: boolean;
 	isLoadingBuildings: boolean;
-	
+
 	// Methods
 	searchRecipes: (gameId: string, query: string) => Promise<Recipe[]>;
 	loadCompatibleBuildings: (recipeVersionId: string) => Promise<Building[]>;
 	clearResults: () => void;
-	
+
 	// Authentication
 	attachAuth: (apiFetch: AuthFetchFn) => void;
 }
@@ -53,31 +53,33 @@ class RecipeStateClass implements RecipeState {
 	searchResults = $state<Recipe[]>([]);
 	selectedRecipe = $state<Recipe | null>(null);
 	availableBuildings = $state<Building[]>([]);
-	
+
 	// UI states
 	isSearching = $state(false);
 	isLoadingBuildings = $state(false);
-	
+
 	// Private auth function
 	private apiFetch: AuthFetchFn | null = null;
-	
+
 	attachAuth(apiFetch: AuthFetchFn) {
 		this.apiFetch = apiFetch;
 	}
-	
+
 	async searchRecipes(gameId: string, query: string): Promise<Recipe[]> {
 		if (!this.apiFetch) {
 			throw new Error('Authentication not attached to recipeState');
 		}
-		
+
 		if (!query.trim()) {
 			this.searchResults = [];
 			return [];
 		}
-		
+
 		this.isSearching = true;
 		try {
-			const res = await this.apiFetch(`/api/recipes?gameId=${encodeURIComponent(gameId)}&search=${encodeURIComponent(query.trim())}`);
+			const res = await this.apiFetch(
+				`/api/recipes?gameId=${encodeURIComponent(gameId)}&search=${encodeURIComponent(query.trim())}`
+			);
 			if (!res.ok) throw new Error(`Failed to search recipes (${res.status})`);
 			const results = (await res.json()) as Recipe[];
 			this.searchResults = results;
@@ -90,23 +92,23 @@ class RecipeStateClass implements RecipeState {
 			this.isSearching = false;
 		}
 	}
-	
+
 	async loadCompatibleBuildings(recipeVersionId: string): Promise<Building[]> {
 		if (!this.apiFetch) {
 			throw new Error('Authentication not attached to recipeState');
 		}
-		
+
 		if (!recipeVersionId) {
 			this.availableBuildings = [];
 			return [];
 		}
-		
+
 		this.isLoadingBuildings = true;
 		try {
 			const res = await this.apiFetch(`/api/recipes/versions/${recipeVersionId}/buildings`);
 			if (!res.ok) throw new Error(`Failed to load buildings (${res.status})`);
 			const buildings = (await res.json()) as Building[];
-			
+
 			this.availableBuildings = buildings;
 			return buildings;
 		} catch (error) {
@@ -118,7 +120,7 @@ class RecipeStateClass implements RecipeState {
 			this.isLoadingBuildings = false;
 		}
 	}
-	
+
 	clearResults() {
 		this.searchResults = [];
 		this.selectedRecipe = null;
@@ -138,7 +140,7 @@ export function getRecipeState(): RecipeState {
 	if (existingState) {
 		return existingState;
 	}
-	
+
 	// Create new state instance if none exists
 	const newState = new RecipeStateClass();
 	setContext<RecipeState>(RECIPE_STATE_KEY, newState);

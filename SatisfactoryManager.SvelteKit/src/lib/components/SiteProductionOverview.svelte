@@ -37,7 +37,7 @@
 
 		const totalInputs = overview.totalConsumption.length;
 		const totalOutputs = overview.totalProduction.length;
-		const imbalances = overview.netBalance.filter(item => Math.abs(item.balance) > 0.001).length;
+		const imbalances = overview.netBalance.filter((item) => Math.abs(item.balance) > 0.001).length;
 
 		return {
 			inputs: totalInputs,
@@ -62,7 +62,7 @@
 		}
 	});
 
-	function handleAddRecipe() {		
+	function handleAddRecipe() {
 		if (addRecipeDialogRef?.open) {
 			addRecipeDialogRef.open(siteId);
 		}
@@ -76,7 +76,7 @@
 	function handleDeleteInstance(instance: ProductionInstanceData) {
 		confirmDialogRef?.open({
 			title: $t('productionInstances.delete_instance'),
-			message: $t('productionInstances.delete_instance_confirm', { 
+			message: $t('productionInstances.delete_instance_confirm', {
 				values: { name: instance.recipe?.displayName || 'Unknown Recipe' }
 			}),
 			confirmText: $t('productionInstances.delete_instance'),
@@ -97,12 +97,11 @@
 	<div class="flex items-center justify-between">
 		<div>
 			<h2 class="text-xl font-semibold">{siteName}</h2>
-			<p class="text-base-content/70 text-sm mt-1">
-				{gameState.siteProductionInstances.length} 
-				{gameState.siteProductionInstances.length === 1 ? 
-					$t('productionInstances.recipe_instance') : 
-					$t('productionInstances.recipe_instances')
-				}
+			<p class="mt-1 text-sm text-base-content/70">
+				{gameState.siteProductionInstances.length}
+				{gameState.siteProductionInstances.length === 1
+					? $t('productionInstances.recipe_instance')
+					: $t('productionInstances.recipe_instances')}
 			</p>
 		</div>
 
@@ -121,19 +120,18 @@
 		{/if}
 	</div>
 
-
 	<!-- Recipe Instances List -->
 	{#if gameState.isLoading}
 		<div class="flex items-center justify-center py-8">
-			<span class="loading loading-spinner loading-lg"></span>
+			<span class="loading loading-lg loading-spinner"></span>
 		</div>
 	{:else if gameState.siteProductionInstances.length === 0}
-		<div class="text-center py-12">
+		<div class="py-12 text-center">
 			<div class="mb-4 opacity-50">
-				<Icon src={ChartBarSquare} class="size-16 mx-auto" />
+				<Icon src={ChartBarSquare} class="mx-auto size-16" />
 			</div>
-			<h3 class="font-semibold mb-2">{$t('productionInstances.no_instances')}</h3>
-			<p class="text-base-content/70 mb-6">{$t('productionInstances.no_instances_description')}</p>
+			<h3 class="mb-2 font-semibold">{$t('productionInstances.no_instances')}</h3>
+			<p class="mb-6 text-base-content/70">{$t('productionInstances.no_instances_description')}</p>
 			{#if canManage()}
 				<button class="btn btn-primary" onclick={handleAddRecipe}>
 					<Icon src={Plus} class="size-4" />
@@ -143,10 +141,10 @@
 		</div>
 	{:else}
 		<div>
-			<h3 class="font-medium mb-4">{$t('productionInstances.recipe_instances')}</h3>
-			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+			<h3 class="mb-4 font-medium">{$t('productionInstances.recipe_instances')}</h3>
+			<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
 				{#each gameState.siteProductionInstances as instance (instance.id)}
-					<ProductionInstanceCard 
+					<ProductionInstanceCard
 						{instance}
 						onEdit={handleEditInstance}
 						onDelete={handleDeleteInstance}

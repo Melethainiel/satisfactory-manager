@@ -9,17 +9,17 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 export default defineConfig({
-  // Database connection
-  dialect: 'postgresql',
-  dbCredentials: { 
-    url: process.env.DATABASE_URL || 'postgres://app:app@localhost:5432/satisfactory'
-  },
-  
-  // Schema and migrations
-  schema: './src/lib/server/db/schema.ts',
-  out: './drizzle',
-  
-  // Development options
-  verbose: true,
-  strict: true
+	// Database connection
+	dialect: 'postgresql',
+	dbCredentials: {
+		url: process.env.DATABASE_URL || 'postgres://app:app@localhost:5432/satisfactory'
+	},
+
+	// Schema and migrations
+	schema: './src/lib/server/db/schema.ts',
+	out: './drizzle',
+
+	// Development options
+	verbose: true,
+	strict: true
 });

@@ -75,7 +75,9 @@ export interface IProductionInstanceService {
 	getAllProductionInstances(): Promise<ProductionInstance[]>;
 	getProductionInstanceById(id: string): Promise<ProductionInstanceWithDetails | undefined>;
 	getProductionInstancesBySite(siteId: string): Promise<ProductionInstanceWithDetails[]>;
-	createProductionInstance(data: Omit<NewProductionInstance, 'id' | 'createdAt' | 'updatedAt'>): Promise<ProductionInstance>;
+	createProductionInstance(
+		data: Omit<NewProductionInstance, 'id' | 'createdAt' | 'updatedAt'>
+	): Promise<ProductionInstance>;
 	updateProductionInstance(
 		id: string,
 		data: Partial<Omit<NewProductionInstance, 'id' | 'createdAt' | 'updatedAt'>>
@@ -91,7 +93,9 @@ export interface IProductionInstanceService {
 	}>;
 
 	// Validation
-	validateProductionInstanceData(data: Omit<NewProductionInstance, 'id' | 'createdAt' | 'updatedAt'>): Promise<{
+	validateProductionInstanceData(
+		data: Omit<NewProductionInstance, 'id' | 'createdAt' | 'updatedAt'>
+	): Promise<{
 		isValid: boolean;
 		errors: string[];
 	}>;
@@ -99,10 +103,7 @@ export interface IProductionInstanceService {
 
 class ProductionInstanceService implements IProductionInstanceService {
 	async getAllProductionInstances(): Promise<ProductionInstance[]> {
-		return db
-			.select()
-			.from(productionInstances)
-			.orderBy(desc(productionInstances.createdAt));
+		return db.select().from(productionInstances).orderBy(desc(productionInstances.createdAt));
 	}
 
 	async getProductionInstanceById(id: string): Promise<ProductionInstanceWithDetails | undefined> {
@@ -153,14 +154,17 @@ class ProductionInstanceService implements IProductionInstanceService {
 			.leftJoin(recipes, eq(recipeVersions.recipeId, recipes.id))
 			.leftJoin(buildings, eq(productionInstances.buildingId, buildings.id))
 			.leftJoin(modules, eq(buildings.moduleId, modules.id))
-			.leftJoin(moduleGames, and(
-				eq(moduleGames.moduleId, modules.id),
-				eq(moduleGames.gameId, sites.gameId)
-			))
-			.leftJoin(buildingVersions, and(
-				eq(buildingVersions.buildingId, buildings.id),
-				eq(buildingVersions.moduleVersionId, moduleGames.selectedVersionId)
-			))
+			.leftJoin(
+				moduleGames,
+				and(eq(moduleGames.moduleId, modules.id), eq(moduleGames.gameId, sites.gameId))
+			)
+			.leftJoin(
+				buildingVersions,
+				and(
+					eq(buildingVersions.buildingId, buildings.id),
+					eq(buildingVersions.moduleVersionId, moduleGames.selectedVersionId)
+				)
+			)
 			.where(eq(productionInstances.id, id))
 			.limit(1);
 
@@ -233,15 +237,17 @@ class ProductionInstanceService implements IProductionInstanceService {
 				.limit(1);
 
 			if (extractedItem.length > 0) {
-				products = [{
-					itemId: extractedItem[0].id,
-					count: '1', // Placeholder count for extraction
-					item: {
-						displayName: extractedItem[0].displayName,
-						className: extractedItem[0].className,
-						form: extractedItem[0].form
+				products = [
+					{
+						itemId: extractedItem[0].id,
+						count: '1', // Placeholder count for extraction
+						item: {
+							displayName: extractedItem[0].displayName,
+							className: extractedItem[0].className,
+							form: extractedItem[0].form
+						}
 					}
-				}];
+				];
 			}
 		}
 
@@ -265,10 +271,14 @@ class ProductionInstanceService implements IProductionInstanceService {
 			})
 		);
 
-		return detailed.filter((instance): instance is ProductionInstanceWithDetails => instance !== undefined);
+		return detailed.filter(
+			(instance): instance is ProductionInstanceWithDetails => instance !== undefined
+		);
 	}
 
-	async createProductionInstance(data: Omit<NewProductionInstance, 'id' | 'createdAt' | 'updatedAt'>): Promise<ProductionInstance> {
+	async createProductionInstance(
+		data: Omit<NewProductionInstance, 'id' | 'createdAt' | 'updatedAt'>
+	): Promise<ProductionInstance> {
 		// Validate data first
 		const validation = await this.validateProductionInstanceData(data);
 		if (!validation.isValid) {
@@ -311,7 +321,9 @@ class ProductionInstanceService implements IProductionInstanceService {
 		return result.length > 0;
 	}
 
-	async calculateInstanceProduction(instanceId: string): Promise<ProductionCalculation | undefined> {
+	async calculateInstanceProduction(
+		instanceId: string
+	): Promise<ProductionCalculation | undefined> {
 		const instance = await this.getProductionInstanceById(instanceId);
 		if (!instance) return undefined;
 
@@ -339,7 +351,8 @@ class ProductionInstanceService implements IProductionInstanceService {
 				itemsPerMinute: totalRate,
 				totalProduction: totalRate,
 				buildingUtilization: efficiency,
-				powerConsumption: parseFloat(instance.buildingVersion.energyConsumption || '0') * buildingCount * efficiency
+				powerConsumption:
+					parseFloat(instance.buildingVersion.energyConsumption || '0') * buildingCount * efficiency
 			};
 		}
 
@@ -347,7 +360,7 @@ class ProductionInstanceService implements IProductionInstanceService {
 		const manufacturingDuration = parseFloat(instance.recipeVersion?.manufacturingDuration || '1');
 
 		// Calculate items per minute for each product
-		const productionRates = instance.products.map(product => {
+		const productionRates = instance.products.map((product) => {
 			const baseRate = parseFloat(product.count) / manufacturingDuration; // items per minute for 1 building
 			const totalRate = baseRate * buildingCount * efficiency;
 
@@ -403,7 +416,9 @@ class ProductionInstanceService implements IProductionInstanceService {
 			}
 
 			// Handle crafting instances (with recipes)
-			const manufacturingDuration = parseFloat(instance.recipeVersion?.manufacturingDuration || '1');
+			const manufacturingDuration = parseFloat(
+				instance.recipeVersion?.manufacturingDuration || '1'
+			);
 
 			// Calculate production
 			for (const product of instance.products) {
@@ -445,17 +460,20 @@ class ProductionInstanceService implements IProductionInstanceService {
 
 		// Calculate net balance
 		const allItemIds = new Set([...productionMap.keys(), ...consumptionMap.keys()]);
-		const netBalance = Array.from(allItemIds).map(itemId => {
-			const production = productionMap.get(itemId)?.rate || 0;
-			const consumption = consumptionMap.get(itemId)?.rate || 0;
-			const itemName = productionMap.get(itemId)?.itemName || consumptionMap.get(itemId)?.itemName || '';
+		const netBalance = Array.from(allItemIds)
+			.map((itemId) => {
+				const production = productionMap.get(itemId)?.rate || 0;
+				const consumption = consumptionMap.get(itemId)?.rate || 0;
+				const itemName =
+					productionMap.get(itemId)?.itemName || consumptionMap.get(itemId)?.itemName || '';
 
-			return {
-				itemId,
-				itemName,
-				balance: production - consumption
-			};
-		}).filter(item => Math.abs(item.balance) > 0.001); // Filter out near-zero balances
+				return {
+					itemId,
+					itemName,
+					balance: production - consumption
+				};
+			})
+			.filter((item) => Math.abs(item.balance) > 0.001); // Filter out near-zero balances
 
 		return {
 			totalProduction,
@@ -464,7 +482,9 @@ class ProductionInstanceService implements IProductionInstanceService {
 		};
 	}
 
-	async validateProductionInstanceData(data: Omit<NewProductionInstance, 'id' | 'createdAt' | 'updatedAt'>): Promise<{
+	async validateProductionInstanceData(
+		data: Omit<NewProductionInstance, 'id' | 'createdAt' | 'updatedAt'>
+	): Promise<{
 		isValid: boolean;
 		errors: string[];
 	}> {
@@ -472,11 +492,7 @@ class ProductionInstanceService implements IProductionInstanceService {
 
 		// Check if site exists
 		if (data.siteId) {
-			const site = await db
-				.select()
-				.from(sites)
-				.where(eq(sites.id, data.siteId))
-				.limit(1);
+			const site = await db.select().from(sites).where(eq(sites.id, data.siteId)).limit(1);
 
 			if (site.length === 0) {
 				errors.push('Site does not exist');
@@ -514,7 +530,10 @@ class ProductionInstanceService implements IProductionInstanceService {
 			errors.push('Building count must be greater than 0');
 		}
 
-		if (data.efficiencyRatio && (parseFloat(data.efficiencyRatio) <= 0 || parseFloat(data.efficiencyRatio) > 2.5)) {
+		if (
+			data.efficiencyRatio &&
+			(parseFloat(data.efficiencyRatio) <= 0 || parseFloat(data.efficiencyRatio) > 2.5)
+		) {
 			errors.push('Efficiency ratio must be between 0 and 2.5');
 		}
 

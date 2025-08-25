@@ -3,6 +3,7 @@ import {
 	items,
 	itemVersions,
 	buildings,
+	buildingVersions,
 	recipeVersions,
 	recipeProducts,
 	moduleGames,
@@ -93,6 +94,12 @@ export interface Building {
 	name: string;
 	type: string;
 	className: string;
+	// Energy data for generators (stored in original DB units)
+	energyProduction?: string;
+	burnTime?: number;
+	consumptionPerMinute?: number;
+	// Display values (converted units)
+	energyProductionMW?: number;
 }
 
 export interface ProductionOptions {
@@ -232,18 +239,24 @@ class ItemService implements IItemService {
 				form: items.form,
 				itemVersionId: itemVersions.id,
 				energyValue: itemVersions.energyValue,
-				moduleVersion: sql<{version: string, module: {name: string}}>`json_build_object('version', ${moduleVersions.version}, 'module', json_build_object('name', ${modules.name}))`
+				moduleVersion: sql<{
+					version: string;
+					module: { name: string };
+				}>`json_build_object('version', ${moduleVersions.version}, 'module', json_build_object('name', ${modules.name}))`
 			})
 			.from(items)
 			.innerJoin(itemVersions, eq(items.id, itemVersions.itemId))
 			.innerJoin(moduleVersions, eq(itemVersions.moduleVersionId, moduleVersions.id))
 			.innerJoin(modules, eq(moduleVersions.moduleId, modules.id))
-			.innerJoin(moduleGames, and(
-				eq(moduleGames.gameId, gameId),
-				eq(moduleGames.moduleId, modules.id),
-				isNotNull(moduleGames.selectedVersionId),
-				eq(moduleGames.selectedVersionId, moduleVersions.id)
-			))
+			.innerJoin(
+				moduleGames,
+				and(
+					eq(moduleGames.gameId, gameId),
+					eq(moduleGames.moduleId, modules.id),
+					isNotNull(moduleGames.selectedVersionId),
+					eq(moduleGames.selectedVersionId, moduleVersions.id)
+				)
+			)
 			.where(ilike(items.displayName, `%${searchTerm}%`))
 			.orderBy(items.displayName);
 
@@ -253,10 +266,10 @@ class ItemService implements IItemService {
 	async getItemProductionOptions(gameId: string, itemId: string): Promise<ProductionOptions> {
 		// Get extractors (buildings of type 'Miner' that are configured for this game)
 		const extractors = await this.getExtractorsForItem(gameId, itemId);
-		
+
 		// Get recipes that produce this item
 		const recipes = await this.getRecipesProducingItem(gameId, itemId);
-		
+
 		// Get generators (buildings of type 'Generator' that can use this item as fuel)
 		const generators = await this.getGeneratorsForItem(gameId, itemId);
 
@@ -283,35 +296,79 @@ class ItemService implements IItemService {
 			})
 			.from(buildings)
 			.innerJoin(modules, eq(buildings.moduleId, modules.id))
-			.innerJoin(moduleGames, and(
-				eq(moduleGames.gameId, gameId),
-				eq(moduleGames.moduleId, modules.id),
-				isNotNull(moduleGames.selectedVersionId)
-			))
+			.innerJoin(
+				moduleGames,
+				and(
+					eq(moduleGames.gameId, gameId),
+					eq(moduleGames.moduleId, modules.id),
+					isNotNull(moduleGames.selectedVersionId)
+				)
+			)
 			.where(eq(buildings.type, 'Miner'));
 
 		return extractors;
 	}
 
 	async getGeneratorsForItem(gameId: string, itemId: string): Promise<Building[]> {
-		// Get generators that are available in the game's selected modules
-		// TODO: Later we can add logic to check if the item can actually be used as fuel
-		// (requires generatorFuels table or check energyValue > 0)
-		const generators = await db
+		// Get generators that are available in the game's selected modules AND can use this item as fuel
+		// Check if the item has energy value > 0 to be usable as fuel
+		const results = await db
 			.select({
 				id: buildings.id,
 				name: buildings.name,
 				className: buildings.className,
-				type: buildings.type
+				type: buildings.type,
+				energyProduction: buildingVersions.energyProduction,
+				energyValue: itemVersions.energyValue
 			})
 			.from(buildings)
 			.innerJoin(modules, eq(buildings.moduleId, modules.id))
-			.innerJoin(moduleGames, and(
-				eq(moduleGames.gameId, gameId),
-				eq(moduleGames.moduleId, modules.id),
-				isNotNull(moduleGames.selectedVersionId)
-			))
+			.innerJoin(
+				moduleGames,
+				and(
+					eq(moduleGames.gameId, gameId),
+					eq(moduleGames.moduleId, modules.id),
+					isNotNull(moduleGames.selectedVersionId)
+				)
+			)
+			.innerJoin(
+				buildingVersions,
+				and(
+					eq(buildingVersions.buildingId, buildings.id),
+					sql`${buildingVersions.energyProduction} > 0`
+				)
+			)
+			.innerJoin(
+				itemVersions,
+				and(eq(itemVersions.itemId, itemId), sql`${itemVersions.energyValue} > 0`)
+			)
 			.where(eq(buildings.type, 'Generator'));
+
+		// Calculate burn time and consumption per minute for each generator
+		const generators: Building[] = results.map((result) => {
+			const energyProductionGJ = parseFloat(result.energyProduction || '0');
+			const energyValueGJ = parseFloat(result.energyValue || '0');
+
+			// Convert units for calculations and display
+			const energyProductionMW = energyProductionGJ * 1000; // GJ → MW (1 GJ = 1000 MW)
+			
+			// burnTime = energyValue(GJ) / energyProduction(GJ) (en secondes)
+			const burnTime = energyValueGJ / energyProductionGJ;
+
+			// consommation par minute = 60 / burnTime
+			const consumptionPerMinute = 60 / burnTime;
+
+			return {
+				id: result.id,
+				name: result.name,
+				className: result.className,
+				type: result.type,
+				energyProduction: result.energyProduction || undefined,
+				energyProductionMW,
+				burnTime,
+				consumptionPerMinute
+			};
+		});
 
 		return generators;
 	}
@@ -330,12 +387,15 @@ class ItemService implements IItemService {
 			.innerJoin(recipeProducts, eq(recipeVersions.id, recipeProducts.recipeVersionId))
 			.innerJoin(moduleVersions, eq(recipeVersions.moduleVersionId, moduleVersions.id))
 			.innerJoin(modules, eq(moduleVersions.moduleId, modules.id))
-			.innerJoin(moduleGames, and(
-				eq(moduleGames.gameId, gameId),
-				eq(moduleGames.moduleId, modules.id),
-				isNotNull(moduleGames.selectedVersionId),
-				eq(moduleGames.selectedVersionId, moduleVersions.id)
-			))
+			.innerJoin(
+				moduleGames,
+				and(
+					eq(moduleGames.gameId, gameId),
+					eq(moduleGames.moduleId, modules.id),
+					isNotNull(moduleGames.selectedVersionId),
+					eq(moduleGames.selectedVersionId, moduleVersions.id)
+				)
+			)
 			.where(eq(recipeProducts.itemId, itemId))
 			.orderBy(recipes.displayName);
 

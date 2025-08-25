@@ -310,7 +310,6 @@ export type UserGame = typeof userGames.$inferSelect;
 export type NewUserGame = typeof userGames.$inferInsert;
 export type GameUserRole = (typeof gameUserRoleEnum.enumValues)[number];
 
-
 // Relations (many-to-many) Game/Module
 export const moduleGames = pgTable(
 	'module_games',
@@ -460,15 +459,18 @@ export const productionInstances = pgTable('production_instances', {
 	siteId: uuid('site_id')
 		.notNull()
 		.references(() => sites.id, { onDelete: 'cascade' }),
-	recipeVersionId: uuid('recipe_version_id')
-		.references(() => recipeVersions.id, { onDelete: 'cascade' }),
+	recipeVersionId: uuid('recipe_version_id').references(() => recipeVersions.id, {
+		onDelete: 'cascade'
+	}),
 	buildingId: uuid('building_id')
 		.notNull()
 		.references(() => buildings.id, { onDelete: 'cascade' }),
-	extractedItemId: uuid('extracted_item_id')
-		.references(() => items.id, { onDelete: 'cascade' }),
+	extractedItemId: uuid('extracted_item_id').references(() => items.id, { onDelete: 'cascade' }),
+	fuelItemId: uuid('fuel_item_id').references(() => items.id, { onDelete: 'cascade' }),
 	buildingCount: numeric('building_count', { precision: 10, scale: 2 }).notNull(),
-	efficiencyRatio: numeric('efficiency_ratio', { precision: 10, scale: 3 }).notNull().default('1.000'),
+	efficiencyRatio: numeric('efficiency_ratio', { precision: 10, scale: 3 })
+		.notNull()
+		.default('1.000'),
 	notes: varchar('notes', { length: 1000 }),
 	createdAt: timestamp('created_at').defaultNow().notNull(),
 	updatedAt: timestamp('updated_at').defaultNow().notNull()
@@ -492,6 +494,10 @@ export const productionInstancesRelations = relations(productionInstances, ({ on
 	}),
 	extractedItem: one(items, {
 		fields: [productionInstances.extractedItemId],
+		references: [items.id]
+	}),
+	fuelItem: one(items, {
+		fields: [productionInstances.fuelItemId],
 		references: [items.id]
 	})
 }));

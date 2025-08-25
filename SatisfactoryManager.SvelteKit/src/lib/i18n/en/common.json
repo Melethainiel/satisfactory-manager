@@ -281,5 +281,22 @@
 		"loading_production_options": "Loading production options...",
 		"no_compatible_buildings": "No compatible buildings available",
 		"loading_buildings": "Loading buildings..."
+	},
+	"productionInstances": {
+		"add_recipe": "Add Recipe",
+		"add_first_recipe": "Add First Recipe",
+		"recipe_instance": "production instance",
+		"recipe_instances": "production instances",
+		"no_instances": "No Production Instances",
+		"no_instances_description": "This site has no production instances yet. Add your first recipe to start tracking production.",
+		"edit_instance": "Edit Instance",
+		"delete_instance": "Delete Instance",
+		"delete_instance_confirm": "Are you sure you want to delete this production instance for {name}?",
+		"production_rate": "Production Rate",
+		"building_count": "Building Count",
+		"efficiency": "Efficiency",
+		"ingredients": "Ingredients",
+		"products": "Products",
+		"notes": "Notes"
 	}
 }

@@ -191,7 +191,8 @@
 		"dismiss": "Fermer",
 		"created": "Créé",
 		"refresh": "Actualiser",
-		"retry": "Réessayer"
+		"retry": "Réessayer",
+		"minute": "min"
 	},
 	"demo": {
 		"title": "Démo d'authentification Azure AD B2C",
@@ -280,5 +281,22 @@
 		"loading_production_options": "Chargement des options de production...",
 		"no_compatible_buildings": "Aucun bâtiment compatible disponible",
 		"loading_buildings": "Chargement des bâtiments..."
+	},
+	"productionInstances": {
+		"add_recipe": "Ajouter une recette",
+		"add_first_recipe": "Ajouter la première recette",
+		"recipe_instance": "instance de production",
+		"recipe_instances": "instances de production",
+		"no_instances": "Aucune instance de production",
+		"no_instances_description": "Ce site n'a encore aucune instance de production. Ajoutez votre première recette pour commencer le suivi de production.",
+		"edit_instance": "Modifier l'instance",
+		"delete_instance": "Supprimer l'instance",
+		"delete_instance_confirm": "Êtes-vous sûr de vouloir supprimer cette instance de production pour {name} ?",
+		"production_rate": "Taux de production",
+		"building_count": "Nombre de bâtiments",
+		"efficiency": "Efficacité",
+		"ingredients": "Ingrédients",
+		"products": "Produits",
+		"notes": "Notes"
 	}
 }

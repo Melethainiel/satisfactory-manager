@@ -1,5 +1,5 @@
 import { expect } from 'vitest';
-import { getTestDb } from './test-db';
+// removed unused getTestDb import
 import {
 	testUsers,
 	testGames,
@@ -24,28 +24,34 @@ export async function createTestEnvironment() {
 	// Create users using service with unique emails
 	const timestamp = Date.now();
 	const createdUsers = await Promise.all(
-		testUsers.map((user, index) => userService.create({
-			...user,
-			email: `${user.email.replace('@example.com', '')}-${timestamp}-${index}@example.com`
-		}))
+		testUsers.map((user, index) =>
+			userService.create({
+				...user,
+				email: `${user.email.replace('@example.com', '')}-${timestamp}-${index}@example.com`
+			})
+		)
 	);
 
 	// Create games using service with unique names
 	const createdGames = await Promise.all(
-		testGames.map((game, index) => gameService.create({
-			...game,
-			name: `${game.name} ${timestamp}-${index}`
-		}))
+		testGames.map((game, index) =>
+			gameService.create({
+				...game,
+				name: `${game.name} ${timestamp}-${index}`
+			})
+		)
 	);
 
 	// Create modules using service with unique names and URLs
 	const createdModules = await Promise.all(
-		testModules.map((module, index) => moduleService.create({
-			...module,
-			name: `${module.name} ${timestamp}-${index}`,
-			url: `${module.url}-${timestamp}-${index}`,
-			githubRepo: module.githubRepo ? `${module.githubRepo}-${timestamp}-${index}` : null
-		}))
+		testModules.map((module, index) =>
+			moduleService.create({
+				...module,
+				name: `${module.name} ${timestamp}-${index}`,
+				url: `${module.url}-${timestamp}-${index}`,
+				githubRepo: module.githubRepo ? `${module.githubRepo}-${timestamp}-${index}` : null
+			})
+		)
 	);
 
 	// Create module versions using service
@@ -61,13 +67,13 @@ export async function createTestEnvironment() {
 	// Create basic items, buildings, and recipes using first module
 	const firstModuleId = createdModules[0].id;
 	const createdItems = await Promise.all(
-		testItems(firstModuleId).map(item => itemService.createItem(item))
+		testItems(firstModuleId).map((item) => itemService.createItem(item))
 	);
 	const createdBuildings = await Promise.all(
-		testBuildings(firstModuleId).map(building => buildingService.createBuilding(building))
+		testBuildings(firstModuleId).map((building) => buildingService.createBuilding(building))
 	);
 	const createdRecipes = await Promise.all(
-		testRecipes(firstModuleId).map(recipe => recipeService.createRecipe(recipe))
+		testRecipes(firstModuleId).map((recipe) => recipeService.createRecipe(recipe))
 	);
 
 	// Set up user-game relationships with different roles using service

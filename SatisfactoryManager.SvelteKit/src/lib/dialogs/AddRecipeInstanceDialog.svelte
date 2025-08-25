@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { getGameState } from '$lib/states/gameState.svelte';
-	import { getRecipeState } from '$lib/states/recipeState.svelte';
+	import { getItemState } from '$lib/states/itemState.svelte';
 	import { t } from '$lib/i18n';
 	import type { AddRecipeInstanceDialogHandle } from './AddRecipeInstanceDialogHandle';
 
 	const gameState = getGameState();
-	const recipeState = getRecipeState();
+	const itemState = getItemState();
 
 	// Dialog state
 	let dialog: HTMLDialogElement | null = null;
@@ -25,13 +25,18 @@
 	// Connect authentication when gameState apiFetch is available
 	$effect(() => {
 		const apiFetch = gameState.getApiFetch();
+		console.log('🔍 $effect running, apiFetch:', !!apiFetch);
 		if (apiFetch) {
-			recipeState.attachAuth(apiFetch);
+			console.log('🔍 Attaching auth to itemState');
+			itemState.attachAuth(apiFetch);
+			console.log('🔍 Auth attached to itemState');
+		} else {
+			console.log('🔍 No apiFetch available from gameState');
 		}
 	});
 
-	// Search functionality using recipeState
-	async function searchRecipes(query: string) {
+	// Search functionality using itemState
+	async function searchItems(query: string) {
 		if (!query.trim() || !gameState.selectedGameId) {
 			showSearchResults = false;
 			return;
@@ -41,11 +46,11 @@
 		showSearchResults = true;
 		
 		try {
-			await recipeState.searchRecipes(gameState.selectedGameId, query);
+			await itemState.searchItems(gameState.selectedGameId, query);
 			// Keep dropdown visible if we have a query, regardless of results
 			showSearchResults = true;
 		} catch (error) {
-			console.error('Error searching recipes:', error);
+			console.error('Error searching items:', error);
 			// Still show dropdown to display error state
 			showSearchResults = true;
 		}
@@ -64,7 +69,7 @@
 		}
 		
 		searchTimeout = setTimeout(() => {
-			searchRecipes(searchQuery);
+			searchItems(searchQuery);
 		}, 300);
 	}
 
@@ -75,18 +80,56 @@
 	}
 
 
-	async function selectRecipe(recipe: typeof recipeState.selectedRecipe) {
-		recipeState.selectedRecipe = recipe;
-		searchQuery = recipe?.displayName || '';
+	async function selectItem(item: typeof itemState.selectedItem) {
+		itemState.selectedItem = item;
+		searchQuery = item?.displayName || '';
 		showSearchResults = false;
 		
 		// Reset previous selections
 		selectedBuildingId = '';
+		itemState.selectedProductionType = null;
+		itemState.selectedRecipe = null;
+		itemState.availableBuildings = [];
 		
-		// Load compatible buildings for this recipe version
-		if (recipe?.recipeVersionId) {
-			await recipeState.loadCompatibleBuildings(recipe.recipeVersionId);
+		// Load production options for this item
+		if (item?.id && gameState.selectedGameId) {
+			await itemState.loadProductionOptions(gameState.selectedGameId, item.id);
 		}
+	}
+
+	async function selectProductionType(type: 'extract' | 'craft' | 'power') {
+		itemState.selectedProductionType = type;
+		selectedBuildingId = '';
+		itemState.selectedRecipe = null;
+		itemState.availableBuildings = [];
+		
+		if (!itemState.selectedItem?.id || !gameState.selectedGameId) return;
+		
+		// Load buildings based on production type
+		if (type === 'extract' || type === 'power') {
+			// For extraction or power generation, load buildings directly
+			await itemState.loadBuildingsForProduction(
+				gameState.selectedGameId,
+				itemState.selectedItem.id,
+				type
+			);
+		}
+		// For crafting, we need to wait for recipe selection first
+	}
+
+	async function selectRecipe(recipe: typeof itemState.selectedRecipe) {
+		itemState.selectedRecipe = recipe;
+		selectedBuildingId = '';
+		
+		if (!recipe?.recipeVersionId || !itemState.selectedItem?.id || !gameState.selectedGameId) return;
+		
+		// Load buildings for this recipe
+		await itemState.loadBuildingsForProduction(
+			gameState.selectedGameId,
+			itemState.selectedItem.id,
+			'craft',
+			recipe.recipeVersionId
+		);
 	}
 
 	function resetForm() {
@@ -95,11 +138,11 @@
 		buildingCount = 1;
 		efficiencyRatio = 1.0;
 		notes = '';
-		currentSiteId = null;
+		// Note: currentSiteId is NOT cleared here - it should persist during dialog session
 		showSearchResults = false;
 		
-		// Clear recipeState data
-		recipeState.clearResults();
+		// Clear itemState data
+		itemState.clearResults();
 		
 		// Clear any pending search
 		if (searchTimeout) {
@@ -108,61 +151,130 @@
 		}
 	}
 
+	function fullReset() {
+		// Reset all form fields including currentSiteId
+		resetForm();
+		currentSiteId = null;
+	}
+
 	async function handleSubmit(e?: Event) {
+		console.log('🔍 handleSubmit called with event:', e);
 		e?.preventDefault();
+		console.log('🔍 preventDefault() called');
 		
-		if (!currentSiteId || !recipeState.selectedRecipe?.recipeVersionId || !selectedBuildingId || buildingCount <= 0) {
+		// Debug logging
+		console.log('🔍 Form validation data:', {
+			currentSiteId,
+			selectedItem: itemState.selectedItem,
+			productionType: itemState.selectedProductionType,
+			selectedRecipe: itemState.selectedRecipe,
+			selectedBuildingId,
+			buildingCount,
+			gameStateLoading: gameState.isLoading
+		});
+		
+		if (!currentSiteId) {
+			console.log('❌ No current site ID');
+			return;
+		}
+		
+		if (!itemState.selectedItem) {
+			console.log('❌ No item selected');
 			return;
 		}
 
+		if (!itemState.selectedProductionType) {
+			console.log('❌ No production type selected');
+			return;
+		}
+		
+		if (!selectedBuildingId) {
+			console.log('❌ No building selected');
+			return;
+		}
+		
+		if (buildingCount <= 0) {
+			console.log('❌ Invalid building count:', buildingCount);
+			return;
+		}
+
+		// Determine recipeVersionId based on production type
+		let recipeVersionId: string;
+		
+		switch (itemState.selectedProductionType) {
+			case 'craft':
+				if (!itemState.selectedRecipe?.recipeVersionId) {
+					console.log('❌ No recipe selected for crafting');
+					return;
+				}
+				recipeVersionId = itemState.selectedRecipe.recipeVersionId;
+				break;
+				
+			case 'extract':
+			case 'power':
+				// For now, these are not fully implemented
+				// TODO: Create proper extraction/power generation logic
+				console.log('🚧 Production type not fully implemented yet:', itemState.selectedProductionType);
+				return;
+				
+			default:
+				console.log('❌ Unknown production type:', itemState.selectedProductionType);
+				return;
+		}
+
+		console.log('✅ Validation passed, creating production instance...');
+
 		try {
 			await gameState.createRecipeInstance(currentSiteId, {
-				recipeVersionId: recipeState.selectedRecipe.recipeVersionId,
+				recipeVersionId: recipeVersionId,
 				buildingId: selectedBuildingId,
 				buildingCount: buildingCount,
 				efficiencyRatio: efficiencyRatio,
 				notes: notes.trim() || undefined
 			});
 			
+			console.log('✅ Production instance created successfully');
+			fullReset();
 			dialog?.close();
-			resetForm();
 		} catch (error) {
-			console.error('Failed to create recipe instance:', error);
+			console.error('❌ Failed to create recipe instance:', error);
 		}
 	}
 
-	// Expose open method for external use
-	export const open: AddRecipeInstanceDialogHandle['open'] = async function (siteId: string) {
+	// Expose methods for external use using Svelte 5 syntax
+	export async function open(siteId: string): Promise<void> {
+		console.log('🔍 AddRecipeInstanceDialog.open() called with siteId:', siteId);
 		currentSiteId = siteId;
 		resetForm();
 		dialog?.showModal();
-	};
+		console.log('🔍 Dialog should now be open, dialog element:', dialog);
+	}
 </script>
 
 <dialog bind:this={dialog} id="add_recipe_instance_modal" class="modal">
 	<div class="modal-box w-11/12 max-w-2xl">
-		<h3 class="mb-4 text-lg font-bold">{$t('recipeInstances.add_recipe')}</h3>
+		<h3 class="mb-4 text-lg font-bold">Add Production Instance</h3>
 		
 		<form onsubmit={handleSubmit} class="flex flex-col gap-4">
-			<!-- Recipe Search -->
+			<!-- Item Search -->
 			<div class="form-control">
-				<label class="label" for="recipe-search">
-					<span class="label-text">{$t('recipeInstances.recipe')}<span class="text-error">*</span></span>
+				<label class="label" for="item-search">
+					<span class="label-text">Item to Produce<span class="text-error">*</span></span>
 				</label>
 				<div class="relative">
 					<input
-						id="recipe-search"
+						id="item-search"
 						type="text"
 						class="input input-bordered w-full"
-						placeholder={$t('recipeInstances.search_recipes')}
+						placeholder="Search for items to produce (e.g., Iron Ore, Iron Ingot)"
 						bind:value={searchQuery}
 						oninput={handleSearchInput}
-						onfocus={() => showSearchResults = searchQuery.trim().length > 0 || recipeState.searchResults.length > 0}
+						onfocus={() => showSearchResults = searchQuery.trim().length > 0 || itemState.searchResults.length > 0}
 						onkeydown={handleKeydown}
 						autocomplete="off"
 					/>
 					
-					{#if recipeState.isSearching}
+					{#if itemState.isSearching}
 						<div class="absolute right-3 top-1/2 transform -translate-y-1/2">
 							<span class="loading loading-spinner loading-sm"></span>
 						</div>
@@ -171,31 +283,35 @@
 					<!-- Search Results Dropdown -->
 					{#if showSearchResults}
 						<div class="absolute z-10 w-full mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-							{#if recipeState.isSearching}
+							{#if itemState.isSearching}
 								<div class="p-3 text-center text-base-content/70">
 									<div class="flex items-center justify-center gap-2">
 										<span class="loading loading-spinner loading-sm"></span>
-										{$t('recipeInstances.searching')}...
+										Searching items...
 									</div>
 								</div>
 							{:else if searchQuery.trim().length === 0}
 								<div class="p-3 text-center text-base-content/70">
-									{$t('recipeInstances.start_typing_to_search')}
+									Start typing to search for items
 								</div>
-							{:else if recipeState.searchResults.length === 0}
+							{:else if itemState.searchResults.length === 0}
 								<div class="p-3 text-center text-base-content/70">
-									{$t('recipeInstances.no_recipes_found')}
+									No items found
 								</div>
 							{:else}
-								{#each recipeState.searchResults as recipe}
+								{#each itemState.searchResults as item}
 									<button
 										type="button"
 										class="w-full p-3 text-left hover:bg-base-200 border-b border-base-300 last:border-b-0"
-										onclick={() => selectRecipe(recipe)}
+										onclick={() => selectItem(item)}
 									>
-										<div class="font-medium">{recipe.displayName}</div>
-										<div class="text-sm text-base-content/70">
-											{recipe.moduleVersion.module.name} v{recipe.moduleVersion.version}
+										<div class="font-medium">{item.displayName}</div>
+										<div class="text-sm text-base-content/70 flex items-center gap-2">
+											<span class="badge badge-xs badge-outline">{item.form}</span>
+											{item.moduleVersion.module.name} v{item.moduleVersion.version}
+											{#if parseFloat(item.energyValue) > 0}
+												<span class="badge badge-xs badge-secondary">⚡ {item.energyValue} MJ</span>
+											{/if}
 										</div>
 									</button>
 								{/each}
@@ -205,51 +321,153 @@
 				</div>
 			</div>
 
-			<!-- Selected Recipe Display -->
-			{#if recipeState.selectedRecipe}
+			<!-- Selected Item Display -->
+			{#if itemState.selectedItem}
 				<div class="form-control">
 					<div class="bg-base-200 rounded-lg p-3">
-						<div class="font-medium">{recipeState.selectedRecipe.displayName}</div>
-						<div class="text-sm text-base-content/70">
-							{recipeState.selectedRecipe.moduleVersion.module.name} v{recipeState.selectedRecipe.moduleVersion.version}
+						<div class="font-medium flex items-center gap-2">
+							{itemState.selectedItem.displayName}
+							<span class="badge badge-xs badge-outline">{itemState.selectedItem.form}</span>
+							{#if parseFloat(itemState.selectedItem.energyValue) > 0}
+								<span class="badge badge-xs badge-secondary">⚡ {itemState.selectedItem.energyValue} MJ</span>
+							{/if}
 						</div>
-						<div class="text-sm text-base-content/60">
-							{$t('recipeInstances.manufacturing_duration')}: {recipeState.selectedRecipe.manufacturingDuration}s
+						<div class="text-sm text-base-content/70">
+							{itemState.selectedItem.moduleVersion.module.name} v{itemState.selectedItem.moduleVersion.version}
 						</div>
 					</div>
 				</div>
 			{/if}
 
+			<!-- Production Options -->
+			{#if itemState.selectedItem && itemState.productionOptions}
+				<div class="form-control">
+					<label class="label">
+						<span class="label-text">How do you want to produce this item?<span class="text-error">*</span></span>
+					</label>
+					
+					{#if itemState.isLoadingProductionOptions}
+						<div class="flex items-center justify-center p-4">
+							<span class="loading loading-spinner loading-sm"></span>
+							<span class="ml-2">Loading production options...</span>
+						</div>
+					{:else}
+						<div class="flex flex-col gap-2">
+							{#if itemState.productionOptions.canCraft}
+								<label class="cursor-pointer">
+									<input 
+										type="radio" 
+										class="radio radio-primary" 
+										bind:group={itemState.selectedProductionType}
+										value="craft"
+										onchange={() => selectProductionType('craft')}
+									>
+									<span class="ml-2">🏭 Craft via Recipe ({itemState.productionOptions.recipes.length} recipes available)</span>
+								</label>
+							{/if}
+							
+							{#if itemState.productionOptions.canExtract}
+								<label class="cursor-pointer">
+									<input 
+										type="radio" 
+										class="radio radio-primary" 
+										bind:group={itemState.selectedProductionType}
+										value="extract"
+										onchange={() => selectProductionType('extract')}
+										disabled
+									>
+									<span class="ml-2 text-base-content/50">⛏️ Extract from deposits ({itemState.productionOptions.extractors.length} extractors available) - Coming soon</span>
+								</label>
+							{/if}
+							
+							{#if itemState.productionOptions.canGeneratePower}
+								<label class="cursor-pointer">
+									<input 
+										type="radio" 
+										class="radio radio-primary" 
+										bind:group={itemState.selectedProductionType}
+										value="power"
+										onchange={() => selectProductionType('power')}
+										disabled
+									>
+									<span class="ml-2 text-base-content/50">⚡ Generate Power ({itemState.productionOptions.generators.length} generators available) - Coming soon</span>
+								</label>
+							{/if}
+							
+							{#if !itemState.productionOptions.canCraft && !itemState.productionOptions.canExtract && !itemState.productionOptions.canGeneratePower}
+								<div class="text-center text-base-content/70 p-4">
+									No production methods available for this item in the current game configuration.
+								</div>
+							{/if}
+						</div>
+					{/if}
+				</div>
+			{/if}
+
+			<!-- Recipe Selection (only shown for craft production type) -->
+			{#if itemState.selectedProductionType === 'craft' && itemState.productionOptions?.recipes}
+				<div class="form-control">
+					<label class="label" for="recipe-select">
+						<span class="label-text">Select Recipe<span class="text-error">*</span></span>
+					</label>
+					<select 
+						id="recipe-select"
+						class="select select-bordered w-full"
+						onchange={(e) => {
+							const recipeId = (e.target as HTMLSelectElement)?.value;
+							const recipe = itemState.productionOptions?.recipes.find(r => r.id === recipeId) || null;
+							selectRecipe(recipe);
+						}}
+						required
+					>
+						<option value="">Select a recipe...</option>
+						{#each itemState.productionOptions.recipes as recipe}
+							<option value={recipe.id}>{recipe.displayName} ({recipe.manufacturingDuration}s)</option>
+						{/each}
+					</select>
+				</div>
+			{/if}
+
 			<!-- Building Selection -->
-			<div class="form-control">
-				<label class="label" for="building-select">
-					<span class="label-text">{$t('recipeInstances.building')}<span class="text-error">*</span></span>
-				</label>
-				<select 
-					id="building-select"
-					class="select select-bordered w-full"
-					bind:value={selectedBuildingId}
-					disabled={recipeState.availableBuildings.length === 0}
-					required
-				>
-					<option value="">{$t('recipeInstances.select_building')}</option>
-					{#each recipeState.availableBuildings as building}
-						<option value={building.id}>
-							{building.name} ({building.type})
-						</option>
-					{/each}
-				</select>
-				{#if recipeState.selectedRecipe && recipeState.availableBuildings.length === 0 && !recipeState.isLoadingBuildings}
-					<div class="label">
-						<span class="label-text-alt text-warning">No compatible buildings for this recipe</span>
-					</div>
-				{/if}
-				{#if recipeState.isLoadingBuildings}
-					<div class="label">
-						<span class="label-text-alt">{$t('recipeInstances.searching')}...</span>
-					</div>
-				{/if}
-			</div>
+			{#if itemState.selectedProductionType}
+				<div class="form-control">
+					<label class="label" for="building-select">
+						<span class="label-text">
+							{#if itemState.selectedProductionType === 'craft'}
+								Building for Recipe<span class="text-error">*</span>
+							{:else if itemState.selectedProductionType === 'extract'}
+								Extractor<span class="text-error">*</span>
+							{:else if itemState.selectedProductionType === 'power'}
+								Generator<span class="text-error">*</span>
+							{/if}
+						</span>
+					</label>
+					<select 
+						id="building-select"
+						class="select select-bordered w-full"
+						bind:value={selectedBuildingId}
+						disabled={itemState.availableBuildings.length === 0}
+						required
+					>
+						<option value="">Select a building...</option>
+						{#each itemState.availableBuildings as building}
+							<option value={building.id}>
+								{building.name} ({building.type})
+							</option>
+						{/each}
+					</select>
+					{#if itemState.selectedProductionType && itemState.availableBuildings.length === 0 && !itemState.isLoadingBuildings}
+						<div class="label">
+							<span class="label-text-alt text-warning">No compatible buildings available</span>
+						</div>
+					{/if}
+					{#if itemState.isLoadingBuildings}
+						<div class="label">
+							<span class="label-text-alt">Loading buildings...</span>
+						</div>
+					{/if}
+				</div>
+			{/if}
 
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 				<!-- Building Count -->
@@ -312,26 +530,29 @@
 				<button 
 					type="button" 
 					class="btn" 
-					onclick={() => dialog?.close()}
+					onclick={() => {
+						fullReset();
+						dialog?.close();
+					}}
 				>
 					{$t('common.cancel')}
 				</button>
 				<button 
 					type="submit" 
 					class="btn btn-primary"
-					disabled={gameState.isLoading || !recipeState.selectedRecipe?.recipeVersionId || !selectedBuildingId || buildingCount <= 0}
+					disabled={gameState.isLoading || !itemState.selectedItem || !itemState.selectedProductionType || !selectedBuildingId || buildingCount <= 0 || (itemState.selectedProductionType === 'craft' && !itemState.selectedRecipe)}
 				>
 					{#if gameState.isLoading}
 						<span class="loading loading-spinner loading-xs"></span>
 					{/if}
-					{$t('recipeInstances.add_recipe')}
+					Add Production Instance
 				</button>
 			</div>
 		</form>
 	</div>
 	
 	<form method="dialog" class="modal-backdrop">
-		<button aria-label={$t('common.close')}>{$t('common.close')}</button>
+		<button aria-label={$t('common.close')} onclick={() => fullReset()}>{$t('common.close')}</button>
 	</form>
 </dialog>
 

@@ -2,11 +2,27 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { itemService } from '$lib/server/services/itemService';
 
-// GET /api/items - List all items
+// GET /api/items - List all items OR search items by game and name
 export const GET: RequestHandler = async ({ url }) => {
 	try {
 		const form = url.searchParams.get('form');
+		const gameId = url.searchParams.get('gameId');
+		const search = url.searchParams.get('search');
 
+		// If gameId and search are provided, use the new search functionality
+		if (gameId && search) {
+			if (!gameId.trim() || !search.trim()) {
+				return json(
+					{ error: 'gameId and search parameters are required for item search' },
+					{ status: 400 }
+				);
+			}
+
+			const items = await itemService.searchItemsByGameAndName(gameId.trim(), search.trim());
+			return json(items);
+		}
+
+		// Original functionality for backward compatibility
 		// Validate form if provided
 		if (form && !['RF_SOLID', 'RF_LIQUID', 'RF_GAS'].includes(form)) {
 			return json(

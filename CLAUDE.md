@@ -41,6 +41,7 @@ npm run check:watch     # Type-check in watch mode
 
 # Database Operations
 npm run db:push         # Push schema changes to database
+drizzle-kit push --force # Force push schema changes (use when conflicts occur)
 npm run db:migrate      # Run database migrations
 npm run db:studio       # Open Drizzle Studio (database GUI)
 npm run generate        # Generate migration files

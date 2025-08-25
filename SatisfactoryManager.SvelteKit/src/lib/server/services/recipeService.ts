@@ -21,7 +21,7 @@ import {
 	type RecipeBuilding,
 	type NewRecipeBuilding
 } from '../db/schema';
-import { eq, desc, ilike, inArray, and, isNotNull } from 'drizzle-orm';
+import { eq, desc, ilike, inArray, and, isNotNull, sql } from 'drizzle-orm';
 
 export interface RecipeVersionWithDetails extends RecipeVersion {
 	ingredients: RecipeIngredient[];
@@ -316,12 +316,7 @@ class RecipeService implements IRecipeService {
 				className: recipes.className,
 				recipeVersionId: recipeVersions.id,
 				manufacturingDuration: recipeVersions.manufacturingDuration,
-				moduleVersion: {
-					version: moduleVersions.version,
-					module: {
-						name: modules.name
-					}
-				}
+				moduleVersion: sql<{version: string, module: {name: string}}>`json_build_object('version', ${moduleVersions.version}, 'module', json_build_object('name', ${modules.name}))`
 			})
 			.from(recipes)
 			.innerJoin(recipeVersions, eq(recipes.id, recipeVersions.recipeId))

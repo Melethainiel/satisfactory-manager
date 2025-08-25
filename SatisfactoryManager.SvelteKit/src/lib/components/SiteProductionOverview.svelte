@@ -63,7 +63,20 @@
 	});
 
 	function handleAddRecipe() {
-		addRecipeDialogRef?.open(siteId);
+		console.log('🔍 handleAddRecipe called with siteId:', siteId);
+		console.log('🔍 addRecipeDialogRef:', addRecipeDialogRef);
+		console.log('🔍 addRecipeDialogRef type:', typeof addRecipeDialogRef);
+		console.log('🔍 addRecipeDialogRef.open:', addRecipeDialogRef?.open);
+		console.log('🔍 addRecipeDialogRef.open type:', typeof addRecipeDialogRef?.open);
+		
+		if (addRecipeDialogRef?.open) {
+			console.log('🔍 Calling addRecipeDialogRef.open() with siteId:', siteId);
+			addRecipeDialogRef.open(siteId);
+			console.log('🔍 addRecipeDialogRef.open() call completed');
+		} else {
+			console.error('❌ addRecipeDialogRef.open is not available');
+			console.error('❌ addRecipeDialogRef is:', addRecipeDialogRef);
+		}
 	}
 
 	function handleEditInstance(instance: RecipeInstanceData) {
@@ -107,7 +120,10 @@
 		{#if canManage()}
 			<button
 				class="btn btn-primary"
-				onclick={handleAddRecipe}
+				onclick={() => {
+					console.log('🔍 Add Recipe button clicked');
+					handleAddRecipe();
+				}}
 				disabled={gameState.isLoading}
 			>
 				<Icon src={Plus} class="size-4" />

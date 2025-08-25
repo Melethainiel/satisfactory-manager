@@ -21,12 +21,26 @@
 		return gameState.canManageSites(authState.user.email);
 	});
 
-	// Calculate production rate (simplified)
+	// Calculate production rate
 	let productionInfo = $derived(() => {
 		if (!instance.products || instance.products.length === 0) return null;
 		
 		const primaryProduct = instance.products[0];
-		const baseRate = primaryProduct.count / (instance.recipeVersion?.manufacturingDuration || 1) ;
+		let baseRate: number;
+		
+		// Handle extraction instances (no recipe)
+		if (!instance.recipeVersion) {
+			// Use building output rate for extraction
+			if (!instance.buildingVersion?.output) {
+				return null; // No building version data available
+			}
+			baseRate = parseFloat(instance.buildingVersion.output);
+		} else {
+			// Handle crafting instances (with recipe)
+			// count is already in items/minute
+			baseRate = parseFloat(primaryProduct.count);
+		}
+		
 		const actualRate = baseRate * instance.buildingCount * instance.efficiencyRatio;
 		
 		return {

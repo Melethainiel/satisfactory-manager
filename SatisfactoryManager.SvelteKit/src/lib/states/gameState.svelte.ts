@@ -57,7 +57,7 @@ export interface ProductionInstanceData {
 	};
 	recipeVersion?: {
 		id: string;
-		manufacturingDuration: number;
+		manufacturingDuration: string;
 	};
 	building?: {
 		id: string;
@@ -65,9 +65,15 @@ export interface ProductionInstanceData {
 		className: string;
 		type: string;
 	};
+	buildingVersion?: {
+		id: string;
+		output: string;
+		energyConsumption: string;
+		energyProduction: string;
+	};
 	products?: Array<{
 		itemId: string;
-		count: number;
+		count: string;
 		item: {
 			displayName: string;
 			className: string;
@@ -76,7 +82,7 @@ export interface ProductionInstanceData {
 	}>;
 	ingredients?: Array<{
 		itemId: string;
-		count: number;
+		count: string;
 		item: {
 			displayName: string;
 			className: string;
@@ -537,9 +543,16 @@ class GameStateClass implements GameState {
 	}) {
 		if (!instanceId || !this.apiFetch) return;
 
+		// Find the instance to get its siteId
+		const instance = this.siteProductionInstances.find((i: ProductionInstanceData) => i.id === instanceId);
+		if (!instance) {
+			notificationService.error('Production instance not found');
+			return;
+		}
+
 		this.isLoading = true;
 		try {
-			const response = await this.apiFetch(`/api/sites/_/production-instances/${instanceId}`, {
+			const response = await this.apiFetch(`/api/sites/${instance.siteId}/production-instances/${instanceId}`, {
 				method: 'PATCH',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(data)
@@ -549,12 +562,9 @@ class GameStateClass implements GameState {
 			
 			const result = await response.json();
 			if (result.success) {
-				// Find the instance and reload the site's instances
-				const instance = this.siteProductionInstances.find((i: ProductionInstanceData) => i.id === instanceId);
-				if (instance) {
-					await this.loadSiteProductionInstances(instance.siteId);
-					await this.loadSiteProductionOverview(instance.siteId);
-				}
+				// Reload the site's instances
+				await this.loadSiteProductionInstances(instance.siteId);
+				await this.loadSiteProductionOverview(instance.siteId);
 				notificationService.success('Production instance updated successfully');
 			}
 		} catch (e: any) {
@@ -567,9 +577,16 @@ class GameStateClass implements GameState {
 	async deleteProductionInstance(instanceId: string) {
 		if (!instanceId || !this.apiFetch) return;
 
+		// Find the instance to get its siteId
+		const instance = this.siteProductionInstances.find((i: ProductionInstanceData) => i.id === instanceId);
+		if (!instance) {
+			notificationService.error('Production instance not found');
+			return;
+		}
+
 		this.isLoading = true;
 		try {
-			const response = await this.apiFetch(`/api/sites/_/production-instances/${instanceId}`, {
+			const response = await this.apiFetch(`/api/sites/${instance.siteId}/production-instances/${instanceId}`, {
 				method: 'DELETE'
 			});
 			
@@ -577,12 +594,9 @@ class GameStateClass implements GameState {
 			
 			const result = await response.json();
 			if (result.success) {
-				// Find the instance and reload the site's instances
-				const instance = this.siteProductionInstances.find((i: ProductionInstanceData) => i.id === instanceId);
-				if (instance) {
-					await this.loadSiteProductionInstances(instance.siteId);
-					await this.loadSiteProductionOverview(instance.siteId);
-				}
+				// Reload the site's instances
+				await this.loadSiteProductionInstances(instance.siteId);
+				await this.loadSiteProductionOverview(instance.siteId);
 				notificationService.success('Production instance deleted successfully');
 			}
 		} catch (e: any) {

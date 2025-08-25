@@ -9,6 +9,8 @@ import {
 	recipeProducts,
 	recipeIngredients,
 	items,
+	moduleGames,
+	modules,
 	type ProductionInstance,
 	type NewProductionInstance
 } from '../db/schema';
@@ -35,6 +37,12 @@ export interface ProductionInstanceWithDetails extends ProductionInstance {
 		className: string;
 		type: string;
 	};
+	buildingVersion: {
+		id: string;
+		output: string;
+		energyConsumption: string;
+		energyProduction: string;
+	} | null;
 	products: Array<{
 		itemId: string;
 		count: string;
@@ -131,6 +139,12 @@ class ProductionInstanceService implements IProductionInstanceService {
 					name: buildings.name,
 					className: buildings.className,
 					type: buildings.type
+				},
+				buildingVersion: {
+					id: buildingVersions.id,
+					output: buildingVersions.output,
+					energyConsumption: buildingVersions.energyConsumption,
+					energyProduction: buildingVersions.energyProduction
 				}
 			})
 			.from(productionInstances)
@@ -138,6 +152,15 @@ class ProductionInstanceService implements IProductionInstanceService {
 			.leftJoin(recipeVersions, eq(productionInstances.recipeVersionId, recipeVersions.id))
 			.leftJoin(recipes, eq(recipeVersions.recipeId, recipes.id))
 			.leftJoin(buildings, eq(productionInstances.buildingId, buildings.id))
+			.leftJoin(modules, eq(buildings.moduleId, modules.id))
+			.leftJoin(moduleGames, and(
+				eq(moduleGames.moduleId, modules.id),
+				eq(moduleGames.gameId, sites.gameId)
+			))
+			.leftJoin(buildingVersions, and(
+				eq(buildingVersions.buildingId, buildings.id),
+				eq(buildingVersions.moduleVersionId, moduleGames.selectedVersionId)
+			))
 			.where(eq(productionInstances.id, id))
 			.limit(1);
 
@@ -282,7 +305,8 @@ class ProductionInstanceService implements IProductionInstanceService {
 	async deleteProductionInstance(id: string): Promise<boolean> {
 		const result = await db
 			.delete(productionInstances)
-			.where(eq(productionInstances.id, id));
+			.where(eq(productionInstances.id, id))
+			.returning({ id: productionInstances.id });
 
 		return result.length > 0;
 	}
@@ -296,16 +320,8 @@ class ProductionInstanceService implements IProductionInstanceService {
 
 		// Handle extraction (no recipe)
 		if (!instance.recipeVersionId) {
-			// For extraction, get the building output rate from buildingVersions
-			const buildingVersionResult = await db
-				.select({
-					output: buildingVersions.output
-				})
-				.from(buildingVersions)
-				.where(eq(buildingVersions.buildingId, instance.buildingId))
-				.limit(1);
-
-			if (buildingVersionResult.length === 0) {
+			// For extraction, use the building output rate from buildingVersion
+			if (!instance.buildingVersion) {
 				// Fallback if no building version data
 				return {
 					itemsPerMinute: 0,
@@ -315,15 +331,15 @@ class ProductionInstanceService implements IProductionInstanceService {
 				};
 			}
 
-			const buildingOutput = parseFloat(buildingVersionResult[0].output || '0');
-			const baseRatePerMinute = buildingOutput; // Convert to per minute
+			const buildingOutput = parseFloat(instance.buildingVersion.output || '0');
+			const baseRatePerMinute = buildingOutput; // Already per minute
 			const totalRate = baseRatePerMinute * buildingCount * efficiency;
 
 			return {
 				itemsPerMinute: totalRate,
 				totalProduction: totalRate,
 				buildingUtilization: efficiency,
-				powerConsumption: 0 // TODO: Calculate based on building power consumption
+				powerConsumption: parseFloat(instance.buildingVersion.energyConsumption || '0') * buildingCount * efficiency
 			};
 		}
 
@@ -369,17 +385,9 @@ class ProductionInstanceService implements IProductionInstanceService {
 
 			// Handle extraction instances (no recipes)
 			if (!instance.recipeVersionId) {
-				// For extraction, get the building output rate from buildingVersions
-				const buildingVersionResult = await db
-					.select({
-						output: buildingVersions.output
-					})
-					.from(buildingVersions)
-					.where(eq(buildingVersions.buildingId, instance.buildingId))
-					.limit(1);
-
-				if (buildingVersionResult.length > 0 && instance.products.length > 0) {
-					const buildingOutput = parseFloat(buildingVersionResult[0].output || '0');
+				// For extraction, use the building output rate from buildingVersion
+				if (instance.buildingVersion && instance.products.length > 0) {
+					const buildingOutput = parseFloat(instance.buildingVersion.output || '0');
 					const baseRatePerMinute = buildingOutput;
 					const totalRate = baseRatePerMinute * buildingCount * efficiency;
 

@@ -21,37 +21,21 @@
 		return gameState.canManageSites(authState.user.email);
 	});
 
-	// Calculate production rate
+	// Get production info from pre-calculated data
 	let productionInfo = $derived(() => {
 		if (!instance.products || instance.products.length === 0) return null;
 
 		const primaryProduct = instance.products[0];
-		let baseRate: number;
-
-		// Handle extraction instances (no recipe)
-		if (!instance.recipeVersion) {
-			// Use building output rate for extraction
-			if (!instance.buildingVersion?.output) {
-				return null; // No building version data available
-			}
-			baseRate = parseFloat(instance.buildingVersion.output);
-		} else {
-			// Handle crafting instances (with recipe)
-			// count is already in items/minute
-			baseRate = parseFloat(primaryProduct.count);
-		}
-
-		const actualRate = baseRate * instance.buildingCount * instance.efficiencyRatio;
 
 		return {
 			item: primaryProduct.item,
-			baseRate,
-			actualRate
+			baseRate: parseFloat(primaryProduct.count), // Base recipe count
+			actualRate: primaryProduct.actualRate // Pre-calculated actual rate
 		};
 	});
 
 	// Calculate efficiency percentage
-	let efficiencyPercent = $derived(() => Math.round(instance.efficiencyRatio * 100));
+	let efficiencyPercent = $derived(() => Math.round(parseFloat(instance.efficiencyRatio) * 100));
 
 	// Building utilization color
 	let utilizationColor = $derived(() => {
@@ -160,7 +144,7 @@
 							{$t('productionInstances.building_count')}
 						</div>
 						<div class="font-mono text-sm font-semibold">
-							{instance.buildingCount}
+							{parseFloat(instance.buildingCount)}
 						</div>
 					</div>
 					<div>

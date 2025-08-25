@@ -313,7 +313,9 @@
 											<span class="badge badge-outline badge-xs">{item.form}</span>
 											{item.moduleVersion.module.name} v{item.moduleVersion.version}
 											{#if parseFloat(item.energyValue) > 0}
-												<span class="badge badge-xs badge-secondary">⚡ {(parseFloat(item.energyValue) * 1000).toFixed(0)} MJ</span>
+												<span class="badge badge-xs badge-secondary"
+													>⚡ {(parseFloat(item.energyValue) * 1000).toFixed(0)} MJ</span
+												>
 											{/if}
 										</div>
 									</button>
@@ -476,7 +478,9 @@
 							<option value={building.id}>
 								{building.name} ({building.type})
 								{#if building.energyProductionMW && building.consumptionPerMinute}
-									- {building.energyProductionMW.toFixed(0)} MW - {building.consumptionPerMinute.toFixed(2)} items/min
+									- {building.energyProductionMW.toFixed(0)} MW - {building.consumptionPerMinute.toFixed(
+										2
+									)} items/min
 								{/if}
 							</option>
 						{/each}

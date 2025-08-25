@@ -15,6 +15,7 @@ import {
 	type NewProductionInstance
 } from '../db/schema';
 import { eq, desc, and } from 'drizzle-orm';
+import { productionCalculationService } from './productionCalculationService';
 
 export interface ProductionInstanceWithDetails extends ProductionInstance {
 	site: {
@@ -74,7 +75,6 @@ export interface IProductionInstanceService {
 	// CRUD operations
 	getAllProductionInstances(): Promise<ProductionInstance[]>;
 	getProductionInstanceById(id: string): Promise<ProductionInstanceWithDetails | undefined>;
-	getProductionInstancesBySite(siteId: string): Promise<ProductionInstanceWithDetails[]>;
 	createProductionInstance(
 		data: Omit<NewProductionInstance, 'id' | 'createdAt' | 'updatedAt'>
 	): Promise<ProductionInstance>;
@@ -83,14 +83,6 @@ export interface IProductionInstanceService {
 		data: Partial<Omit<NewProductionInstance, 'id' | 'createdAt' | 'updatedAt'>>
 	): Promise<ProductionInstance | undefined>;
 	deleteProductionInstance(id: string): Promise<boolean>;
-
-	// Production calculations
-	calculateInstanceProduction(instanceId: string): Promise<ProductionCalculation | undefined>;
-	calculateSiteProduction(siteId: string): Promise<{
-		totalProduction: Array<{ itemId: string; itemName: string; rate: number }>;
-		totalConsumption: Array<{ itemId: string; itemName: string; rate: number }>;
-		netBalance: Array<{ itemId: string; itemName: string; balance: number }>;
-	}>;
 
 	// Validation
 	validateProductionInstanceData(
@@ -258,24 +250,6 @@ class ProductionInstanceService implements IProductionInstanceService {
 		} as ProductionInstanceWithDetails;
 	}
 
-	async getProductionInstancesBySite(siteId: string): Promise<ProductionInstanceWithDetails[]> {
-		const instances = await db
-			.select()
-			.from(productionInstances)
-			.where(eq(productionInstances.siteId, siteId))
-			.orderBy(desc(productionInstances.createdAt));
-
-		const detailed = await Promise.all(
-			instances.map(async (instance) => {
-				return this.getProductionInstanceById(instance.id);
-			})
-		);
-
-		return detailed.filter(
-			(instance): instance is ProductionInstanceWithDetails => instance !== undefined
-		);
-	}
-
 	async createProductionInstance(
 		data: Omit<NewProductionInstance, 'id' | 'createdAt' | 'updatedAt'>
 	): Promise<ProductionInstance> {
@@ -293,6 +267,11 @@ class ProductionInstanceService implements IProductionInstanceService {
 			})
 			.returning();
 
+		// Invalidate cache for the site
+		if (data.siteId) {
+			await productionCalculationService.onProductionInstanceChanged(data.siteId);
+		}
+
 		return result;
 	}
 
@@ -300,6 +279,13 @@ class ProductionInstanceService implements IProductionInstanceService {
 		id: string,
 		data: Partial<Omit<NewProductionInstance, 'id' | 'createdAt' | 'updatedAt'>>
 	): Promise<ProductionInstance | undefined> {
+		// Get the current instance to know which site to invalidate cache for
+		const currentInstance = await db
+			.select({ siteId: productionInstances.siteId })
+			.from(productionInstances)
+			.where(eq(productionInstances.id, id))
+			.limit(1);
+
 		const [result] = await db
 			.update(productionInstances)
 			.set({
@@ -309,6 +295,11 @@ class ProductionInstanceService implements IProductionInstanceService {
 			.where(eq(productionInstances.id, id))
 			.returning();
 
+		// Invalidate cache for the site
+		if (currentInstance.length > 0) {
+			await productionCalculationService.onProductionInstanceChanged(currentInstance[0].siteId);
+		}
+
 		return result;
 	}
 
@@ -316,170 +307,14 @@ class ProductionInstanceService implements IProductionInstanceService {
 		const result = await db
 			.delete(productionInstances)
 			.where(eq(productionInstances.id, id))
-			.returning({ id: productionInstances.id });
+			.returning({ id: productionInstances.id, siteId: productionInstances.siteId });
+
+		// Invalidate cache for the site
+		if (result.length > 0) {
+			await productionCalculationService.onProductionInstanceChanged(result[0].siteId);
+		}
 
 		return result.length > 0;
-	}
-
-	async calculateInstanceProduction(
-		instanceId: string
-	): Promise<ProductionCalculation | undefined> {
-		const instance = await this.getProductionInstanceById(instanceId);
-		if (!instance) return undefined;
-
-		const buildingCount = parseFloat(instance.buildingCount);
-		const efficiency = parseFloat(instance.efficiencyRatio);
-
-		// Handle extraction (no recipe)
-		if (!instance.recipeVersionId) {
-			// For extraction, use the building output rate from buildingVersion
-			if (!instance.buildingVersion) {
-				// Fallback if no building version data
-				return {
-					itemsPerMinute: 0,
-					totalProduction: 0,
-					buildingUtilization: efficiency,
-					powerConsumption: 0
-				};
-			}
-
-			const buildingOutput = parseFloat(instance.buildingVersion.output || '0');
-			const baseRatePerMinute = buildingOutput; // Already per minute
-			const totalRate = baseRatePerMinute * buildingCount * efficiency;
-
-			return {
-				itemsPerMinute: totalRate,
-				totalProduction: totalRate,
-				buildingUtilization: efficiency,
-				powerConsumption:
-					parseFloat(instance.buildingVersion.energyConsumption || '0') * buildingCount * efficiency
-			};
-		}
-
-		// Handle crafting (has recipe)
-		const manufacturingDuration = parseFloat(instance.recipeVersion?.manufacturingDuration || '1');
-
-		// Calculate items per minute for each product
-		const productionRates = instance.products.map((product) => {
-			const baseRate = parseFloat(product.count) / manufacturingDuration; // items per minute for 1 building
-			const totalRate = baseRate * buildingCount * efficiency;
-
-			return {
-				itemId: product.itemId,
-				itemName: product.item.displayName,
-				rate: totalRate
-			};
-		});
-
-		// For now, return the first product's rate (in a real scenario, you might want to return all products)
-		const primaryProduct = productionRates[0];
-
-		return {
-			itemsPerMinute: primaryProduct?.rate || 0,
-			totalProduction: primaryProduct?.rate || 0,
-			buildingUtilization: efficiency,
-			powerConsumption: 0 // TODO: Calculate based on building power consumption
-		};
-	}
-
-	async calculateSiteProduction(siteId: string): Promise<{
-		totalProduction: Array<{ itemId: string; itemName: string; rate: number }>;
-		totalConsumption: Array<{ itemId: string; itemName: string; rate: number }>;
-		netBalance: Array<{ itemId: string; itemName: string; balance: number }>;
-	}> {
-		const instances = await this.getProductionInstancesBySite(siteId);
-
-		const productionMap = new Map<string, { itemName: string; rate: number }>();
-		const consumptionMap = new Map<string, { itemName: string; rate: number }>();
-
-		for (const instance of instances) {
-			const buildingCount = parseFloat(instance.buildingCount);
-			const efficiency = parseFloat(instance.efficiencyRatio);
-
-			// Handle extraction instances (no recipes)
-			if (!instance.recipeVersionId) {
-				// For extraction, use the building output rate from buildingVersion
-				if (instance.buildingVersion && instance.products.length > 0) {
-					const buildingOutput = parseFloat(instance.buildingVersion.output || '0');
-					const baseRatePerMinute = buildingOutput;
-					const totalRate = baseRatePerMinute * buildingCount * efficiency;
-
-					// Use the first (and typically only) product for extraction
-					const extractedItem = instance.products[0];
-					const existing = productionMap.get(extractedItem.itemId);
-					productionMap.set(extractedItem.itemId, {
-						itemName: extractedItem.item.displayName,
-						rate: (existing?.rate || 0) + totalRate
-					});
-				}
-				continue;
-			}
-
-			// Handle crafting instances (with recipes)
-			const manufacturingDuration = parseFloat(
-				instance.recipeVersion?.manufacturingDuration || '1'
-			);
-
-			// Calculate production
-			for (const product of instance.products) {
-				const baseRate = parseFloat(product.count) / manufacturingDuration;
-				const totalRate = baseRate * buildingCount * efficiency;
-
-				const existing = productionMap.get(product.itemId);
-				productionMap.set(product.itemId, {
-					itemName: product.item.displayName,
-					rate: (existing?.rate || 0) + totalRate
-				});
-			}
-
-			// Calculate consumption
-			for (const ingredient of instance.ingredients) {
-				const baseRate = parseFloat(ingredient.count) / manufacturingDuration;
-				const totalRate = baseRate * buildingCount * efficiency;
-
-				const existing = consumptionMap.get(ingredient.itemId);
-				consumptionMap.set(ingredient.itemId, {
-					itemName: ingredient.item.displayName,
-					rate: (existing?.rate || 0) + totalRate
-				});
-			}
-		}
-
-		// Convert maps to arrays
-		const totalProduction = Array.from(productionMap.entries()).map(([itemId, data]) => ({
-			itemId,
-			itemName: data.itemName,
-			rate: data.rate
-		}));
-
-		const totalConsumption = Array.from(consumptionMap.entries()).map(([itemId, data]) => ({
-			itemId,
-			itemName: data.itemName,
-			rate: data.rate
-		}));
-
-		// Calculate net balance
-		const allItemIds = new Set([...productionMap.keys(), ...consumptionMap.keys()]);
-		const netBalance = Array.from(allItemIds)
-			.map((itemId) => {
-				const production = productionMap.get(itemId)?.rate || 0;
-				const consumption = consumptionMap.get(itemId)?.rate || 0;
-				const itemName =
-					productionMap.get(itemId)?.itemName || consumptionMap.get(itemId)?.itemName || '';
-
-				return {
-					itemId,
-					itemName,
-					balance: production - consumption
-				};
-			})
-			.filter((item) => Math.abs(item.balance) > 0.001); // Filter out near-zero balances
-
-		return {
-			totalProduction,
-			totalConsumption,
-			netBalance
-		};
 	}
 
 	async validateProductionInstanceData(

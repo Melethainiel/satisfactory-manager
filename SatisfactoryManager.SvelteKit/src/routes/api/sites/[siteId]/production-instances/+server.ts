@@ -2,26 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { productionInstanceService } from '$lib/server/services/productionInstanceService';
 
-export const GET: RequestHandler = async ({ params }) => {
-	try {
-		const { siteId } = params;
-		const instances = await productionInstanceService.getProductionInstancesBySite(siteId);
-
-		return json({
-			success: true,
-			data: instances
-		});
-	} catch (error) {
-		console.error('Error fetching production instances:', error);
-		return json(
-			{
-				success: false,
-				error: error instanceof Error ? error.message : 'Failed to fetch production instances'
-			},
-			{ status: 500 }
-		);
-	}
-};
+// GET method removed - use /production-summary endpoint instead for consolidated data
 
 export const POST: RequestHandler = async ({ request, params }) => {
 	try {

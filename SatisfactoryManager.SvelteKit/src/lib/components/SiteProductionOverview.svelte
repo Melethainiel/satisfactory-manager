@@ -47,18 +47,14 @@
 	});
 
 	onMount(async () => {
-		// Load recipe instances and production overview for this site
-		await Promise.all([
-			gameState.loadSiteProductionInstances(siteId),
-			gameState.loadSiteProductionOverview(siteId)
-		]);
+		// Load consolidated production summary for this site
+		await gameState.loadSiteProductionSummary(siteId);
 	});
 
 	// Watch for site changes and reload data
 	$effect(() => {
 		if (siteId) {
-			gameState.loadSiteProductionInstances(siteId);
-			gameState.loadSiteProductionOverview(siteId);
+			gameState.loadSiteProductionSummary(siteId);
 		}
 	});
 

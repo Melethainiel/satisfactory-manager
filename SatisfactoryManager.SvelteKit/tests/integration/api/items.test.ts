@@ -327,11 +327,11 @@ describe('/api/items', () => {
 	describe('POST /api/items/import', () => {
 		it('should import items successfully', async () => {
 			// Create unique item data to avoid conflicts
-			const uniqueItemData = testImportItemData.items.map(item => ({
+			const uniqueItemData = testImportItemData.items.map((item) => ({
 				...item,
 				className: `${item.className.replace('_C', '')}_${Date.now()}_C`
 			}));
-			
+
 			const importData = {
 				items: uniqueItemData,
 				moduleVersionId: testModuleVersionId

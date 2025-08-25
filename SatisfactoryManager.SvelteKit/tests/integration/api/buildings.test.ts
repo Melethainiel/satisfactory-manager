@@ -306,11 +306,11 @@ describe('/api/buildings', () => {
 	describe('POST /api/buildings/import', () => {
 		it('should import buildings successfully', async () => {
 			// Create unique building data to avoid conflicts
-			const uniqueBuildingData = testImportBuildingData.map(building => ({
+			const uniqueBuildingData = testImportBuildingData.map((building) => ({
 				...building,
 				className: `${building.className.replace('_C', '')}_${Date.now()}_C`
 			}));
-			
+
 			const importData = {
 				moduleVersionId: testModuleVersionId,
 				buildings: uniqueBuildingData

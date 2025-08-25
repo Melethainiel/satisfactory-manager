@@ -40,7 +40,7 @@ describe('/api/auth', () => {
 
 		it('should update displayName when user already exists', async () => {
 			const uniqueEmail = `update-displayname-test-${Date.now()}@example.com`;
-			
+
 			// First, create a user using service
 			const existingUser = await userService.create({
 				displayName: 'Original Name',

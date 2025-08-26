@@ -21,6 +21,13 @@
 		return gameState.canManageSites(authState.user.email);
 	});
 
+	// Helper to determine instance type
+	function getInstanceType(instance: ProductionInstanceData): 'craft' | 'extract' | 'power' {
+		if (instance.building?.type === 'Generator') return 'power';
+		if (instance.extractedItemId) return 'extract';
+		return 'craft';
+	}
+
 	// Get production info from pre-calculated data
 	let productionInfo = $derived(() => {
 		if (!instance.products || instance.products.length === 0) return null;
@@ -67,6 +74,10 @@
 
 	function formatRate(rate: number): string {
 		return rate < 10 ? rate.toFixed(2) : rate.toFixed(1);
+	}
+
+	function formatPower(power: number): string {
+		return power < 100 ? power.toFixed(1) : power.toFixed(0);
 	}
 
 	function handleEdit() {
@@ -120,22 +131,182 @@
 			{/if}
 		</div>
 
-		<!-- Production Information -->
-		{#if productionInfo}
-			<div class="mt-3 grid grid-cols-1 gap-3">
-				<!-- Primary Production -->
-				<div class="rounded bg-base-200 p-3">
-					<div class="mb-1 text-xs font-medium opacity-70">
-						{$t('productionInstances.production_rate')}
+		<!-- Production Information - Different display based on type -->
+		{#if getInstanceType(instance) === 'craft'}
+			<!-- CRAFT: Show primary production + ingredients/products totals + power consumption -->
+			{#if productionInfo}
+				<div class="mt-3 grid grid-cols-1 gap-3">
+					<!-- Primary Production -->
+					<div class="rounded bg-base-200 p-3">
+						<div class="mb-1 text-xs font-medium opacity-70">
+							{$t('productionInstances.production_rate')}
+						</div>
+						<div class="font-mono text-sm">
+							<span class="font-semibold">{formatRate(productionInfo()?.actualRate || 0)}</span>
+							<span class="opacity-70">/{$t('common.minute')}</span>
+						</div>
+						<div class="mt-1 text-xs opacity-60">
+							{productionInfo()?.item.displayName || 'Unknown'}
+						</div>
 					</div>
-					<div class="font-mono text-sm">
-						<span class="font-semibold">{formatRate(productionInfo()?.actualRate || 0)}</span>
-						<span class="opacity-70">/{$t('common.minute')}</span>
-					</div>
-					<div class="mt-1 text-xs opacity-60">
-						{productionInfo()?.item.displayName || 'Unknown'}
+
+					<!-- Total Ingredients -->
+					{#if instance.ingredients && instance.ingredients.length > 0}
+						<div class="rounded bg-base-200 p-3">
+							<div class="mb-1 text-xs font-medium opacity-70">
+								{$t('productionInstances.total_ingredients')}
+							</div>
+							<div class="flex flex-col gap-1">
+								{#each instance.ingredients as ingredient}
+									<div class="flex justify-between text-xs">
+										<span>{ingredient.item.displayName}</span>
+										<span class="font-mono font-semibold">
+											{formatRate(ingredient.actualRate)}/{$t('common.minute')}
+										</span>
+									</div>
+								{/each}
+							</div>
+						</div>
+					{/if}
+
+					<!-- Total Products (if multiple) -->
+					{#if instance.products && instance.products.length > 1}
+						<div class="rounded bg-base-200 p-3">
+							<div class="mb-1 text-xs font-medium opacity-70">
+								{$t('productionInstances.total_products')}
+							</div>
+							<div class="flex flex-col gap-1">
+								{#each instance.products as product}
+									<div class="flex justify-between text-xs">
+										<span>{product.item.displayName}</span>
+										<span class="font-mono font-semibold">
+											{formatRate(product.actualRate)}/{$t('common.minute')}
+										</span>
+									</div>
+								{/each}
+							</div>
+						</div>
+					{/if}
+
+					<!-- Power Consumption -->
+					{#if instance.production.powerConsumption > 0}
+						<div class="rounded bg-base-200 p-3">
+							<div class="mb-1 text-xs font-medium opacity-70">
+								⚡ {$t('productionInstances.power_consumption')}
+							</div>
+							<div class="font-mono text-sm font-semibold text-warning">
+								{formatPower(instance.production.powerConsumption)} MW
+							</div>
+						</div>
+					{/if}
+
+					<!-- Building Details -->
+					<div class="grid grid-cols-2 gap-3">
+						<div>
+							<div class="text-xs font-medium opacity-70">
+								{$t('productionInstances.building_count')}
+							</div>
+							<div class="font-mono text-sm font-semibold">
+								{parseFloat(instance.buildingCount)}
+							</div>
+						</div>
+						<div>
+							<div class="text-xs font-medium opacity-70">
+								{$t('productionInstances.efficiency')}
+							</div>
+							<div class="font-mono text-sm font-semibold {utilizationColor()}">
+								{efficiencyPercent()}%
+							</div>
+						</div>
 					</div>
 				</div>
+			{/if}
+
+		{:else if getInstanceType(instance) === 'extract'}
+			<!-- EXTRACT: Show extraction rate + power consumption -->
+			{#if productionInfo}
+				<div class="mt-3 grid grid-cols-1 gap-3">
+					<!-- Extraction Rate -->
+					<div class="rounded bg-base-200 p-3">
+						<div class="mb-1 text-xs font-medium opacity-70">
+							⛏️ {$t('productionInstances.extraction_rate')}
+						</div>
+						<div class="font-mono text-sm">
+							<span class="font-semibold">{formatRate(productionInfo()?.actualRate || 0)}</span>
+							<span class="opacity-70">/{$t('common.minute')}</span>
+						</div>
+						<div class="mt-1 text-xs opacity-60">
+							{productionInfo()?.item.displayName || 'Unknown'}
+						</div>
+					</div>
+
+					<!-- Power Consumption -->
+					{#if instance.production.powerConsumption > 0}
+						<div class="rounded bg-base-200 p-3">
+							<div class="mb-1 text-xs font-medium opacity-70">
+								⚡ {$t('productionInstances.power_consumption')}
+							</div>
+							<div class="font-mono text-sm font-semibold text-warning">
+								{formatPower(instance.production.powerConsumption)} MW
+							</div>
+						</div>
+					{/if}
+
+					<!-- Building Details -->
+					<div class="grid grid-cols-2 gap-3">
+						<div>
+							<div class="text-xs font-medium opacity-70">
+								{$t('productionInstances.building_count')}
+							</div>
+							<div class="font-mono text-sm font-semibold">
+								{parseFloat(instance.buildingCount)}
+							</div>
+						</div>
+						<div>
+							<div class="text-xs font-medium opacity-70">
+								{$t('productionInstances.efficiency')}
+							</div>
+							<div class="font-mono text-sm font-semibold {utilizationColor()}">
+								{efficiencyPercent()}%
+							</div>
+						</div>
+					</div>
+				</div>
+			{/if}
+
+		{:else if getInstanceType(instance) === 'power'}
+			<!-- POWER: Show power production + fuel consumption -->
+			<div class="mt-3 grid grid-cols-1 gap-3">
+				<!-- Power Production -->
+				{#if instance.production.powerProduction > 0}
+					<div class="rounded bg-base-200 p-3">
+						<div class="mb-1 text-xs font-medium opacity-70">
+							⚡ {$t('productionInstances.power_production')}
+						</div>
+						<div class="font-mono text-sm font-semibold text-success">
+							{formatPower(instance.production.powerProduction)} MW
+						</div>
+					</div>
+				{/if}
+
+				<!-- Fuel Consumption -->
+				{#if instance.ingredients && instance.ingredients.length > 0}
+					<div class="rounded bg-base-200 p-3">
+						<div class="mb-1 text-xs font-medium opacity-70">
+							🔥 {$t('productionInstances.fuel_consumption')}
+						</div>
+						<div class="flex flex-col gap-1">
+							{#each instance.ingredients as ingredient}
+								<div class="flex justify-between text-xs">
+									<span>{ingredient.item.displayName}</span>
+									<span class="font-mono font-semibold">
+										{formatRate(ingredient.actualRate)}/{$t('common.minute')}
+									</span>
+								</div>
+							{/each}
+						</div>
+					</div>
+				{/if}
 
 				<!-- Building Details -->
 				<div class="grid grid-cols-2 gap-3">
@@ -159,36 +330,6 @@
 			</div>
 		{/if}
 
-		<!-- Ingredients and Products Summary -->
-		{#if instance.ingredients && instance.ingredients.length > 0}
-			<div class="mt-3">
-				<div class="mb-2 text-xs font-medium opacity-70">
-					{$t('productionInstances.ingredients')}
-				</div>
-				<div class="flex flex-wrap gap-1">
-					{#each instance.ingredients as ingredient}
-						<span class="badge badge-outline badge-sm">
-							{ingredient.count}x {ingredient.item.displayName}
-						</span>
-					{/each}
-				</div>
-			</div>
-		{/if}
-
-		{#if instance.products && instance.products.length > 1}
-			<div class="mt-2">
-				<div class="mb-2 text-xs font-medium opacity-70">
-					{$t('productionInstances.products')}
-				</div>
-				<div class="flex flex-wrap gap-1">
-					{#each instance.products as product}
-						<span class="badge badge-sm badge-primary">
-							{product.count}x {product.item.displayName}
-						</span>
-					{/each}
-				</div>
-			</div>
-		{/if}
 
 		<!-- Notes -->
 		{#if instance.notes}

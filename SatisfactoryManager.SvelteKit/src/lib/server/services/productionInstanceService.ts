@@ -14,6 +14,7 @@ import {
 	type ProductionInstance,
 	type NewProductionInstance
 } from '../db/schema';
+import { alias } from 'drizzle-orm/pg-core';
 import { eq, desc, and } from 'drizzle-orm';
 import { productionCalculationService } from './productionCalculationService';
 
@@ -43,6 +44,12 @@ export interface ProductionInstanceWithDetails extends ProductionInstance {
 		output: string;
 		energyConsumption: string;
 		energyProduction: string;
+	} | null;
+	fuelItem: {
+		id: string;
+		displayName: string;
+		className: string;
+		form: string;
 	} | null;
 	products: Array<{
 		itemId: string;
@@ -99,6 +106,7 @@ class ProductionInstanceService implements IProductionInstanceService {
 	}
 
 	async getProductionInstanceById(id: string): Promise<ProductionInstanceWithDetails | undefined> {
+		const fuelItems = alias(items, 'fuel_items');
 		const result = await db
 			.select({
 				// Production instance fields
@@ -107,6 +115,7 @@ class ProductionInstanceService implements IProductionInstanceService {
 				recipeVersionId: productionInstances.recipeVersionId,
 				buildingId: productionInstances.buildingId,
 				extractedItemId: productionInstances.extractedItemId,
+				fuelItemId: productionInstances.fuelItemId,
 				buildingCount: productionInstances.buildingCount,
 				efficiencyRatio: productionInstances.efficiencyRatio,
 				notes: productionInstances.notes,
@@ -138,6 +147,12 @@ class ProductionInstanceService implements IProductionInstanceService {
 					output: buildingVersions.output,
 					energyConsumption: buildingVersions.energyConsumption,
 					energyProduction: buildingVersions.energyProduction
+				},
+				fuelItem: {
+					id: fuelItems.id,
+					displayName: fuelItems.displayName,
+					className: fuelItems.className,
+					form: fuelItems.form
 				}
 			})
 			.from(productionInstances)
@@ -156,6 +171,10 @@ class ProductionInstanceService implements IProductionInstanceService {
 					eq(buildingVersions.buildingId, buildings.id),
 					eq(buildingVersions.moduleVersionId, moduleGames.selectedVersionId)
 				)
+			)
+			.leftJoin(
+				fuelItems,
+				eq(productionInstances.fuelItemId, fuelItems.id)
 			)
 			.where(eq(productionInstances.id, id))
 			.limit(1);
@@ -237,6 +256,32 @@ class ProductionInstanceService implements IProductionInstanceService {
 							displayName: extractedItem[0].displayName,
 							className: extractedItem[0].className,
 							form: extractedItem[0].form
+						}
+					}
+				];
+			}
+		} else if (instanceData.fuelItemId) {
+			// For generator instances - create synthetic ingredient from fuelItemId
+			const fuelItem = await db
+				.select({
+					id: items.id,
+					displayName: items.displayName,
+					className: items.className,
+					form: items.form
+				})
+				.from(items)
+				.where(eq(items.id, instanceData.fuelItemId))
+				.limit(1);
+
+			if (fuelItem.length > 0) {
+				ingredients = [
+					{
+						itemId: fuelItem[0].id,
+						count: '1', // Placeholder count for fuel
+						item: {
+							displayName: fuelItem[0].displayName,
+							className: fuelItem[0].className,
+							form: fuelItem[0].form
 						}
 					}
 				];

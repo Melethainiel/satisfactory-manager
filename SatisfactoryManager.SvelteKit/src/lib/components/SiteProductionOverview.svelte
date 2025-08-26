@@ -185,27 +185,18 @@
 	}
 
 	function handleAddRecipe() {
-		// Désactiver immédiatement les animations pour éviter les replays
-		isInitialLoad = false;
-
 		if (addRecipeDialogRef?.open) {
 			addRecipeDialogRef.open(siteId);
 		}
 	}
 
 	function handleEditInstance(instance: ProductionInstanceData) {
-		// Désactiver les animations pour éviter les replays
-		isInitialLoad = false;
-
 		if (editInstanceDialogRef?.open) {
 			editInstanceDialogRef.open(instance);
 		}
 	}
 
 	function handleDeleteInstance(instance: ProductionInstanceData) {
-		// Désactiver les animations pour éviter les replays
-		isInitialLoad = false;
-
 		confirmDialogRef?.open({
 			title: $t('productionInstances.delete_instance'),
 			message: $t('productionInstances.delete_instance_confirm', {
@@ -243,15 +234,16 @@
 	// State for details expander
 	let isResourceDetailsOpen = $state(false);
 
-	// Animation state management
-	let isInitialLoad = $state(true);
+	// Track if we've completed the first load
+	let hasLoadedOnce = $state(false);
 
-	// Effect pour désactiver les animations après le chargement initial
+	// Conditional loading that only applies during initial load
+	let shouldShowInitialLoading = $derived(() => gameState.isLoading && !hasLoadedOnce);
+
+	// Effect pour marquer le premier chargement comme terminé
 	$effect(() => {
-		if (isInitialLoad && gameState.siteProductionInstances.length > 0) {
-			setTimeout(() => {
-				isInitialLoad = false;
-			}, 2500); // Après que toutes les animations initiales soient terminées
+		if (!hasLoadedOnce && !gameState.isLoading) {
+			hasLoadedOnce = true;
 		}
 	});
 </script>
@@ -262,7 +254,7 @@
 		<div in:fly={{ x: -20, duration: 400, delay: 200 }}>
 			<div class="flex items-center gap-3">
 				<h2 class="text-xl font-semibold">{siteName}</h2>
-				{#if energyConsumption() && !gameState.isLoading}
+				{#if energyConsumption() && !shouldShowInitialLoading()}
 					{@const energy = energyConsumption()}
 					{#if energy && Math.abs(energy.netBalance) > 0.1}
 						<span class="badge {energy.netBalance > 0 ? 'badge-success' : 'badge-error'} font-mono">
@@ -302,7 +294,7 @@
 	</div>
 
 	<!-- Resource Balance Section -->
-	{#if resourceBalance() && !gameState.isLoading}
+	{#if resourceBalance() && !shouldShowInitialLoading()}
 		{@const balance = resourceBalance()}
 		<div
 			class="card border border-base-300 bg-base-100"
@@ -410,7 +402,7 @@
 
 	<!-- Recipe Instances List -->
 	{#if gameState.siteProductionInstances.length === 0}
-		{#if gameState.isLoading}
+		{#if shouldShowInitialLoading()}
 			<div class="flex items-center justify-center py-8">
 				<span class="loading loading-lg loading-spinner"></span>
 			</div>
@@ -440,7 +432,7 @@
 	{:else}
 		<div class="relative" in:fade={{ duration: 300, delay: 600 }}>
 			<!-- Loading overlay -->
-			{#if gameState.isLoading}
+			{#if shouldShowInitialLoading()}
 				<div
 					class="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-base-100/80"
 				>
@@ -448,7 +440,7 @@
 				</div>
 			{/if}
 
-			<div class={gameState.isLoading ? 'pointer-events-none opacity-50' : ''}>
+			<div class={shouldShowInitialLoading() ? 'pointer-events-none opacity-50' : ''}>
 				<h3 class="mb-4 font-medium" in:fly={{ x: -20, duration: 400, delay: 700 }}>
 					{$t('productionInstances.recipe_instances')}
 				</h3>
@@ -527,7 +519,7 @@
 						{#each sortedFilteredInstances() as instance, index (instance.id)}
 							<div
 								animate:flip={{ duration: 300 }}
-								in:fly={isInitialLoad
+								in:fly={!hasLoadedOnce
 									? {
 											y: 30,
 											duration: 400,

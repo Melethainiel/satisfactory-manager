@@ -38,6 +38,7 @@ export interface ProductionInstanceDetail {
 	extractorPurity: string | null;
 	buildingCount: string;
 	efficiencyRatio: string;
+	isBuilt: boolean;
 	notes: string | null;
 	createdAt: Date;
 	updatedAt: Date;

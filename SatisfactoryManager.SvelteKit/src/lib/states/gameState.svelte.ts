@@ -437,8 +437,49 @@ class GameStateClass implements GameState {
 			});
 			if (!res.ok) throw new Error(`Failed to set module version (${res.status})`);
 
+			const result = await res.json();
+			
+			// Show migration results if any
+			if (result.migrationResult) {
+				const migration = result.migrationResult;
+				if (migration.success) {
+					if (migration.migratedInstancesCount > 0) {
+						notificationService.success(
+							`Module version updated successfully. ${migration.migratedInstancesCount} production instances migrated.`
+						);
+						
+						if (migration.warnings.length > 0) {
+							migration.warnings.forEach((warning: string) => 
+								notificationService.info(warning)
+							);
+						}
+					} else {
+						notificationService.success('Module version updated successfully.');
+					}
+				} else {
+					notificationService.warning(
+						`Module version updated, but ${migration.failedInstancesCount} production instances could not be migrated automatically.`
+					);
+					
+					if (migration.failedInstances.length > 0) {
+						migration.failedInstances.forEach((instance: any) => 
+							notificationService.warning(
+								`Failed to migrate instance in ${instance.siteName}: ${instance.reason}`
+							)
+						);
+					}
+				}
+			} else {
+				notificationService.success('Module version updated successfully.');
+			}
+
 			// Reload modules to get updated version info
 			await this.loadGameModules(gameId);
+			
+			// If we have a selected site, refresh its production data
+			if (this.selectedSiteId) {
+				await this.loadSiteProductionSummary(this.selectedSiteId, true);
+			}
 		} catch (e: any) {
 			notificationService.error(e?.message ?? 'Failed to set module version');
 		}

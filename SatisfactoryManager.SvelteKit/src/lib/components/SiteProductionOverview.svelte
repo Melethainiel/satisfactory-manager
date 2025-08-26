@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { getGameState, type ProductionInstanceData } from '$lib/states/gameState.svelte';
 	import { getAuthState } from '$lib/states/authState.svelte';
-	import { Icon, Plus, ChartBarSquare } from 'svelte-hero-icons';
+	import { Icon, Plus, ChartBarSquare, ChevronDown, ChevronRight } from 'svelte-hero-icons';
 	import { t } from '$lib/i18n';
 	import { onMount } from 'svelte';
 	import ProductionInstanceCard from './ProductionInstanceCard.svelte';
@@ -33,19 +33,64 @@
 		return gameState.canManageSites(authState.user.email);
 	});
 
-	// Production overview stats
-	let productionStats = $derived(() => {
+	// Removed unused productionStats
+
+	// Resource balance data with production and consumption values
+	let resourceBalance = $derived(() => {
 		const overview = gameState.siteProductionOverview;
 		if (!overview) return null;
 
-		const totalInputs = overview.totalConsumption.length;
-		const totalOutputs = overview.totalProduction.length;
-		const imbalances = overview.netBalance.filter((item) => Math.abs(item.balance) > 0.001).length;
+		// Get all unique item IDs from production, consumption, and net balance
+		const allItemIds = new Set([
+			...overview.totalProduction.map((item) => item.itemId),
+			...overview.totalConsumption.map((item) => item.itemId),
+			...overview.netBalance.map((item) => item.itemId)
+		]);
+
+		// Create production and consumption maps for quick lookup
+		const productionMap = new Map(overview.totalProduction.map((item) => [item.itemId, item]));
+		const consumptionMap = new Map(overview.totalConsumption.map((item) => [item.itemId, item]));
+		const balanceMap = new Map(overview.netBalance.map((item) => [item.itemId, item]));
+
+		// Build complete resource data including all items (even those with 0 values)
+		const allResources = Array.from(allItemIds)
+			.map((itemId) => {
+				const production = productionMap.get(itemId);
+				const consumption = consumptionMap.get(itemId);
+				const balance = balanceMap.get(itemId);
+
+				const productionRate = production?.rate || 0;
+				const consumptionRate = consumption?.rate || 0;
+				const netBalance = balance?.balance || productionRate - consumptionRate;
+
+				// Determine type based on balance
+				let type: string;
+				if (Math.abs(netBalance) <= 0.001) {
+					type = 'balanced';
+				} else if (netBalance > 0) {
+					type = 'overflow';
+				} else {
+					type = 'underflow';
+				}
+
+				return {
+					itemId,
+					itemName: production?.itemName || consumption?.itemName || balance?.itemName || 'Unknown',
+					productionRate,
+					consumptionRate,
+					netBalance,
+					absBalance: Math.abs(netBalance),
+					type
+				};
+			})
+			.sort((a, b) => b.absBalance - a.absBalance); // Sort by magnitude of balance
 
 		return {
-			inputs: totalInputs,
-			outputs: totalOutputs,
-			imbalances: imbalances
+			resources: allResources,
+			hasOverflow: allResources.some((item) => item.type === 'overflow'),
+			hasUnderflow: allResources.some((item) => item.type === 'underflow'),
+			hasBalanced: allResources.some((item) => item.type === 'balanced'),
+			isEmpty: allResources.length === 0
 		};
 	});
 
@@ -90,6 +135,10 @@
 	function formatRate(rate: number): string {
 		return rate < 10 ? rate.toFixed(2) : rate.toFixed(1);
 	}
+
+	// State for details expander
+	let isResourceDetailsOpen = $state(false);
+
 </script>
 
 <div class="flex flex-col gap-6">
@@ -119,6 +168,110 @@
 			</button>
 		{/if}
 	</div>
+
+	<!-- Resource Balance Section -->
+	{#if resourceBalance() && !gameState.isLoading}
+		{@const balance = resourceBalance()}
+		<div class="card border border-base-300 bg-base-100">
+			<div class="card-body">
+				<!-- Collapsible header -->
+				<details bind:open={isResourceDetailsOpen} class="group">
+					<summary class="cursor-pointer list-none">
+						<div class="flex items-center justify-between">
+							<div class="flex items-center gap-2">
+								<h3 class="card-title text-lg">{$t('resourceBalance.title')}</h3>
+								{#if balance?.resources && balance.resources.length > 0}
+									<span class="badge badge-sm badge-neutral">
+										{$t(
+											balance.resources.length === 1
+												? 'resourceBalance.resource_count_singular'
+												: 'resourceBalance.resource_count',
+											{
+												values: { count: balance.resources.length }
+											}
+										)}
+									</span>
+								{/if}
+							</div>
+							<Icon
+								src={isResourceDetailsOpen ? ChevronDown : ChevronRight}
+								class="size-5 transition-transform group-hover:text-primary"
+							/>
+						</div>
+					</summary>
+
+					<!-- Collapsible content -->
+					<div class="mt-4">
+						{#if balance?.isEmpty}
+							<div class="py-4 text-center">
+								<p class="font-medium text-success">{$t('resourceBalance.no_resources')}</p>
+								<p class="mt-1 text-sm text-base-content/70">
+									{$t('resourceBalance.no_resources_description')}
+								</p>
+							</div>
+						{:else if balance?.resources}
+							<div class="overflow-x-auto">
+								<table class="table table-zebra">
+									<thead>
+										<tr>
+											<th>{$t('resourceBalance.resource')}</th>
+											<th class="text-right">{$t('resourceBalance.production')}</th>
+											<th class="text-right">{$t('resourceBalance.consumption')}</th>
+											<th class="text-right">{$t('resourceBalance.net_balance')}</th>
+											<th class="text-center">{$t('resourceBalance.status')}</th>
+										</tr>
+									</thead>
+									<tbody>
+										{#each balance.resources as resource (resource.itemId)}
+											<tr>
+												<td class="font-medium">{resource.itemName}</td>
+												<td class="text-right font-mono">
+													{formatRate(resource.productionRate)}{$t('resourceBalance.per_minute')}
+												</td>
+												<td class="text-right font-mono">
+													{formatRate(resource.consumptionRate)}{$t('resourceBalance.per_minute')}
+												</td>
+												<td
+													class="text-right font-mono {resource.type === 'overflow'
+														? 'text-success'
+														: resource.type === 'underflow'
+															? 'text-error'
+															: 'text-warning'}"
+												>
+													{resource.type === 'overflow'
+														? '+'
+														: resource.type === 'underflow'
+															? '-'
+															: '±'}{formatRate(resource.absBalance)}{$t(
+														'resourceBalance.per_minute'
+													)}
+												</td>
+												<td class="text-center">
+													<div
+														class="badge badge-sm {resource.type === 'overflow'
+															? 'badge-success'
+															: resource.type === 'underflow'
+																? 'badge-error'
+																: 'badge-warning'}"
+													>
+														{resource.type === 'overflow'
+															? $t('resourceBalance.overflow')
+															: resource.type === 'underflow'
+																? $t('resourceBalance.underflow')
+																: $t('resourceBalance.balanced')}
+													</div>
+												</td>
+											</tr>
+										{/each}
+									</tbody>
+								</table>
+							</div>
+						{/if}
+					</div>
+				</details>
+			</div>
+		</div>
+	{/if}
 
 	<!-- Recipe Instances List -->
 	{#if gameState.isLoading}

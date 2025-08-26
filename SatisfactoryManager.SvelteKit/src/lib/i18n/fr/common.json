@@ -312,5 +312,28 @@
 		"ingredients": "Ingrédients",
 		"products": "Produits",
 		"notes": "Notes"
+	},
+	"resourceBalance": {
+		"title": "Équilibre des ressources",
+		"overflow": "Surplus",
+		"underflow": "Déficit",
+		"balanced": "Équilibré",
+		"no_imbalances": "Toutes les ressources sont parfaitement équilibrées",
+		"no_imbalances_description": "La production et la consommation sont égales pour toutes les ressources.",
+		"per_minute": "/min",
+		"surplus": "excédent",
+		"deficit": "déficit",
+		"resource": "Ressource",
+		"production": "Production",
+		"consumption": "Consommation",
+		"net_balance": "Solde net",
+		"status": "Statut",
+		"no_resources": "Aucune ressource trouvée",
+		"no_resources_description": "Ce site n'a aucune production ou consommation de ressources.",
+		"show_details": "Afficher l'équilibre détaillé des ressources",
+		"hide_details": "Masquer l'équilibre détaillé des ressources",
+		"resource_count": "{count} ressources",
+		"resource_count_singular": "{count} ressource",
+		"tooltip_net_balance": "Solde net pour cette instance de production"
 	}
 }

@@ -80,6 +80,104 @@
 		return power < 100 ? power.toFixed(1) : power.toFixed(0);
 	}
 
+	// Generate tooltip for production output
+	function getProductionTooltip(): string {
+		const items: string[] = [];
+		const overview = gameState.siteProductionOverview;
+		
+		instance.products?.forEach((product) => {
+			const rate = formatRate(product.actualRate);
+			let tooltipText = `${product.item.displayName}: +${rate}${$t('resourceBalance.per_minute')}`;
+			
+			// Add net balance information if available
+			if (overview) {
+				const netBalanceItem = overview.netBalance.find(item => item.itemName === product.item.displayName);
+				if (netBalanceItem) {
+					const netBalance = netBalanceItem.balance;
+					const sign = netBalance >= 0 ? '+' : '';
+					const netBalanceText = `${sign}${formatRate(netBalance)}`;
+					tooltipText += ` (Solde net: ${netBalanceText}${$t('resourceBalance.per_minute')})`;
+				}
+			}
+			
+			items.push(tooltipText);
+		});
+		
+		return items.length > 0 ? items.join('\n') : '';
+	}
+
+	// Generate tooltip for consumption (ingredients)
+	function getConsumptionTooltip(): string {
+		const items: string[] = [];
+		const overview = gameState.siteProductionOverview;
+		
+		instance.ingredients?.forEach((ingredient) => {
+			const rate = formatRate(ingredient.actualRate);
+			let tooltipText = `${ingredient.item.displayName}: -${rate}${$t('resourceBalance.per_minute')}`;
+			
+			// Add net balance information if available
+			if (overview) {
+				const netBalanceItem = overview.netBalance.find(item => item.itemName === ingredient.item.displayName);
+				if (netBalanceItem) {
+					const netBalance = netBalanceItem.balance;
+					const sign = netBalance >= 0 ? '+' : '';
+					const netBalanceText = `${sign}${formatRate(netBalance)}`;
+					tooltipText += ` (Solde net: ${netBalanceText}${$t('resourceBalance.per_minute')})`;
+				}
+			}
+			
+			items.push(tooltipText);
+		});
+		
+		return items.length > 0 ? items.join('\n') : '';
+	}
+
+	// Generate complete net balance tooltip for multi-resource sections
+	function getNetBalanceTooltip(): string {
+		const items: string[] = [];
+		const overview = gameState.siteProductionOverview;
+
+		// Add products (positive values) with net balance
+		instance.products?.forEach((product) => {
+			const rate = formatRate(product.actualRate);
+			let tooltipText = `${product.item.displayName}: +${rate}${$t('resourceBalance.per_minute')}`;
+			
+			// Add net balance information if available
+			if (overview) {
+				const netBalanceItem = overview.netBalance.find(item => item.itemName === product.item.displayName);
+				if (netBalanceItem) {
+					const netBalance = netBalanceItem.balance;
+					const sign = netBalance >= 0 ? '+' : '';
+					const netBalanceText = `${sign}${formatRate(netBalance)}`;
+					tooltipText += ` (Solde net: ${netBalanceText}${$t('resourceBalance.per_minute')})`;
+				}
+			}
+			
+			items.push(tooltipText);
+		});
+
+		// Add ingredients (negative values) with net balance
+		instance.ingredients?.forEach((ingredient) => {
+			const rate = formatRate(ingredient.actualRate);
+			let tooltipText = `${ingredient.item.displayName}: -${rate}${$t('resourceBalance.per_minute')}`;
+			
+			// Add net balance information if available
+			if (overview) {
+				const netBalanceItem = overview.netBalance.find(item => item.itemName === ingredient.item.displayName);
+				if (netBalanceItem) {
+					const netBalance = netBalanceItem.balance;
+					const sign = netBalance >= 0 ? '+' : '';
+					const netBalanceText = `${sign}${formatRate(netBalance)}`;
+					tooltipText += ` (Solde net: ${netBalanceText}${$t('resourceBalance.per_minute')})`;
+				}
+			}
+			
+			items.push(tooltipText);
+		});
+
+		return items.length > 0 ? items.join('\n') : $t('resourceBalance.tooltip_net_balance');
+	}
+
 	function handleEdit() {
 		if (canEdit() && onEdit) {
 			onEdit(instance);
@@ -137,7 +235,7 @@
 			{#if productionInfo}
 				<div class="mt-3 grid grid-cols-1 gap-3">
 					<!-- Primary Production -->
-					<div class="rounded bg-base-200 p-3">
+					<div class="rounded bg-base-200 p-3 tooltip tooltip-top" data-tip={getProductionTooltip()}>
 						<div class="mb-1 text-xs font-medium opacity-70">
 							{$t('productionInstances.production_rate')}
 						</div>
@@ -152,12 +250,12 @@
 
 					<!-- Total Ingredients -->
 					{#if instance.ingredients && instance.ingredients.length > 0}
-						<div class="rounded bg-base-200 p-3">
+						<div class="rounded bg-base-200 p-3 tooltip tooltip-top" data-tip={getConsumptionTooltip()}>
 							<div class="mb-1 text-xs font-medium opacity-70">
 								{$t('productionInstances.total_ingredients')}
 							</div>
 							<div class="flex flex-col gap-1">
-								{#each instance.ingredients as ingredient}
+								{#each instance.ingredients as ingredient (ingredient.item.className)}
 									<div class="flex justify-between text-xs">
 										<span>{ingredient.item.displayName}</span>
 										<span class="font-mono font-semibold">
@@ -171,12 +269,12 @@
 
 					<!-- Total Products (if multiple) -->
 					{#if instance.products && instance.products.length > 1}
-						<div class="rounded bg-base-200 p-3">
+						<div class="rounded bg-base-200 p-3 tooltip tooltip-top" data-tip={getProductionTooltip()}>
 							<div class="mb-1 text-xs font-medium opacity-70">
 								{$t('productionInstances.total_products')}
 							</div>
 							<div class="flex flex-col gap-1">
-								{#each instance.products as product}
+								{#each instance.products as product (product.item.className)}
 									<div class="flex justify-between text-xs">
 										<span>{product.item.displayName}</span>
 										<span class="font-mono font-semibold">
@@ -226,7 +324,7 @@
 			{#if productionInfo}
 				<div class="mt-3 grid grid-cols-1 gap-3">
 					<!-- Extraction Rate -->
-					<div class="rounded bg-base-200 p-3">
+					<div class="rounded bg-base-200 p-3 tooltip tooltip-top" data-tip={getProductionTooltip()}>
 						<div class="mb-1 text-xs font-medium opacity-70">
 							⛏️ {$t('productionInstances.extraction_rate')}
 						</div>
@@ -289,12 +387,12 @@
 
 				<!-- Fuel Consumption -->
 				{#if instance.ingredients && instance.ingredients.length > 0}
-					<div class="rounded bg-base-200 p-3">
+					<div class="rounded bg-base-200 p-3 tooltip tooltip-top" data-tip={getConsumptionTooltip()}>
 						<div class="mb-1 text-xs font-medium opacity-70">
 							🔥 {$t('productionInstances.fuel_consumption')}
 						</div>
 						<div class="flex flex-col gap-1">
-							{#each instance.ingredients as ingredient}
+							{#each instance.ingredients as ingredient (ingredient.item.className)}
 								<div class="flex justify-between text-xs">
 									<span>{ingredient.item.displayName}</span>
 									<span class="font-mono font-semibold">

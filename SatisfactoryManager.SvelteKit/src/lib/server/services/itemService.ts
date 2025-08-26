@@ -299,9 +299,8 @@ class ItemService implements IItemService {
 	}
 
 	async getExtractorsForItem(gameId: string, itemId: string): Promise<Building[]> {
-		// Return building versions for miners that are available in the game's selected modules
-		// TODO: Later we can add logic to check if the item can actually be extracted
-		// (requires itemDeposits table or similar)
+		// Return building versions for miners that can extract the specific item
+		// Uses itemExtractionBuildings association table to filter compatible buildings
 
 		try {
 			const extractors = await db
@@ -324,17 +323,32 @@ class ItemService implements IItemService {
 						isNotNull(moduleGames.selectedVersionId)
 					)
 				)
+				.innerJoin(
+					itemVersions,
+					and(
+						eq(itemVersions.itemId, itemId),
+						eq(itemVersions.moduleVersionId, moduleVersions.id)
+					)
+				)
+				.innerJoin(
+					itemExtractionBuildings,
+					and(
+						eq(itemExtractionBuildings.itemVersionId, itemVersions.id),
+						eq(itemExtractionBuildings.buildingId, buildings.id)
+					)
+				)
 				.where(eq(buildings.type, 'Miner'));
 
 			return extractors;
 		} catch (error) {
-			console.warn('No extractors found for game:', gameId, 'Error:', error);
+			console.warn('No extractors found for game:', gameId, 'item:', itemId, 'Error:', error);
 			return [];
 		}
 	}
 
 	async getGeneratorsForItem(gameId: string, itemId: string): Promise<Building[]> {
-		// Get generators that are available in the game's selected modules AND can use this item as fuel
+		// Get generators that can use the specific item as fuel
+		// Uses itemFuelGenerators association table to filter compatible buildings
 		// Check if the item has energy value > 0 to be usable as fuel
 
 		try {
@@ -366,6 +380,13 @@ class ItemService implements IItemService {
 						eq(itemVersions.itemId, itemId),
 						eq(itemVersions.moduleVersionId, moduleVersions.id),
 						sql`${itemVersions.energyValue} > 0`
+					)
+				)
+				.innerJoin(
+					itemFuelGenerators,
+					and(
+						eq(itemFuelGenerators.itemVersionId, itemVersions.id),
+						eq(itemFuelGenerators.buildingId, buildings.id)
 					)
 				)
 				.where(and(eq(buildings.type, 'Generator'), sql`${buildingVersions.energyProduction} > 0`));

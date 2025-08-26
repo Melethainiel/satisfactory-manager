@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { getGameState, type ProductionInstanceData } from '$lib/states/gameState.svelte';
 	import { getAuthState } from '$lib/states/authState.svelte';
-	import { Icon, PencilSquare, Trash, Cog6Tooth } from 'svelte-hero-icons';
+	import { Icon, PencilSquare, Trash, Cog6Tooth, CheckBadge } from 'svelte-hero-icons';
 	import { t } from '$lib/i18n';
 
 	interface Props {
@@ -14,6 +14,9 @@
 
 	const gameState = getGameState();
 	const authState = getAuthState();
+
+	// Local state for built status animation
+	let isTogglingBuilt = $state(false);
 
 	// Check if current user can edit this instance
 	let canEdit = $derived(() => {
@@ -141,6 +144,26 @@
 			onDelete(instance);
 		}
 	}
+
+	async function handleToggleBuiltStatus() {
+		if (!canEdit() || isTogglingBuilt) return;
+
+		isTogglingBuilt = true;
+		try {
+			// Use optimistic update method - no global loading
+			const success = await gameState.updateProductionInstanceBuiltStatus(
+				instance.id, 
+				!instance.isBuilt
+			);
+			if (!success) {
+				console.error('Failed to toggle built status');
+			}
+		} catch (error) {
+			console.error('Error toggling built status:', error);
+		} finally {
+			isTogglingBuilt = false;
+		}
+	}
 </script>
 
 <div
@@ -158,6 +181,34 @@
 					<span class="truncate">
 						{instance.building?.name || 'Unknown Building'}
 					</span>
+				</div>
+				<!-- Built Status Indicator -->
+				<div class="mt-1 flex items-center gap-2">
+					{#if instance.isBuilt}
+						<span class="badge badge-success badge-sm gap-1">
+							<Icon src={CheckBadge} class="size-3" />
+							Construite
+						</span>
+					{:else}
+						<span class="badge badge-warning badge-sm">
+							Non construite
+						</span>
+					{/if}
+					{#if canEdit()}
+						<button
+							class="btn btn-xs btn-ghost"
+							class:loading={isTogglingBuilt}
+							onclick={handleToggleBuiltStatus}
+							disabled={isTogglingBuilt}
+							title={instance.isBuilt ? 'Marquer comme non construite' : 'Marquer comme construite'}
+						>
+							{#if isTogglingBuilt}
+								<span class="loading loading-xs loading-spinner"></span>
+							{:else}
+								{instance.isBuilt ? '❌' : '✅'}
+							{/if}
+						</button>
+					{/if}
 				</div>
 			</div>
 

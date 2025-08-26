@@ -44,6 +44,7 @@ export interface ProductionInstanceData {
 	extractorPurity: string | null;
 	buildingCount: string;
 	efficiencyRatio: string;
+	isBuilt: boolean;
 	notes: string | null;
 	createdAt: Date;
 	updatedAt: Date;
@@ -175,9 +176,12 @@ export interface GameState {
 			buildingVersionId?: string;
 			buildingCount?: number;
 			efficiencyRatio?: number;
+			isBuilt?: boolean;
 			notes?: string;
 		}
 	) => Promise<void>;
+	updateProductionInstanceBuiltStatus: (instanceId: string, isBuilt: boolean) => Promise<boolean>;
+	deleteProductionInstanceOptimistic: (instanceId: string) => Promise<boolean>;
 	deleteProductionInstance: (instanceId: string) => Promise<void>;
 	// Backward compatibility getters
 	get siteProductionInstances(): ProductionInstanceData[];
@@ -635,6 +639,7 @@ class GameStateClass implements GameState {
 			buildingVersionId?: string;
 			buildingCount?: number;
 			efficiencyRatio?: number;
+			isBuilt?: boolean;
 			notes?: string;
 		}
 	) {
@@ -673,6 +678,150 @@ class GameStateClass implements GameState {
 			notificationService.error(e?.message ?? 'Failed to update production instance');
 		} finally {
 			this.isLoading = false;
+		}
+	}
+
+	// Optimistic update for built status - no global loading
+	async updateProductionInstanceBuiltStatus(instanceId: string, isBuilt: boolean) {
+		if (!instanceId || !this.apiFetch) return false;
+
+		// Find the instance to get its siteId
+		const instance = this.siteProductionInstances.find(
+			(i: ProductionInstanceData) => i.id === instanceId
+		);
+		if (!instance) {
+			notificationService.error('Production instance not found');
+			return false;
+		}
+
+		// Optimistic update - immediately update local state
+		if (this.siteProductionSummary?.instances) {
+			const instanceIndex = this.siteProductionSummary.instances.findIndex(
+				(i) => i.id === instanceId
+			);
+			if (instanceIndex !== -1) {
+				// Create a new array with updated instance
+				const updatedInstances = [...this.siteProductionSummary.instances];
+				updatedInstances[instanceIndex] = { 
+					...updatedInstances[instanceIndex], 
+					isBuilt 
+				};
+				this.siteProductionSummary = {
+					...this.siteProductionSummary,
+					instances: updatedInstances
+				};
+			}
+		}
+
+		// Background API call
+		try {
+			const response = await this.apiFetch(
+				`/api/sites/${instance.siteId}/production-instances/${instanceId}`,
+				{
+					method: 'PATCH',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ isBuilt })
+				}
+			);
+
+			if (!response.ok) {
+				throw new Error(`Failed to update production instance (${response.status})`);
+			}
+
+			const result = await response.json();
+			if (result.success) {
+				// No need to reload - optimistic update is sufficient for built status
+				return true;
+			} else {
+				throw new Error('Server returned unsuccessful result');
+			}
+		} catch (e: any) {
+			// Rollback optimistic update on error
+			if (this.siteProductionSummary?.instances) {
+				const instanceIndex = this.siteProductionSummary.instances.findIndex(
+					(i) => i.id === instanceId
+				);
+				if (instanceIndex !== -1) {
+					const updatedInstances = [...this.siteProductionSummary.instances];
+					updatedInstances[instanceIndex] = { 
+						...updatedInstances[instanceIndex], 
+						isBuilt: !isBuilt // Revert back
+					};
+					this.siteProductionSummary = {
+						...this.siteProductionSummary,
+						instances: updatedInstances
+					};
+				}
+			}
+			
+			notificationService.error(e?.message ?? 'Failed to update built status');
+			return false;
+		}
+	}
+
+	// Optimistic delete - immediate removal with rollback on error
+	async deleteProductionInstanceOptimistic(instanceId: string) {
+		if (!instanceId || !this.apiFetch) return false;
+
+		// Find the instance to get its siteId and store for rollback
+		const instance = this.siteProductionInstances.find(
+			(i: ProductionInstanceData) => i.id === instanceId
+		);
+		if (!instance) {
+			notificationService.error('Production instance not found');
+			return false;
+		}
+
+		// Store instance for potential rollback
+		const instanceBackup = { ...instance };
+
+		// Optimistic update - immediately remove from local state
+		if (this.siteProductionSummary?.instances) {
+			const updatedInstances = this.siteProductionSummary.instances.filter(
+				(i) => i.id !== instanceId
+			);
+			this.siteProductionSummary = {
+				...this.siteProductionSummary,
+				instances: updatedInstances
+			};
+		}
+
+		// Background API call
+		try {
+			const response = await this.apiFetch(
+				`/api/sites/${instance.siteId}/production-instances/${instanceId}`,
+				{
+					method: 'DELETE'
+				}
+			);
+
+			if (!response.ok) {
+				throw new Error(`Failed to delete production instance (${response.status})`);
+			}
+
+			const result = await response.json();
+			if (result.success) {
+				notificationService.success('Production instance deleted successfully');
+				return true;
+			} else {
+				throw new Error('Server returned unsuccessful result');
+			}
+		} catch (e: any) {
+			// Rollback optimistic update on error - restore the instance
+			if (this.siteProductionSummary?.instances) {
+				const updatedInstances = [...this.siteProductionSummary.instances, instanceBackup];
+				// Sort by creation date to maintain consistent order
+				updatedInstances.sort((a, b) => 
+					new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+				);
+				this.siteProductionSummary = {
+					...this.siteProductionSummary,
+					instances: updatedInstances
+				};
+			}
+			
+			notificationService.error(e?.message ?? 'Failed to delete production instance');
+			return false;
 		}
 	}
 

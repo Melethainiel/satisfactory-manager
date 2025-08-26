@@ -6,6 +6,7 @@ import {
 	pgEnum,
 	timestamp,
 	numeric,
+	boolean,
 	index,
 	unique
 } from 'drizzle-orm/pg-core';
@@ -510,6 +511,7 @@ export const productionInstances = pgTable('production_instances', {
 	efficiencyRatio: numeric('efficiency_ratio', { precision: 10, scale: 3 })
 		.notNull()
 		.default('1.000'),
+	isBuilt: boolean('is_built').notNull().default(false),
 	notes: varchar('notes', { length: 1000 }),
 	createdAt: timestamp('created_at').defaultNow().notNull(),
 	updatedAt: timestamp('updated_at').defaultNow().notNull()

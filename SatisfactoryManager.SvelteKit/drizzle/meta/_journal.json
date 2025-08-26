@@ -134,6 +134,13 @@
       "when": 1756232620220,
       "tag": "0018_fix_production_instances_building_version",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1756238838293,
+      "tag": "0019_add_is_built_to_production_instances",
+      "breakpoints": true
     }
   ]
 }

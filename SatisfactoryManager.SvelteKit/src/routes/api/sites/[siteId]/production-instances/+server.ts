@@ -42,6 +42,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
 			extractorPurity: data.extractorPurity || 'Normal', // For extraction purity
 			buildingCount: data.buildingCount.toString(),
 			efficiencyRatio: data.efficiencyRatio?.toString() || '1.000',
+			isBuilt: data.isBuilt || false, // Default to not built
 			notes: data.notes || null
 		};
 

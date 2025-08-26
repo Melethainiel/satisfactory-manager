@@ -47,15 +47,28 @@
 
 	// Search functionality for production instances
 	let searchTerm = $state('');
+	
+	// Filter by built status: 'all', 'built', 'not-built'
+	let builtStatusFilter = $state<'all' | 'built' | 'not-built'>('all');
 
-	// Filter production instances based on search term
+	// Filter production instances based on search term and built status
 	let filteredInstances = $derived(() => {
+		let instances = gameState.siteProductionInstances;
+
+		// Filter by built status first
+		if (builtStatusFilter !== 'all') {
+			instances = instances.filter((instance) => {
+				return builtStatusFilter === 'built' ? instance.isBuilt : !instance.isBuilt;
+			});
+		}
+
+		// Then filter by search term
 		if (!searchTerm.trim()) {
-			return gameState.siteProductionInstances;
+			return instances;
 		}
 
 		const term = searchTerm.toLowerCase();
-		return gameState.siteProductionInstances.filter((instance) => {
+		return instances.filter((instance) => {
 			// Search in recipe name
 			const recipeName = instance.recipe?.displayName?.toLowerCase() || '';
 			if (recipeName.includes(term)) return true;
@@ -166,6 +179,11 @@
 		searchTerm = '';
 	}
 
+	function clearAllFilters() {
+		searchTerm = '';
+		builtStatusFilter = 'all';
+	}
+
 	function handleAddRecipe() {
 		// Désactiver immédiatement les animations pour éviter les replays
 		isInitialLoad = false;
@@ -196,7 +214,7 @@
 			confirmText: $t('productionInstances.delete_instance'),
 			type: 'danger',
 			onConfirm: async () => {
-				await gameState.deleteProductionInstance(instance.id);
+				await gameState.deleteProductionInstanceOptimistic(instance.id);
 			}
 		});
 	}
@@ -435,9 +453,32 @@
 					{$t('productionInstances.recipe_instances')}
 				</h3>
 
-				<!-- Search Bar for Production Instances -->
+				<!-- Filter and Search Controls -->
 				{#if gameState.siteProductionInstances.length >= 1}
-					<div class="relative mb-6" in:fly={{ y: 20, duration: 400, delay: 800 }}>
+					<div class="mb-6 space-y-4" in:fly={{ y: 20, duration: 400, delay: 800 }}>
+						<!-- Built Status Filter Buttons -->
+						<div class="flex gap-2">
+							<button
+								class="btn btn-sm {builtStatusFilter === 'all' ? 'btn-primary' : 'btn-outline'}"
+								onclick={() => (builtStatusFilter = 'all')}
+							>
+								Tout ({gameState.siteProductionInstances.length})
+							</button>
+							<button
+								class="btn btn-sm {builtStatusFilter === 'built' ? 'btn-success' : 'btn-outline'}"
+								onclick={() => (builtStatusFilter = 'built')}
+							>
+								Construit ({gameState.siteProductionInstances.filter(i => i.isBuilt).length})
+							</button>
+							<button
+								class="btn btn-sm {builtStatusFilter === 'not-built' ? 'btn-warning' : 'btn-outline'}"
+								onclick={() => (builtStatusFilter = 'not-built')}
+							>
+								Non construit ({gameState.siteProductionInstances.filter(i => !i.isBuilt).length})
+							</button>
+						</div>
+						
+						<!-- Search Bar -->
 						<div class="relative">
 							<Icon
 								src={MagnifyingGlass}
@@ -465,11 +506,17 @@
 				{/if}
 
 				<!-- Production Instances Grid -->
-				{#if sortedFilteredInstances().length === 0 && searchTerm}
+				{#if sortedFilteredInstances().length === 0 && (searchTerm || builtStatusFilter !== 'all')}
 					<div class="py-6 text-center" in:fade={{ duration: 200 }}>
-						<p class="text-base-content/70">{$t('productionInstances.no_instances_found')}</p>
-						<button class="btn mt-2 btn-ghost btn-sm" onclick={clearSearch}>
-							{$t('productionInstances.clear_search')}
+						<p class="text-base-content/70">
+							{#if searchTerm}
+								{$t('productionInstances.no_instances_found')}
+							{:else}
+								Aucune instance {builtStatusFilter === 'built' ? 'construite' : 'non construite'} trouvée
+							{/if}
+						</p>
+						<button class="btn mt-2 btn-ghost btn-sm" onclick={clearAllFilters}>
+							Effacer les filtres
 						</button>
 					</div>
 				{:else}

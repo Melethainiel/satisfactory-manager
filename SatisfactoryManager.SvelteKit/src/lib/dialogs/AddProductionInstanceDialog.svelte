@@ -15,6 +15,7 @@
 	let buildingCount = $state(1);
 	let efficiencyRatio = $state(1.0);
 	let extractorPurity = $state('Normal');
+	let isBuilt = $state(false);
 	let notes = $state('');
 
 	// Search state - now using recipeState
@@ -144,6 +145,7 @@
 		buildingCount = 1;
 		efficiencyRatio = 1.0;
 		extractorPurity = 'Normal';
+		isBuilt = false;
 		notes = '';
 		// Note: currentSiteId is NOT cleared here - it should persist during dialog session
 		showSearchResults = false;
@@ -225,6 +227,7 @@
 				buildingVersionId: selectedBuildingId,
 				buildingCount: buildingCount,
 				efficiencyRatio: efficiencyRatio,
+				isBuilt: isBuilt,
 				notes: notes.trim() || undefined
 			};
 
@@ -572,6 +575,18 @@
 						<span class="label-text-alt">0.1 - 2.5 (1.0 = 100%)</span>
 					</div>
 				</div>
+			</div>
+
+			<!-- Built Status -->
+			<div class="form-control">
+				<label class="label cursor-pointer">
+					<span class="label-text">Marquer comme construite</span>
+					<input
+						type="checkbox"
+						bind:checked={isBuilt}
+						class="checkbox checkbox-success"
+					/>
+				</label>
 			</div>
 
 			<!-- Notes -->

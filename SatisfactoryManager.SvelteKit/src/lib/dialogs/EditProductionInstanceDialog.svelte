@@ -13,6 +13,7 @@
 	let buildingCount = $state(1);
 	let efficiencyRatio = $state(1.0);
 	let extractorPurity = $state('Normal');
+	let isBuilt = $state(false);
 	let notes = $state('');
 
 	// Reset form with instance data
@@ -20,6 +21,7 @@
 		buildingCount = parseFloat(instance.buildingCount);
 		efficiencyRatio = parseFloat(instance.efficiencyRatio);
 		extractorPurity = instance.extractorPurity || 'Normal';
+		isBuilt = instance.isBuilt;
 		notes = instance.notes || '';
 	}
 
@@ -41,6 +43,7 @@
 			const updateData: any = {
 				buildingCount: buildingCount,
 				efficiencyRatio: efficiencyRatio,
+				isBuilt: isBuilt,
 				notes: notes.trim() || undefined
 			};
 
@@ -207,6 +210,18 @@
 						</div>
 					</div>
 				{/if}
+
+				<!-- Built Status -->
+				<div class="form-control">
+					<label class="label cursor-pointer">
+						<span class="label-text">Marquer comme construite</span>
+						<input
+							type="checkbox"
+							bind:checked={isBuilt}
+							class="checkbox checkbox-success"
+						/>
+					</label>
+				</div>
 
 				<!-- Notes -->
 				<div class="form-control">

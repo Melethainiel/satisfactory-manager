@@ -39,8 +39,8 @@ export interface ProductionInstanceData {
 	siteId: string;
 	recipeVersionId: string | null;
 	buildingId: string;
-	extractedItemId: string | null;
-	fuelItemId: string | null;
+	extractedItemVersionId: string | null;
+	fuelItemVersionId: string | null;
 	extractorPurity: string | null;
 	buildingCount: string;
 	efficiencyRatio: string;
@@ -164,8 +164,8 @@ export interface GameState {
 			buildingCount: number;
 			efficiencyRatio?: number;
 			notes?: string;
-			extractedItemId?: string;
-			fuelItemId?: string;
+			extractedItemVersionId?: string;
+			fuelItemVersionId?: string;
 		}
 	) => Promise<void>;
 	updateProductionInstance: (
@@ -557,8 +557,8 @@ class GameStateClass implements GameState {
 			buildingCount: number;
 			efficiencyRatio?: number;
 			notes?: string;
-			extractedItemId?: string;
-			fuelItemId?: string;
+			extractedItemVersionId?: string;
+			fuelItemVersionId?: string;
 		}
 	) {
 		if (!siteId || !this.apiFetch) return;

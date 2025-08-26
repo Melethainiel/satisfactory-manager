@@ -45,7 +45,7 @@
 			};
 
 			// Add purity for extractors
-			if (currentInstance.extractedItemId) {
+			if (currentInstance.extractedItemVersionId) {
 				updateData.extractorPurity = extractorPurity;
 			}
 
@@ -101,7 +101,7 @@
 					<div class="rounded-lg bg-base-200 p-3">
 						{#if currentInstance.recipe}
 							<span>🏭 {$t('production.craft_via_recipe')}</span>
-						{:else if currentInstance.extractedItemId}
+						{:else if currentInstance.extractedItemVersionId}
 							<span>⛏️ {$t('production.extract_from_deposits')}</span>
 						{:else if currentInstance.building && currentInstance.building.type === 'Generator'}
 							<span>⚡ {$t('production.generate_power')}</span>
@@ -188,7 +188,7 @@
 				</div>
 
 				<!-- Purity Selection (only shown for extraction) -->
-				{#if currentInstance.extractedItemId}
+				{#if currentInstance.extractedItemVersionId}
 					<div class="form-control">
 						<label class="label" for="purity-select">
 							<span class="label-text">{$t('production.purity')}</span>

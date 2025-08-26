@@ -33,8 +33,8 @@ export interface ProductionInstanceDetail {
 	siteId: string;
 	recipeVersionId: string | null;
 	buildingId: string;
-	extractedItemId: string | null;
-	fuelItemId: string | null;
+	extractedItemVersionId: string | null;
+	fuelItemVersionId: string | null;
 	extractorPurity: string | null;
 	buildingCount: string;
 	efficiencyRatio: string;
@@ -218,8 +218,8 @@ export class ProductionCalculationService {
 				siteId: productionInstances.siteId,
 				recipeVersionId: productionInstances.recipeVersionId,
 				buildingId: productionInstances.buildingId,
-				extractedItemId: productionInstances.extractedItemId,
-				fuelItemId: productionInstances.fuelItemId,
+				extractedItemVersionId: productionInstances.extractedItemVersionId,
+				fuelItemVersionId: productionInstances.fuelItemVersionId,
 				extractorPurity: productionInstances.extractorPurity,
 				buildingCount: productionInstances.buildingCount,
 				efficiencyRatio: productionInstances.efficiencyRatio,
@@ -279,118 +279,118 @@ export class ProductionCalculationService {
 			.filter((i) => i.recipeVersionId)
 			.map((i) => i.recipeVersionId!);
 
-		const extractedItemIds = instancesQuery
-			.filter((i) => i.extractedItemId)
-			.map((i) => i.extractedItemId!);
+		const extractedItemVersionIds = instancesQuery
+			.filter((i) => i.extractedItemVersionId)
+			.map((i) => i.extractedItemVersionId!);
 
-		const fuelItemIds = instancesQuery.filter((i) => i.fuelItemId).map((i) => i.fuelItemId!);
+		const fuelItemVersionIds = instancesQuery
+			.filter((i) => i.fuelItemVersionId)
+			.map((i) => i.fuelItemVersionId!);
 
 		// Check if any generator has supplemental load amount (water consumption)
 		const needsWaterItem = instancesQuery.some(
-			(i) => i.fuelItemId && parseFloat(i.buildingVersion?.supplementalLoadAmount || '0') > 0
+			(i) => i.fuelItemVersionId && parseFloat(i.buildingVersion?.supplementalLoadAmount || '0') > 0
 		);
 
 		// Get gameId from the first instance (all instances in a site have the same gameId)
 		const gameId = instancesQuery.length > 0 ? instancesQuery[0].site?.gameId : null;
 
-		// Batch fetch products, ingredients, and water item if needed
-		const [productsData, ingredientsData, extractedItemsData, fuelItemsData, waterItemData] =
-			await Promise.all([
-				recipeVersionIds.length > 0
-					? db
-							.select({
-								recipeVersionId: recipeProducts.recipeVersionId,
-								itemId: recipeProducts.itemId,
-								count: recipeProducts.count,
-								item: {
-									displayName: items.displayName,
-									className: items.className,
-									form: items.form
-								}
-							})
-							.from(recipeProducts)
-							.innerJoin(items, eq(recipeProducts.itemId, items.id))
-							.where(inArray(recipeProducts.recipeVersionId, recipeVersionIds))
-					: [],
-
-				recipeVersionIds.length > 0
-					? db
-							.select({
-								recipeVersionId: recipeIngredients.recipeVersionId,
-								itemId: recipeIngredients.itemId,
-								count: recipeIngredients.count,
-								item: {
-									displayName: items.displayName,
-									className: items.className,
-									form: items.form
-								}
-							})
-							.from(recipeIngredients)
-							.innerJoin(items, eq(recipeIngredients.itemId, items.id))
-							.where(inArray(recipeIngredients.recipeVersionId, recipeVersionIds))
-					: [],
-
-				extractedItemIds.length > 0
-					? db
-							.select({
-								id: items.id,
+		// Batch fetch products, ingredients, and item versions
+		const [
+			productsData,
+			ingredientsData,
+			extractedItemVersionsData,
+			fuelItemVersionsData,
+			waterItemData
+		] = await Promise.all([
+			recipeVersionIds.length > 0
+				? db
+						.select({
+							recipeVersionId: recipeProducts.recipeVersionId,
+							itemId: recipeProducts.itemId,
+							count: recipeProducts.count,
+							item: {
 								displayName: items.displayName,
 								className: items.className,
 								form: items.form
-							})
-							.from(items)
-							.where(inArray(items.id, extractedItemIds))
-					: [],
+							}
+						})
+						.from(recipeProducts)
+						.innerJoin(items, eq(recipeProducts.itemId, items.id))
+						.where(inArray(recipeProducts.recipeVersionId, recipeVersionIds))
+				: [],
 
-				fuelItemIds.length > 0 && gameId
-					? db
-							.select({
-								id: items.id,
-								displayName: items.displayName,
-								className: items.className,
-								form: items.form,
-								energyValue: itemVersions.energyValue
-							})
-							.from(items)
-							.leftJoin(itemVersions, eq(itemVersions.itemId, items.id))
-							.leftJoin(modules, eq(items.moduleId, modules.id))
-							.leftJoin(
-								moduleGames,
-								and(eq(moduleGames.moduleId, modules.id), eq(moduleGames.gameId, gameId))
-							)
-							.where(
-								and(
-									inArray(items.id, fuelItemIds),
-									eq(itemVersions.moduleVersionId, moduleGames.selectedVersionId)
-								)
-							)
-					: [],
-
-				// Fetch water item if needed for generators with supplemental load amount
-				needsWaterItem && gameId
-					? db
-							.select({
-								id: items.id,
+			recipeVersionIds.length > 0
+				? db
+						.select({
+							recipeVersionId: recipeIngredients.recipeVersionId,
+							itemId: recipeIngredients.itemId,
+							count: recipeIngredients.count,
+							item: {
 								displayName: items.displayName,
 								className: items.className,
 								form: items.form
-							})
-							.from(items)
-							.leftJoin(modules, eq(items.moduleId, modules.id))
-							.leftJoin(
-								moduleGames,
-								and(eq(moduleGames.moduleId, modules.id), eq(moduleGames.gameId, gameId))
-							)
-							.where(eq(items.className, 'Desc_Water_C'))
-							.limit(1)
-					: []
-			]);
+							}
+						})
+						.from(recipeIngredients)
+						.innerJoin(items, eq(recipeIngredients.itemId, items.id))
+						.where(inArray(recipeIngredients.recipeVersionId, recipeVersionIds))
+				: [],
+
+			extractedItemVersionIds.length > 0
+				? db
+						.select({
+							id: itemVersions.id,
+							itemId: itemVersions.itemId,
+							displayName: items.displayName,
+							className: items.className,
+							form: items.form
+						})
+						.from(itemVersions)
+						.innerJoin(items, eq(itemVersions.itemId, items.id))
+						.where(inArray(itemVersions.id, extractedItemVersionIds))
+				: [],
+
+			fuelItemVersionIds.length > 0
+				? db
+						.select({
+							id: itemVersions.id,
+							itemId: itemVersions.itemId,
+							displayName: items.displayName,
+							className: items.className,
+							form: items.form,
+							energyValue: itemVersions.energyValue
+						})
+						.from(itemVersions)
+						.innerJoin(items, eq(itemVersions.itemId, items.id))
+						.where(inArray(itemVersions.id, fuelItemVersionIds))
+				: [],
+
+			// Fetch water item if needed for generators with supplemental load amount
+			needsWaterItem && gameId
+				? db
+						.select({
+							id: items.id,
+							displayName: items.displayName,
+							className: items.className,
+							form: items.form
+						})
+						.from(items)
+						.leftJoin(modules, eq(items.moduleId, modules.id))
+						.leftJoin(
+							moduleGames,
+							and(eq(moduleGames.moduleId, modules.id), eq(moduleGames.gameId, gameId))
+						)
+						.where(eq(items.className, 'Desc_Water_C'))
+						.limit(1)
+				: []
+		]);
 
 		// Group products and ingredients by recipe version ID
 		const productsByRecipeVersion = new Map();
 		const ingredientsByRecipeVersion = new Map();
-		const extractedItemsMap = new Map();
-		const fuelItemsMap = new Map();
+		const extractedItemVersionsMap = new Map();
+		const fuelItemVersionsMap = new Map();
 
 		// Water item for generators
 		const waterItem = waterItemData.length > 0 ? waterItemData[0] : null;
@@ -409,12 +409,12 @@ export class ProductionCalculationService {
 			ingredientsByRecipeVersion.get(i.recipeVersionId).push(i);
 		});
 
-		extractedItemsData.forEach((item) => {
-			extractedItemsMap.set(item.id, item);
+		extractedItemVersionsData.forEach((itemVersion) => {
+			extractedItemVersionsMap.set(itemVersion.id, itemVersion);
 		});
 
-		fuelItemsData.forEach((item) => {
-			fuelItemsMap.set(item.id, item);
+		fuelItemVersionsData.forEach((itemVersion) => {
+			fuelItemVersionsMap.set(itemVersion.id, itemVersion);
 		});
 
 		// Build detailed instances with calculations
@@ -451,10 +451,10 @@ export class ProductionCalculationService {
 						item: i.item
 					};
 				});
-			} else if (instance.extractedItemId) {
+			} else if (instance.extractedItemVersionId) {
 				// Handle extraction
-				const extractedItem = extractedItemsMap.get(instance.extractedItemId);
-				if (extractedItem) {
+				const extractedItemVersion = extractedItemVersionsMap.get(instance.extractedItemVersionId);
+				if (extractedItemVersion) {
 					const buildingCount = parseFloat(instance.buildingCount);
 					const efficiency = parseFloat(instance.efficiencyRatio);
 					const buildingOutput = parseFloat(instance.buildingVersion?.output || '0');
@@ -463,28 +463,28 @@ export class ProductionCalculationService {
 
 					products = [
 						{
-							itemId: extractedItem.id,
+							itemId: extractedItemVersion.itemId,
 							count: '1',
 							actualRate,
 							item: {
-								displayName: extractedItem.displayName,
-								className: extractedItem.className,
-								form: extractedItem.form
+								displayName: extractedItemVersion.displayName,
+								className: extractedItemVersion.className,
+								form: extractedItemVersion.form
 							}
 						}
 					];
 				}
-			} else if (instance.fuelItemId) {
+			} else if (instance.fuelItemVersionId) {
 				// Handle generators with fuel
-				const fuelItem = fuelItemsMap.get(instance.fuelItemId);
-				if (fuelItem) {
+				const fuelItemVersion = fuelItemVersionsMap.get(instance.fuelItemVersionId);
+				if (fuelItemVersion) {
 					const buildingCount = parseFloat(instance.buildingCount);
 					const efficiency = parseFloat(instance.efficiencyRatio);
 					const powerProduction = parseFloat(instance.buildingVersion?.energyProduction || '0');
 
 					// Calculate fuel consumption using correct formula: 60 / (Item.EnergyValue / Building.EnergyProduction)
 					// Convert GJ to MJ: Item.EnergyValue * 1000
-					const fuelEnergyValueMJ = (fuelItem.energyValue || 0) * 1000; // Convert GJ to MJ
+					const fuelEnergyValueMJ = (fuelItemVersion.energyValue || 0) * 1000; // Convert GJ to MJ
 					const buildingEnergyProductionMW = powerProduction; // Already in MW
 
 					let fuelConsumptionRate = 0;
@@ -497,13 +497,13 @@ export class ProductionCalculationService {
 
 					ingredients = [
 						{
-							itemId: fuelItem.id,
+							itemId: fuelItemVersion.itemId,
 							count: '1',
 							actualRate: fuelConsumptionRate,
 							item: {
-								displayName: fuelItem.displayName,
-								className: fuelItem.className,
-								form: fuelItem.form
+								displayName: fuelItemVersion.displayName,
+								className: fuelItemVersion.className,
+								form: fuelItemVersion.form
 							}
 						}
 					];
@@ -536,8 +536,8 @@ export class ProductionCalculationService {
 				siteId: instance.siteId,
 				recipeVersionId: instance.recipeVersionId,
 				buildingId: instance.buildingId,
-				extractedItemId: instance.extractedItemId,
-				fuelItemId: instance.fuelItemId,
+				extractedItemVersionId: instance.extractedItemVersionId,
+				fuelItemVersionId: instance.fuelItemVersionId,
 				extractorPurity: instance.extractorPurity,
 				buildingCount: instance.buildingCount,
 				efficiencyRatio: instance.efficiencyRatio,

@@ -9,6 +9,7 @@ import {
 	recipeProducts,
 	recipeIngredients,
 	items,
+	itemVersions,
 	moduleGames,
 	modules,
 	type ProductionInstance,
@@ -44,12 +45,6 @@ export interface ProductionInstanceWithDetails extends ProductionInstance {
 		output: string;
 		energyConsumption: string;
 		energyProduction: string;
-	} | null;
-	fuelItem: {
-		id: string;
-		displayName: string;
-		className: string;
-		form: string;
 	} | null;
 	products: Array<{
 		itemId: string;
@@ -106,7 +101,6 @@ class ProductionInstanceService implements IProductionInstanceService {
 	}
 
 	async getProductionInstanceById(id: string): Promise<ProductionInstanceWithDetails | undefined> {
-		const fuelItems = alias(items, 'fuel_items');
 		const result = await db
 			.select({
 				// Production instance fields
@@ -114,8 +108,8 @@ class ProductionInstanceService implements IProductionInstanceService {
 				siteId: productionInstances.siteId,
 				recipeVersionId: productionInstances.recipeVersionId,
 				buildingId: productionInstances.buildingId,
-				extractedItemId: productionInstances.extractedItemId,
-				fuelItemId: productionInstances.fuelItemId,
+				extractedItemVersionId: productionInstances.extractedItemVersionId,
+				fuelItemVersionId: productionInstances.fuelItemVersionId,
 				buildingCount: productionInstances.buildingCount,
 				efficiencyRatio: productionInstances.efficiencyRatio,
 				notes: productionInstances.notes,
@@ -147,12 +141,6 @@ class ProductionInstanceService implements IProductionInstanceService {
 					output: buildingVersions.output,
 					energyConsumption: buildingVersions.energyConsumption,
 					energyProduction: buildingVersions.energyProduction
-				},
-				fuelItem: {
-					id: fuelItems.id,
-					displayName: fuelItems.displayName,
-					className: fuelItems.className,
-					form: fuelItems.form
 				}
 			})
 			.from(productionInstances)
@@ -172,7 +160,6 @@ class ProductionInstanceService implements IProductionInstanceService {
 					eq(buildingVersions.moduleVersionId, moduleGames.selectedVersionId)
 				)
 			)
-			.leftJoin(fuelItems, eq(productionInstances.fuelItemId, fuelItems.id))
 			.where(eq(productionInstances.id, id))
 			.limit(1);
 
@@ -231,54 +218,58 @@ class ProductionInstanceService implements IProductionInstanceService {
 					.innerJoin(items, eq(recipeIngredients.itemId, items.id))
 					.where(eq(recipeIngredients.recipeVersionId, instanceData.recipeVersionId))
 			]);
-		} else if (instanceData.extractedItemId) {
-			// For extraction instances - create synthetic product from extractedItemId
-			const extractedItem = await db
+		} else if (instanceData.extractedItemVersionId) {
+			// For extraction instances - create synthetic product from extractedItemVersionId
+			const extractedItemVersion = await db
 				.select({
-					id: items.id,
+					id: itemVersions.id,
+					itemId: itemVersions.itemId,
 					displayName: items.displayName,
 					className: items.className,
 					form: items.form
 				})
-				.from(items)
-				.where(eq(items.id, instanceData.extractedItemId))
+				.from(itemVersions)
+				.innerJoin(items, eq(itemVersions.itemId, items.id))
+				.where(eq(itemVersions.id, instanceData.extractedItemVersionId))
 				.limit(1);
 
-			if (extractedItem.length > 0) {
+			if (extractedItemVersion.length > 0) {
 				products = [
 					{
-						itemId: extractedItem[0].id,
+						itemId: extractedItemVersion[0].itemId,
 						count: '1', // Placeholder count for extraction
 						item: {
-							displayName: extractedItem[0].displayName,
-							className: extractedItem[0].className,
-							form: extractedItem[0].form
+							displayName: extractedItemVersion[0].displayName,
+							className: extractedItemVersion[0].className,
+							form: extractedItemVersion[0].form
 						}
 					}
 				];
 			}
-		} else if (instanceData.fuelItemId) {
-			// For generator instances - create synthetic ingredient from fuelItemId
-			const fuelItem = await db
+		} else if (instanceData.fuelItemVersionId) {
+			// For generator instances - create synthetic ingredient from fuelItemVersionId
+			const fuelItemVersion = await db
 				.select({
-					id: items.id,
+					id: itemVersions.id,
+					itemId: itemVersions.itemId,
 					displayName: items.displayName,
 					className: items.className,
 					form: items.form
 				})
-				.from(items)
-				.where(eq(items.id, instanceData.fuelItemId))
+				.from(itemVersions)
+				.innerJoin(items, eq(itemVersions.itemId, items.id))
+				.where(eq(itemVersions.id, instanceData.fuelItemVersionId))
 				.limit(1);
 
-			if (fuelItem.length > 0) {
+			if (fuelItemVersion.length > 0) {
 				ingredients = [
 					{
-						itemId: fuelItem[0].id,
+						itemId: fuelItemVersion[0].itemId,
 						count: '1', // Placeholder count for fuel
 						item: {
-							displayName: fuelItem[0].displayName,
-							className: fuelItem[0].className,
-							form: fuelItem[0].form
+							displayName: fuelItemVersion[0].displayName,
+							className: fuelItemVersion[0].className,
+							form: fuelItemVersion[0].form
 						}
 					}
 				];

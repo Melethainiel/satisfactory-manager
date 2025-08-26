@@ -37,8 +37,8 @@ export const POST: RequestHandler = async ({ request, params }) => {
 			siteId,
 			recipeVersionId: data.recipeVersionId || null, // Allow null for extraction
 			buildingId: data.buildingId,
-			extractedItemId: data.extractedItemId || null, // For extraction instances
-			fuelItemId: data.fuelItemId || null, // For power generation instances
+			extractedItemVersionId: data.extractedItemVersionId || null, // For extraction instances
+			fuelItemVersionId: data.fuelItemVersionId || null, // For power generation instances
 			extractorPurity: data.extractorPurity || 'Normal', // For extraction purity
 			buildingCount: data.buildingCount.toString(),
 			efficiencyRatio: data.efficiencyRatio?.toString() || '1.000',

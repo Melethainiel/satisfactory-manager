@@ -469,8 +469,12 @@ export const productionInstances = pgTable('production_instances', {
 	buildingId: uuid('building_id')
 		.notNull()
 		.references(() => buildings.id, { onDelete: 'cascade' }),
-	extractedItemId: uuid('extracted_item_id').references(() => items.id, { onDelete: 'cascade' }),
-	fuelItemId: uuid('fuel_item_id').references(() => items.id, { onDelete: 'cascade' }),
+	extractedItemVersionId: uuid('extracted_item_version_id').references(() => itemVersions.id, {
+		onDelete: 'cascade'
+	}),
+	fuelItemVersionId: uuid('fuel_item_version_id').references(() => itemVersions.id, {
+		onDelete: 'cascade'
+	}),
 	extractorPurity: extractorPurityEnum('extractor_purity').default('Normal'),
 	buildingCount: numeric('building_count', { precision: 10, scale: 2 }).notNull(),
 	efficiencyRatio: numeric('efficiency_ratio', { precision: 10, scale: 3 })
@@ -497,13 +501,13 @@ export const productionInstancesRelations = relations(productionInstances, ({ on
 		fields: [productionInstances.buildingId],
 		references: [buildings.id]
 	}),
-	extractedItem: one(items, {
-		fields: [productionInstances.extractedItemId],
-		references: [items.id]
+	extractedItemVersion: one(itemVersions, {
+		fields: [productionInstances.extractedItemVersionId],
+		references: [itemVersions.id]
 	}),
-	fuelItem: one(items, {
-		fields: [productionInstances.fuelItemId],
-		references: [items.id]
+	fuelItemVersion: one(itemVersions, {
+		fields: [productionInstances.fuelItemVersionId],
+		references: [itemVersions.id]
 	})
 }));
 

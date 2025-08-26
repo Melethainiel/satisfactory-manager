@@ -233,15 +233,15 @@
 				instanceData.recipeVersionId = recipeVersionId;
 			}
 
-			// For extraction, include the extracted item ID and purity
-			if (itemState.selectedProductionType === 'extract' && itemState.selectedItem?.id) {
-				instanceData.extractedItemId = itemState.selectedItem.id;
+			// For extraction, include the extracted item version ID and purity
+			if (itemState.selectedProductionType === 'extract' && itemState.selectedItem?.itemVersionId) {
+				instanceData.extractedItemVersionId = itemState.selectedItem.itemVersionId;
 				instanceData.extractorPurity = extractorPurity;
 			}
 
-			// For power generation, include the fuel item ID
-			if (itemState.selectedProductionType === 'power' && itemState.selectedItem?.id) {
-				instanceData.fuelItemId = itemState.selectedItem.id;
+			// For power generation, include the fuel item version ID
+			if (itemState.selectedProductionType === 'power' && itemState.selectedItem?.itemVersionId) {
+				instanceData.fuelItemVersionId = itemState.selectedItem.itemVersionId;
 			}
 
 			await gameState.createProductionInstance(currentSiteId, instanceData);

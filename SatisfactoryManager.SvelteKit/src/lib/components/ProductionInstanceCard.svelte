@@ -24,7 +24,7 @@
 	// Helper to determine instance type
 	function getInstanceType(instance: ProductionInstanceData): 'craft' | 'extract' | 'power' {
 		if (instance.building?.type === 'Generator') return 'power';
-		if (instance.extractedItemId) return 'extract';
+		if (instance.extractedItemVersionId) return 'extract';
 		return 'craft';
 	}
 

@@ -107,7 +107,7 @@ class ProductionInstanceService implements IProductionInstanceService {
 				id: productionInstances.id,
 				siteId: productionInstances.siteId,
 				recipeVersionId: productionInstances.recipeVersionId,
-				buildingId: productionInstances.buildingId,
+				buildingVersionId: productionInstances.buildingVersionId,
 				extractedItemVersionId: productionInstances.extractedItemVersionId,
 				fuelItemVersionId: productionInstances.fuelItemVersionId,
 				buildingCount: productionInstances.buildingCount,
@@ -147,19 +147,8 @@ class ProductionInstanceService implements IProductionInstanceService {
 			.leftJoin(sites, eq(productionInstances.siteId, sites.id))
 			.leftJoin(recipeVersions, eq(productionInstances.recipeVersionId, recipeVersions.id))
 			.leftJoin(recipes, eq(recipeVersions.recipeId, recipes.id))
-			.leftJoin(buildings, eq(productionInstances.buildingId, buildings.id))
-			.leftJoin(modules, eq(buildings.moduleId, modules.id))
-			.leftJoin(
-				moduleGames,
-				and(eq(moduleGames.moduleId, modules.id), eq(moduleGames.gameId, sites.gameId))
-			)
-			.leftJoin(
-				buildingVersions,
-				and(
-					eq(buildingVersions.buildingId, buildings.id),
-					eq(buildingVersions.moduleVersionId, moduleGames.selectedVersionId)
-				)
-			)
+			.leftJoin(buildingVersions, eq(productionInstances.buildingVersionId, buildingVersions.id))
+			.leftJoin(buildings, eq(buildingVersions.buildingId, buildings.id))
 			.where(eq(productionInstances.id, id))
 			.limit(1);
 
@@ -380,16 +369,16 @@ class ProductionInstanceService implements IProductionInstanceService {
 			}
 		}
 
-		// Check if building exists
-		if (data.buildingId) {
-			const building = await db
+		// Check if building version exists
+		if (data.buildingVersionId) {
+			const buildingVersion = await db
 				.select()
-				.from(buildings)
-				.where(eq(buildings.id, data.buildingId))
+				.from(buildingVersions)
+				.where(eq(buildingVersions.id, data.buildingVersionId))
 				.limit(1);
 
-			if (building.length === 0) {
-				errors.push('Building does not exist');
+			if (buildingVersion.length === 0) {
+				errors.push('Building version does not exist');
 			}
 		}
 

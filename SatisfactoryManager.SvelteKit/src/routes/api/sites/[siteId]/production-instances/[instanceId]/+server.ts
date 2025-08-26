@@ -65,7 +65,7 @@ export const PATCH: RequestHandler = async ({ request, params }) => {
 		const updateData: any = {};
 
 		if (data.recipeVersionId) updateData.recipeVersionId = data.recipeVersionId;
-		if (data.buildingId) updateData.buildingId = data.buildingId;
+		if (data.buildingVersionId) updateData.buildingVersionId = data.buildingVersionId;
 		if (data.buildingCount !== undefined) updateData.buildingCount = data.buildingCount.toString();
 		if (data.efficiencyRatio !== undefined)
 			updateData.efficiencyRatio = data.efficiencyRatio.toString();

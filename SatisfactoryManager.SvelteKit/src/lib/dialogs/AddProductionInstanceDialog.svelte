@@ -222,7 +222,7 @@
 
 		try {
 			const instanceData: any = {
-				buildingId: selectedBuildingId,
+				buildingVersionId: selectedBuildingId,
 				buildingCount: buildingCount,
 				efficiencyRatio: efficiencyRatio,
 				notes: notes.trim() || undefined

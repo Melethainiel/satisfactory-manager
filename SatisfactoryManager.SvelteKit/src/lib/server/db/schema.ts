@@ -496,9 +496,9 @@ export const productionInstances = pgTable('production_instances', {
 	recipeVersionId: uuid('recipe_version_id').references(() => recipeVersions.id, {
 		onDelete: 'cascade'
 	}),
-	buildingId: uuid('building_id')
+	buildingVersionId: uuid('building_version_id')
 		.notNull()
-		.references(() => buildings.id, { onDelete: 'cascade' }),
+		.references(() => buildingVersions.id, { onDelete: 'cascade' }),
 	extractedItemVersionId: uuid('extracted_item_version_id').references(() => itemVersions.id, {
 		onDelete: 'cascade'
 	}),
@@ -527,9 +527,9 @@ export const productionInstancesRelations = relations(productionInstances, ({ on
 		fields: [productionInstances.recipeVersionId],
 		references: [recipeVersions.id]
 	}),
-	building: one(buildings, {
-		fields: [productionInstances.buildingId],
-		references: [buildings.id]
+	buildingVersion: one(buildingVersions, {
+		fields: [productionInstances.buildingVersionId],
+		references: [buildingVersions.id]
 	}),
 	extractedItemVersion: one(itemVersions, {
 		fields: [productionInstances.extractedItemVersionId],

@@ -443,10 +443,7 @@ class ArchiveItemService implements IArchiveItemService {
 			}
 
 			// Get the item version ID for this module version
-			const itemVersion = await itemService.getItemVersionByModuleAndItem(
-				item.id,
-				moduleVersionId
-			);
+			const itemVersion = await itemService.getItemVersionByModuleAndItem(item.id, moduleVersionId);
 
 			if (!itemVersion) {
 				results.errors.push(`Could not find item version for ${itemData.className}`);
@@ -504,7 +501,9 @@ class ArchiveItemService implements IArchiveItemService {
 					}
 				}
 			} catch (error) {
-				results.errors.push(`Failed to process building associations for ${itemData.className}: ${error}`);
+				results.errors.push(
+					`Failed to process building associations for ${itemData.className}: ${error}`
+				);
 			}
 		}
 	}

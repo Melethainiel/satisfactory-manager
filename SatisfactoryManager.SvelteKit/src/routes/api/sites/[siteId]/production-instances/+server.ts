@@ -13,11 +13,11 @@ export const POST: RequestHandler = async ({ request, params }) => {
 		// recipeVersionId is optional for extraction, but required for crafting
 		// We'll let the service layer handle the validation based on building type
 
-		if (!data.buildingId) {
+		if (!data.buildingVersionId) {
 			return json(
 				{
 					success: false,
-					error: 'Building ID is required'
+					error: 'Building version ID is required'
 				},
 				{ status: 400 }
 			);
@@ -36,7 +36,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
 		const instanceData = {
 			siteId,
 			recipeVersionId: data.recipeVersionId || null, // Allow null for extraction
-			buildingId: data.buildingId,
+			buildingVersionId: data.buildingVersionId,
 			extractedItemVersionId: data.extractedItemVersionId || null, // For extraction instances
 			fuelItemVersionId: data.fuelItemVersionId || null, // For power generation instances
 			extractorPurity: data.extractorPurity || 'Normal', // For extraction purity

@@ -32,7 +32,7 @@ export interface ProductionInstanceDetail {
 	id: string;
 	siteId: string;
 	recipeVersionId: string | null;
-	buildingId: string;
+	buildingVersionId: string;
 	extractedItemVersionId: string | null;
 	fuelItemVersionId: string | null;
 	extractorPurity: string | null;
@@ -217,7 +217,7 @@ export class ProductionCalculationService {
 				id: productionInstances.id,
 				siteId: productionInstances.siteId,
 				recipeVersionId: productionInstances.recipeVersionId,
-				buildingId: productionInstances.buildingId,
+				buildingVersionId: productionInstances.buildingVersionId,
 				extractedItemVersionId: productionInstances.extractedItemVersionId,
 				fuelItemVersionId: productionInstances.fuelItemVersionId,
 				extractorPurity: productionInstances.extractorPurity,
@@ -259,19 +259,8 @@ export class ProductionCalculationService {
 			.leftJoin(sites, eq(productionInstances.siteId, sites.id))
 			.leftJoin(recipeVersions, eq(productionInstances.recipeVersionId, recipeVersions.id))
 			.leftJoin(recipes, eq(recipeVersions.recipeId, recipes.id))
-			.leftJoin(buildings, eq(productionInstances.buildingId, buildings.id))
-			.leftJoin(modules, eq(buildings.moduleId, modules.id))
-			.leftJoin(
-				moduleGames,
-				and(eq(moduleGames.moduleId, modules.id), eq(moduleGames.gameId, sites.gameId))
-			)
-			.leftJoin(
-				buildingVersions,
-				and(
-					eq(buildingVersions.buildingId, buildings.id),
-					eq(buildingVersions.moduleVersionId, moduleGames.selectedVersionId)
-				)
-			)
+			.leftJoin(buildingVersions, eq(productionInstances.buildingVersionId, buildingVersions.id))
+			.leftJoin(buildings, eq(buildingVersions.buildingId, buildings.id))
 			.where(eq(productionInstances.siteId, siteId));
 
 		// Get all recipe version IDs for batch fetching products/ingredients
@@ -535,7 +524,7 @@ export class ProductionCalculationService {
 				id: instance.id,
 				siteId: instance.siteId,
 				recipeVersionId: instance.recipeVersionId,
-				buildingId: instance.buildingId,
+				buildingVersionId: instance.buildingVersionId,
 				extractedItemVersionId: instance.extractedItemVersionId,
 				fuelItemVersionId: instance.fuelItemVersionId,
 				extractorPurity: instance.extractorPurity,

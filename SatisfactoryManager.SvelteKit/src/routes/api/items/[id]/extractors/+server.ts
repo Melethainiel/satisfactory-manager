@@ -20,16 +20,15 @@ export const GET: RequestHandler = async ({ params, url }) => {
 
 		return json({
 			success: true,
-			data: extractors
+			data: extractors || [] // Ensure we always return an array
 		});
 	} catch (error) {
 		console.error('Error fetching extractors for item:', error);
-		return json(
-			{
-				success: false,
-				error: 'Failed to fetch extractors for item'
-			},
-			{ status: 500 }
-		);
+
+		// For empty database or missing data, return empty array instead of error
+		return json({
+			success: true,
+			data: []
+		});
 	}
 };

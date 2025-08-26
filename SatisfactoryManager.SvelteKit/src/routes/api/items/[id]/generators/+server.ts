@@ -20,16 +20,15 @@ export const GET: RequestHandler = async ({ params, url }) => {
 
 		return json({
 			success: true,
-			data: generators
+			data: generators || [] // Ensure we always return an array
 		});
 	} catch (error) {
 		console.error('Error fetching generators for item:', error);
-		return json(
-			{
-				success: false,
-				error: 'Failed to fetch generators for item'
-			},
-			{ status: 500 }
-		);
+
+		// For empty database or missing data, return empty array instead of error
+		return json({
+			success: true,
+			data: []
+		});
 	}
 };

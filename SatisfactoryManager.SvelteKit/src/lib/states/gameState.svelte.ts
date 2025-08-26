@@ -38,7 +38,7 @@ export interface ProductionInstanceData {
 	id: string;
 	siteId: string;
 	recipeVersionId: string | null;
-	buildingId: string;
+	buildingVersionId: string;
 	extractedItemVersionId: string | null;
 	fuelItemVersionId: string | null;
 	extractorPurity: string | null;
@@ -160,7 +160,7 @@ export interface GameState {
 		siteId: string,
 		data: {
 			recipeVersionId?: string;
-			buildingId: string;
+			buildingVersionId: string;
 			buildingCount: number;
 			efficiencyRatio?: number;
 			notes?: string;
@@ -172,7 +172,7 @@ export interface GameState {
 		instanceId: string,
 		data: {
 			recipeVersionId?: string;
-			buildingId?: string;
+			buildingVersionId?: string;
 			buildingCount?: number;
 			efficiencyRatio?: number;
 			notes?: string;
@@ -553,7 +553,7 @@ class GameStateClass implements GameState {
 		siteId: string,
 		data: {
 			recipeVersionId?: string;
-			buildingId: string;
+			buildingVersionId: string;
 			buildingCount: number;
 			efficiencyRatio?: number;
 			notes?: string;
@@ -591,7 +591,7 @@ class GameStateClass implements GameState {
 		instanceId: string,
 		data: {
 			recipeVersionId?: string;
-			buildingId?: string;
+			buildingVersionId?: string;
 			buildingCount?: number;
 			efficiencyRatio?: number;
 			notes?: string;

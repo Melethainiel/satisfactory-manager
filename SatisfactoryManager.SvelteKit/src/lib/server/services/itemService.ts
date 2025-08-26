@@ -299,91 +299,100 @@ class ItemService implements IItemService {
 	}
 
 	async getExtractorsForItem(gameId: string, itemId: string): Promise<Building[]> {
-		// For now, return miners that are available in the game's selected modules
+		// Return building versions for miners that are available in the game's selected modules
 		// TODO: Later we can add logic to check if the item can actually be extracted
 		// (requires itemDeposits table or similar)
-		const extractors = await db
-			.select({
-				id: buildings.id,
-				name: buildings.name,
-				className: buildings.className,
-				type: buildings.type
-			})
-			.from(buildings)
-			.innerJoin(modules, eq(buildings.moduleId, modules.id))
-			.innerJoin(
-				moduleGames,
-				and(
-					eq(moduleGames.gameId, gameId),
-					eq(moduleGames.moduleId, modules.id),
-					isNotNull(moduleGames.selectedVersionId)
-				)
-			)
-			.where(eq(buildings.type, 'Miner'));
 
-		return extractors;
+		try {
+			const extractors = await db
+				.select({
+					id: buildingVersions.id, // Now returning buildingVersionId
+					name: buildings.name,
+					className: buildings.className,
+					type: buildings.type
+				})
+				.from(buildingVersions)
+				.innerJoin(buildings, eq(buildingVersions.buildingId, buildings.id))
+				.innerJoin(modules, eq(buildings.moduleId, modules.id))
+				.innerJoin(
+					moduleGames,
+					and(
+						eq(moduleGames.gameId, gameId),
+						eq(moduleGames.moduleId, modules.id),
+						eq(buildingVersions.moduleVersionId, moduleGames.selectedVersionId),
+						isNotNull(moduleGames.selectedVersionId)
+					)
+				)
+				.where(eq(buildings.type, 'Miner'));
+
+			return extractors;
+		} catch (error) {
+			console.warn('No extractors found for game:', gameId, 'Error:', error);
+			return [];
+		}
 	}
 
 	async getGeneratorsForItem(gameId: string, itemId: string): Promise<Building[]> {
 		// Get generators that are available in the game's selected modules AND can use this item as fuel
 		// Check if the item has energy value > 0 to be usable as fuel
-		const results = await db
-			.select({
-				id: buildings.id,
-				name: buildings.name,
-				className: buildings.className,
-				type: buildings.type,
-				energyProduction: buildingVersions.energyProduction,
-				energyValue: itemVersions.energyValue
-			})
-			.from(buildings)
-			.innerJoin(modules, eq(buildings.moduleId, modules.id))
-			.innerJoin(
-				moduleGames,
-				and(
-					eq(moduleGames.gameId, gameId),
-					eq(moduleGames.moduleId, modules.id),
-					isNotNull(moduleGames.selectedVersionId)
+
+		try {
+			const results = await db
+				.select({
+					id: buildingVersions.id, // Now returning buildingVersionId
+					name: buildings.name,
+					className: buildings.className,
+					type: buildings.type,
+					energyProduction: buildingVersions.energyProduction,
+					energyValue: itemVersions.energyValue
+				})
+				.from(buildingVersions)
+				.innerJoin(buildings, eq(buildingVersions.buildingId, buildings.id))
+				.innerJoin(modules, eq(buildings.moduleId, modules.id))
+				.innerJoin(
+					moduleGames,
+					and(
+						eq(moduleGames.gameId, gameId),
+						eq(moduleGames.moduleId, modules.id),
+						eq(buildingVersions.moduleVersionId, moduleGames.selectedVersionId),
+						isNotNull(moduleGames.selectedVersionId)
+					)
 				)
-			)
-			.innerJoin(
-				buildingVersions,
-				and(
-					eq(buildingVersions.buildingId, buildings.id),
-					sql`${buildingVersions.energyProduction} > 0`
+				.innerJoin(
+					itemVersions,
+					and(eq(itemVersions.itemId, itemId), sql`${itemVersions.energyValue} > 0`)
 				)
-			)
-			.innerJoin(
-				itemVersions,
-				and(eq(itemVersions.itemId, itemId), sql`${itemVersions.energyValue} > 0`)
-			)
-			.where(eq(buildings.type, 'Generator'));
+				.where(and(eq(buildings.type, 'Generator'), sql`${buildingVersions.energyProduction} > 0`));
 
-		// Calculate burn time and consumption per minute for each generator
-		const generators: Building[] = results.map((result) => {
-			const energyProductionMW = parseFloat(result.energyProduction || '0'); // Already in MW
-			const energyValueGJ = parseFloat(result.energyValue || '0');
-			const energyValueMJ = energyValueGJ * 1000; // GJ → MJ
+			// Calculate burn time and consumption per minute for each generator
+			const generators: Building[] = results.map((result) => {
+				const energyProductionMW = parseFloat(result.energyProduction || '0'); // Already in MW
+				const energyValueGJ = parseFloat(result.energyValue || '0');
+				const energyValueMJ = energyValueGJ * 1000; // GJ → MJ
 
-			// burnTime = energyValue(MJ) / energyProduction(MW) (en secondes)
-			const burnTime = energyValueMJ / energyProductionMW;
+				// burnTime = energyValue(MJ) / energyProduction(MW) (en secondes)
+				const burnTime = energyValueMJ / energyProductionMW;
 
-			// consommation par minute = 60 / burnTime
-			const consumptionPerMinute = 60 / burnTime;
+				// consommation par minute = 60 / burnTime
+				const consumptionPerMinute = 60 / burnTime;
 
-			return {
-				id: result.id,
-				name: result.name,
-				className: result.className,
-				type: result.type,
-				energyProduction: result.energyProduction || undefined,
-				energyProductionMW,
-				burnTime,
-				consumptionPerMinute
-			};
-		});
+				return {
+					id: result.id,
+					name: result.name,
+					className: result.className,
+					type: result.type,
+					energyProduction: result.energyProduction || undefined,
+					energyProductionMW,
+					burnTime,
+					consumptionPerMinute
+				};
+			});
 
-		return generators;
+			return generators;
+		} catch (error) {
+			console.warn('No generators found for game:', gameId, 'item:', itemId, 'Error:', error);
+			return [];
+		}
 	}
 
 	// Building association methods for import

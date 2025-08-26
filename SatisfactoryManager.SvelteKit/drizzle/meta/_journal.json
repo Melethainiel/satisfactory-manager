@@ -127,6 +127,13 @@
       "when": 1756230020342,
       "tag": "0017_add_item_building_associations",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1756232620220,
+      "tag": "0018_fix_production_instances_building_version",
+      "breakpoints": true
     }
   ]
 }

@@ -313,13 +313,14 @@ class ItemService implements IItemService {
 				})
 				.from(buildingVersions)
 				.innerJoin(buildings, eq(buildingVersions.buildingId, buildings.id))
-				.innerJoin(modules, eq(buildings.moduleId, modules.id))
+				.innerJoin(moduleVersions, eq(buildingVersions.moduleVersionId, moduleVersions.id))
+				.innerJoin(modules, eq(moduleVersions.moduleId, modules.id))
 				.innerJoin(
 					moduleGames,
 					and(
 						eq(moduleGames.gameId, gameId),
 						eq(moduleGames.moduleId, modules.id),
-						eq(buildingVersions.moduleVersionId, moduleGames.selectedVersionId),
+						eq(moduleGames.selectedVersionId, moduleVersions.id),
 						isNotNull(moduleGames.selectedVersionId)
 					)
 				)
@@ -348,19 +349,24 @@ class ItemService implements IItemService {
 				})
 				.from(buildingVersions)
 				.innerJoin(buildings, eq(buildingVersions.buildingId, buildings.id))
-				.innerJoin(modules, eq(buildings.moduleId, modules.id))
+				.innerJoin(moduleVersions, eq(buildingVersions.moduleVersionId, moduleVersions.id))
+				.innerJoin(modules, eq(moduleVersions.moduleId, modules.id))
 				.innerJoin(
 					moduleGames,
 					and(
 						eq(moduleGames.gameId, gameId),
 						eq(moduleGames.moduleId, modules.id),
-						eq(buildingVersions.moduleVersionId, moduleGames.selectedVersionId),
+						eq(moduleGames.selectedVersionId, moduleVersions.id),
 						isNotNull(moduleGames.selectedVersionId)
 					)
 				)
 				.innerJoin(
 					itemVersions,
-					and(eq(itemVersions.itemId, itemId), sql`${itemVersions.energyValue} > 0`)
+					and(
+						eq(itemVersions.itemId, itemId),
+						eq(itemVersions.moduleVersionId, moduleVersions.id),
+						sql`${itemVersions.energyValue} > 0`
+					)
 				)
 				.where(and(eq(buildings.type, 'Generator'), sql`${buildingVersions.energyProduction} > 0`));
 

@@ -172,10 +172,7 @@ class ProductionInstanceService implements IProductionInstanceService {
 					eq(buildingVersions.moduleVersionId, moduleGames.selectedVersionId)
 				)
 			)
-			.leftJoin(
-				fuelItems,
-				eq(productionInstances.fuelItemId, fuelItems.id)
-			)
+			.leftJoin(fuelItems, eq(productionInstances.fuelItemId, fuelItems.id))
 			.where(eq(productionInstances.id, id))
 			.limit(1);
 

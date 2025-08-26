@@ -53,7 +53,9 @@
 	}
 
 	// Expose methods for external use using Svelte 5 syntax
-	export const open: EditProductionInstanceDialogHandle['open'] = function (instance: ProductionInstanceData) {
+	export const open: EditProductionInstanceDialogHandle['open'] = function (
+		instance: ProductionInstanceData
+	) {
 		currentInstance = instance;
 		resetForm(instance);
 		dialog?.showModal();
@@ -112,7 +114,9 @@
 							<div class="font-medium">{currentInstance.recipe.displayName}</div>
 							{#if currentInstance.recipeVersion}
 								<div class="text-sm text-base-content/70">
-									{$t('production.manufacturing_duration')}: {parseFloat(currentInstance.recipeVersion.manufacturingDuration || '0')}s
+									{$t('production.manufacturing_duration')}: {parseFloat(
+										currentInstance.recipeVersion.manufacturingDuration || '0'
+									)}s
 								</div>
 							{/if}
 						</div>
@@ -208,7 +212,10 @@
 					<button
 						type="submit"
 						class="btn btn-primary"
-						disabled={gameState.isLoading || buildingCount <= 0 || efficiencyRatio <= 0 || efficiencyRatio > 2.5}
+						disabled={gameState.isLoading ||
+							buildingCount <= 0 ||
+							efficiencyRatio <= 0 ||
+							efficiencyRatio > 2.5}
 					>
 						{#if gameState.isLoading}
 							<span class="loading loading-xs loading-spinner"></span>
@@ -221,9 +228,11 @@
 	</div>
 
 	<form method="dialog" class="modal-backdrop">
-		<button 
-			aria-label={$t('common.close')} 
-			onclick={() => { currentInstance = null; }}
+		<button
+			aria-label={$t('common.close')}
+			onclick={() => {
+				currentInstance = null;
+			}}
 		>
 			{$t('common.close')}
 		</button>

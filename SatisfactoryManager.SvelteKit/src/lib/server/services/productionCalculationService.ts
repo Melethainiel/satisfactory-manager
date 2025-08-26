@@ -265,9 +265,7 @@ export class ProductionCalculationService {
 			.filter((i) => i.extractedItemId)
 			.map((i) => i.extractedItemId!);
 
-		const fuelItemIds = instancesQuery
-			.filter((i) => i.fuelItemId)
-			.map((i) => i.fuelItemId!);
+		const fuelItemIds = instancesQuery.filter((i) => i.fuelItemId).map((i) => i.fuelItemId!);
 
 		// Get gameId from the first instance (all instances in a site have the same gameId)
 		const gameId = instancesQuery.length > 0 ? instancesQuery[0].site?.gameId : null;
@@ -334,10 +332,7 @@ export class ProductionCalculationService {
 						.leftJoin(modules, eq(items.moduleId, modules.id))
 						.leftJoin(
 							moduleGames,
-							and(
-								eq(moduleGames.moduleId, modules.id),
-								eq(moduleGames.gameId, gameId)
-							)
+							and(eq(moduleGames.moduleId, modules.id), eq(moduleGames.gameId, gameId))
 						)
 						.where(
 							and(
@@ -439,16 +434,17 @@ export class ProductionCalculationService {
 					const buildingCount = parseFloat(instance.buildingCount);
 					const efficiency = parseFloat(instance.efficiencyRatio);
 					const powerProduction = parseFloat(instance.buildingVersion?.energyProduction || '0');
-					
+
 					// Calculate fuel consumption using correct formula: 60 / (Item.EnergyValue / Building.EnergyProduction)
 					// Convert GJ to MJ: Item.EnergyValue * 1000
 					const fuelEnergyValueMJ = (fuelItem.energyValue || 0) * 1000; // Convert GJ to MJ
 					const buildingEnergyProductionMW = powerProduction; // Already in MW
-					
+
 					let fuelConsumptionRate = 0;
 					if (fuelEnergyValueMJ > 0 && buildingEnergyProductionMW > 0) {
 						// Formula: 60 / (Item.EnergyValue / Building.EnergyProduction)
-						const fuelConsumptionPerBuilding = 60 / (fuelEnergyValueMJ / buildingEnergyProductionMW);
+						const fuelConsumptionPerBuilding =
+							60 / (fuelEnergyValueMJ / buildingEnergyProductionMW);
 						fuelConsumptionRate = fuelConsumptionPerBuilding * buildingCount * efficiency;
 					}
 

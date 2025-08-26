@@ -221,7 +221,6 @@
 					</div>
 				</div>
 			{/if}
-
 		{:else if getInstanceType(instance) === 'extract'}
 			<!-- EXTRACT: Show extraction rate + power consumption -->
 			{#if productionInfo}
@@ -273,7 +272,6 @@
 					</div>
 				</div>
 			{/if}
-
 		{:else if getInstanceType(instance) === 'power'}
 			<!-- POWER: Show power production + fuel consumption -->
 			<div class="mt-3 grid grid-cols-1 gap-3">
@@ -329,7 +327,6 @@
 				</div>
 			</div>
 		{/if}
-
 
 		<!-- Notes -->
 		{#if instance.notes}

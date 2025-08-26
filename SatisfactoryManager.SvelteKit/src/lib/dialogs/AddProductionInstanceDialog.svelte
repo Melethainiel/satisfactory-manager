@@ -242,11 +242,9 @@
 
 	// Expose methods for external use using Svelte 5 syntax
 	export async function open(siteId: string): Promise<void> {
-		console.log('🔍 AddRecipeInstanceDialog.open() called with siteId:', siteId);
 		currentSiteId = siteId;
 		resetForm();
 		dialog?.showModal();
-		console.log('🔍 Dialog should now be open, dialog element:', dialog);
 	}
 </script>
 
@@ -513,9 +511,9 @@
 						type="number"
 						class="input-bordered input w-full"
 						bind:value={buildingCount}
-						min="0.1"
+						min="1"
 						max="1000"
-						step="0.1"
+						step="1"
 						required
 					/>
 				</div>

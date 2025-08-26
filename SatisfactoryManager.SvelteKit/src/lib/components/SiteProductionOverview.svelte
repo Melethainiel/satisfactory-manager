@@ -7,6 +7,8 @@
 	import ProductionInstanceCard from './ProductionInstanceCard.svelte';
 	import AddProductionInstanceDialog from '$lib/dialogs/AddProductionInstanceDialog.svelte';
 	import type { AddProductionInstanceDialogHandle } from '$lib/dialogs/AddProductionInstanceDialogHandle';
+	import EditProductionInstanceDialog from '$lib/dialogs/EditProductionInstanceDialog.svelte';
+	import type { EditProductionInstanceDialogHandle } from '$lib/dialogs/EditProductionInstanceDialogHandle';
 	import ConfirmDialog from '$lib/dialogs/ConfirmDialog.svelte';
 	import type { ConfirmDialogHandle } from '$lib/dialogs/ConfirmDialogHandle';
 
@@ -22,6 +24,7 @@
 
 	// Dialog refs
 	let addRecipeDialogRef: AddProductionInstanceDialogHandle | null = $state(null);
+	let editInstanceDialogRef: EditProductionInstanceDialogHandle | null = $state(null);
 	let confirmDialogRef: ConfirmDialogHandle | null = $state(null);
 
 	// Check permissions
@@ -65,8 +68,9 @@
 	}
 
 	function handleEditInstance(instance: ProductionInstanceData) {
-		// TODO: Open edit dialog
-		console.log('Edit instance:', instance);
+		if (editInstanceDialogRef?.open) {
+			editInstanceDialogRef.open(instance);
+		}
 	}
 
 	function handleDeleteInstance(instance: ProductionInstanceData) {
@@ -153,4 +157,5 @@
 
 <!-- Dialogs -->
 <AddProductionInstanceDialog bind:this={addRecipeDialogRef} />
+<EditProductionInstanceDialog bind:this={editInstanceDialogRef} />
 <ConfirmDialog bind:this={confirmDialogRef} />

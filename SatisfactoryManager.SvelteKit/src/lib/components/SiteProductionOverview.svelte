@@ -169,7 +169,7 @@
 	function handleAddRecipe() {
 		// Désactiver immédiatement les animations pour éviter les replays
 		isInitialLoad = false;
-		
+
 		if (addRecipeDialogRef?.open) {
 			addRecipeDialogRef.open(siteId);
 		}
@@ -178,7 +178,7 @@
 	function handleEditInstance(instance: ProductionInstanceData) {
 		// Désactiver les animations pour éviter les replays
 		isInitialLoad = false;
-		
+
 		if (editInstanceDialogRef?.open) {
 			editInstanceDialogRef.open(instance);
 		}
@@ -187,7 +187,7 @@
 	function handleDeleteInstance(instance: ProductionInstanceData) {
 		// Désactiver les animations pour éviter les replays
 		isInitialLoad = false;
-		
+
 		confirmDialogRef?.open({
 			title: $t('productionInstances.delete_instance'),
 			message: $t('productionInstances.delete_instance_confirm', {
@@ -252,7 +252,7 @@
 							{formatEnergy(energy.netBalance).unit}
 						</span>
 					{:else if energy}
-						<span class="badge badge-neutral font-mono">
+						<span class="badge font-mono badge-neutral">
 							±{formatEnergy(Math.abs(energy.netBalance)).formatted}
 							{formatEnergy(Math.abs(energy.netBalance)).unit}
 						</span>
@@ -269,7 +269,7 @@
 
 		{#if canManage()}
 			<button
-				class="btn btn-primary transition-transform hover:scale-105"
+				class="btn transition-transform btn-primary hover:scale-105"
 				onclick={() => {
 					console.log('🔍 Add Recipe button clicked');
 					handleAddRecipe();
@@ -283,11 +283,13 @@
 		{/if}
 	</div>
 
-
 	<!-- Resource Balance Section -->
 	{#if resourceBalance() && !gameState.isLoading}
 		{@const balance = resourceBalance()}
-		<div class="card border border-base-300 bg-base-100" in:fly={{ y: 20, duration: 400, delay: 500 }}>
+		<div
+			class="card border border-base-300 bg-base-100"
+			in:fly={{ y: 20, duration: 400, delay: 500 }}
+		>
 			<div class="card-body">
 				<!-- Collapsible header -->
 				<details bind:open={isResourceDetailsOpen} class="group">
@@ -406,8 +408,8 @@
 					{$t('productionInstances.no_instances_description')}
 				</p>
 				{#if canManage()}
-					<button 
-						class="btn btn-primary transition-transform hover:scale-105" 
+					<button
+						class="btn transition-transform btn-primary hover:scale-105"
 						onclick={handleAddRecipe}
 						in:fly={{ y: 20, duration: 400, delay: 600 }}
 					>
@@ -421,79 +423,83 @@
 		<div class="relative" in:fade={{ duration: 300, delay: 600 }}>
 			<!-- Loading overlay -->
 			{#if gameState.isLoading}
-				<div class="absolute inset-0 bg-base-100/80 flex items-center justify-center z-10 rounded-lg">
+				<div
+					class="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-base-100/80"
+				>
 					<span class="loading loading-lg loading-spinner"></span>
 				</div>
 			{/if}
-			
-			<div class="{gameState.isLoading ? 'opacity-50 pointer-events-none' : ''}">
+
+			<div class={gameState.isLoading ? 'pointer-events-none opacity-50' : ''}>
 				<h3 class="mb-4 font-medium" in:fly={{ x: -20, duration: 400, delay: 700 }}>
 					{$t('productionInstances.recipe_instances')}
 				</h3>
 
-			<!-- Search Bar for Production Instances -->
-			{#if gameState.siteProductionInstances.length >= 1}
-				<div class="relative mb-6" in:fly={{ y: 20, duration: 400, delay: 800 }}>
-					<div class="relative">
-						<Icon
-							src={MagnifyingGlass}
-							class="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-base-content/50"
-						/>
-						<input
-							type="text"
-							bind:value={searchTerm}
-							placeholder={$t('productionInstances.search_instances')}
-							class="input-bordered input w-full pr-10 pl-10"
-						/>
-						{#if searchTerm}
-							<button
-								onclick={clearSearch}
-								class="btn absolute top-1/2 right-1 btn-circle -translate-y-1/2 btn-ghost btn-sm hover:bg-base-300"
-								title={$t('productionInstances.clear_search')}
-								in:fade={{ duration: 150 }}
-								out:fade={{ duration: 100 }}
-							>
-								<Icon src={XMark} class="size-3" />
-							</button>
-						{/if}
-					</div>
-				</div>
-			{/if}
-
-			<!-- Production Instances Grid -->
-			{#if sortedFilteredInstances().length === 0 && searchTerm}
-				<div class="py-6 text-center" in:fade={{ duration: 200 }}>
-					<p class="text-base-content/70">{$t('productionInstances.no_instances_found')}</p>
-					<button class="btn mt-2 btn-ghost btn-sm" onclick={clearSearch}>
-						{$t('productionInstances.clear_search')}
-					</button>
-				</div>
-			{:else}
-				<div 
-					class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
-					in:fade={{ duration: 300, delay: 900 }}
-				>
-					{#each sortedFilteredInstances() as instance, index (instance.id)}
-						<div
-							animate:flip={{ duration: 300 }}
-							in:fly={isInitialLoad ? { 
-								y: 30,
-								duration: 400,
-								delay: 1000 + index * 100,
-								easing: cubicOut
-							} : undefined}
-							out:fly={{ y: -10, duration: 200, easing: cubicOut }}
-							class="transition-all duration-300 hover:scale-105 hover:shadow-xl h-full"
-						>
-							<ProductionInstanceCard
-								{instance}
-								onEdit={handleEditInstance}
-								onDelete={handleDeleteInstance}
+				<!-- Search Bar for Production Instances -->
+				{#if gameState.siteProductionInstances.length >= 1}
+					<div class="relative mb-6" in:fly={{ y: 20, duration: 400, delay: 800 }}>
+						<div class="relative">
+							<Icon
+								src={MagnifyingGlass}
+								class="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-base-content/50"
 							/>
+							<input
+								type="text"
+								bind:value={searchTerm}
+								placeholder={$t('productionInstances.search_instances')}
+								class="input-bordered input w-full pr-10 pl-10"
+							/>
+							{#if searchTerm}
+								<button
+									onclick={clearSearch}
+									class="btn absolute top-1/2 right-1 btn-circle -translate-y-1/2 btn-ghost btn-sm hover:bg-base-300"
+									title={$t('productionInstances.clear_search')}
+									in:fade={{ duration: 150 }}
+									out:fade={{ duration: 100 }}
+								>
+									<Icon src={XMark} class="size-3" />
+								</button>
+							{/if}
 						</div>
-					{/each}
-				</div>
-			{/if}
+					</div>
+				{/if}
+
+				<!-- Production Instances Grid -->
+				{#if sortedFilteredInstances().length === 0 && searchTerm}
+					<div class="py-6 text-center" in:fade={{ duration: 200 }}>
+						<p class="text-base-content/70">{$t('productionInstances.no_instances_found')}</p>
+						<button class="btn mt-2 btn-ghost btn-sm" onclick={clearSearch}>
+							{$t('productionInstances.clear_search')}
+						</button>
+					</div>
+				{:else}
+					<div
+						class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
+						in:fade={{ duration: 300, delay: 900 }}
+					>
+						{#each sortedFilteredInstances() as instance, index (instance.id)}
+							<div
+								animate:flip={{ duration: 300 }}
+								in:fly={isInitialLoad
+									? {
+											y: 30,
+											duration: 400,
+											delay: 1000 + index * 100,
+											easing: cubicOut
+										}
+									: undefined}
+								out:fly={{ y: -10, duration: 200, easing: cubicOut }}
+								class="h-full transition-all duration-300 hover:scale-105 hover:shadow-xl"
+							>
+								<ProductionInstanceCard
+									{instance}
+									onEdit={handleEditInstance}
+									onDelete={handleDeleteInstance}
+								/>
+							</div>
+						{/each}
+					</div>
+				{/if}
 			</div>
 		</div>
 	{/if}

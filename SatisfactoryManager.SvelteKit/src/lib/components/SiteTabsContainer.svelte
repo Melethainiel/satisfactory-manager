@@ -82,18 +82,18 @@
 		<!-- Radio Tab Navigation -->
 		<div class="tabs tabs-box">
 			{#each gameState.gameSites as site, index (site.id)}
-					<input
-						type="radio"
-						name={tabGroupName()}
-						class="tab transition-all duration-200 ease-in-out hover:bg-base-200"
-						aria-label={site.name}
-						checked={gameState.selectedSiteId === site.id}
-						onchange={() => handleSiteSelect(site.id)}
-						in:fly={{ x: -10, duration: 200, delay: index * 30 }}
-						out:fade={{ duration: 100 }}
-					/>
-				{/each}
-			</div>
+				<input
+					type="radio"
+					name={tabGroupName()}
+					class="tab transition-all duration-200 ease-in-out hover:bg-base-200"
+					aria-label={site.name}
+					checked={gameState.selectedSiteId === site.id}
+					onchange={() => handleSiteSelect(site.id)}
+					in:fly={{ x: -10, duration: 200, delay: index * 30 }}
+					out:fade={{ duration: 100 }}
+				/>
+			{/each}
+		</div>
 
 		<!-- Site Content Area -->
 		<div class="relative min-h-[200px]">

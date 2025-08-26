@@ -30,6 +30,17 @@
 		}
 	});
 
+	// Auto-select building when only one is available
+	$effect(() => {
+		if (
+			itemState.availableBuildings.length === 1 &&
+			selectedBuildingId === '' &&
+			!itemState.isLoadingBuildings
+		) {
+			selectedBuildingId = itemState.availableBuildings[0].id;
+		}
+	});
+
 	// Search functionality using itemState
 	async function searchItems(query: string) {
 		if (!query.trim() || !gameState.selectedGameId) {

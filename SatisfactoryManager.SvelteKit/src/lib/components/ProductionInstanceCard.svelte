@@ -144,9 +144,9 @@
 </script>
 
 <div
-	class="card-compact card border border-base-300 bg-base-100 shadow-sm transition-shadow hover:shadow-md h-full flex flex-col"
+	class="card-compact card flex h-full flex-col border border-base-300 bg-base-100 shadow-sm transition-shadow hover:shadow-md"
 >
-	<div class="card-body flex-1 flex flex-col">
+	<div class="card-body flex flex-1 flex-col">
 		<!-- Header with Recipe Name and Actions -->
 		<div class="flex items-start justify-between gap-2">
 			<div class="min-w-0 flex-1">
@@ -182,42 +182,230 @@
 		</div>
 
 		<!-- Production Information - Different display based on type -->
-		<div class="flex-1 flex flex-col justify-start">
-		{#if getInstanceType(instance) === 'craft'}
-			<!-- CRAFT: Show primary production + ingredients/products totals + power consumption -->
-			{#if productionInfo}
-				<div class="mt-3 grid grid-cols-1 gap-3">
-					<!-- Primary Production -->
-					<div class="tooltip tooltip-top">
-						{#if getProductionTooltip().length > 0}
-							<div class="tooltip-content">
-								{#if getProductionTooltip().length === 1}
-									Solde net: {getProductionTooltip()[0].balance}
-								{:else}
-									<div class="mb-1 text-xs font-medium">Solde net:</div>
-									<ul class="list-outside list-disc space-y-1 pl-4">
-										{#each getProductionTooltip() as item}
-											<li class="text-xs">{item.name}: {item.balance}</li>
-										{/each}
-									</ul>
+		<div class="flex flex-1 flex-col justify-start">
+			{#if getInstanceType(instance) === 'craft'}
+				<!-- CRAFT: Show primary production + ingredients/products totals + power consumption -->
+				{#if productionInfo}
+					<div class="mt-3 grid grid-cols-1 gap-3">
+						<!-- Primary Production -->
+						<div class="tooltip tooltip-top">
+							{#if getProductionTooltip().length > 0}
+								<div class="tooltip-content">
+									{#if getProductionTooltip().length === 1}
+										Solde net: {getProductionTooltip()[0].balance}
+									{:else}
+										<div class="mb-1 text-xs font-medium">Solde net:</div>
+										<ul class="list-outside list-disc space-y-1 pl-4">
+											{#each getProductionTooltip() as item}
+												<li class="text-xs">{item.name}: {item.balance}</li>
+											{/each}
+										</ul>
+									{/if}
+								</div>
+							{/if}
+							<div class="rounded bg-base-200 p-3">
+								<div class="mb-1 text-xs font-medium opacity-70">
+									{$t('productionInstances.production_rate')}
+								</div>
+								<div class="font-mono text-sm">
+									<span class="font-semibold">{formatRate(productionInfo()?.actualRate || 0)}</span>
+									<span class="opacity-70">/{$t('common.minute')}</span>
+								</div>
+								<div class="mt-1 text-xs opacity-60">
+									{productionInfo()?.item.displayName || 'Unknown'}
+								</div>
+							</div>
+						</div>
+
+						<!-- Total Ingredients -->
+						{#if instance.ingredients && instance.ingredients.length > 0}
+							<div class="tooltip tooltip-top">
+								{#if getConsumptionTooltip().length > 0}
+									<div class="tooltip-content">
+										{#if getConsumptionTooltip().length === 1}
+											Solde net: {getConsumptionTooltip()[0].balance}
+										{:else}
+											<div class="mb-1 text-xs font-medium">Solde net:</div>
+											<ul class="list-outside list-disc space-y-1 pl-4">
+												{#each getConsumptionTooltip() as item}
+													<li class="text-xs">{item.name}: {item.balance}</li>
+												{/each}
+											</ul>
+										{/if}
+									</div>
 								{/if}
+								<div class="rounded bg-base-200 p-3">
+									<div class="mb-1 text-xs font-medium opacity-70">
+										{$t('productionInstances.total_ingredients')}
+									</div>
+									<div class="flex flex-col gap-1">
+										{#each instance.ingredients as ingredient (ingredient.item.className)}
+											<div class="flex justify-between text-xs">
+												<span>{ingredient.item.displayName}</span>
+												<span class="font-mono font-semibold">
+													{formatRate(ingredient.actualRate)}/{$t('common.minute')}
+												</span>
+											</div>
+										{/each}
+									</div>
+								</div>
 							</div>
 						{/if}
-						<div class="rounded bg-base-200 p-3">
-							<div class="mb-1 text-xs font-medium opacity-70">
-								{$t('productionInstances.production_rate')}
+
+						<!-- Total Products (if multiple) -->
+						{#if instance.products && instance.products.length > 1}
+							<div class="tooltip tooltip-top">
+								{#if getProductionTooltip().length > 0}
+									<div class="tooltip-content">
+										<div class="mb-1 text-xs font-medium">Solde net:</div>
+										<ul class="list-outside list-disc space-y-1 pl-4">
+											{#each getProductionTooltip() as item}
+												<li class="text-xs">{item.name}: {item.balance}</li>
+											{/each}
+										</ul>
+									</div>
+								{/if}
+								<div class="rounded bg-base-200 p-3">
+									<div class="mb-1 text-xs font-medium opacity-70">
+										{$t('productionInstances.total_products')}
+									</div>
+									<div class="flex flex-col gap-1">
+										{#each instance.products as product (product.item.className)}
+											<div class="flex justify-between text-xs">
+												<span>{product.item.displayName}</span>
+												<span class="font-mono font-semibold">
+													{formatRate(product.actualRate)}/{$t('common.minute')}
+												</span>
+											</div>
+										{/each}
+									</div>
+								</div>
 							</div>
-							<div class="font-mono text-sm">
-								<span class="font-semibold">{formatRate(productionInfo()?.actualRate || 0)}</span>
-								<span class="opacity-70">/{$t('common.minute')}</span>
+						{/if}
+
+						<!-- Power Consumption -->
+						{#if instance.production.powerConsumption > 0}
+							<div class="rounded bg-base-200 p-3">
+								<div class="mb-1 text-xs font-medium opacity-70">
+									⚡ {$t('productionInstances.power_consumption')}
+								</div>
+								<div class="font-mono text-sm font-semibold text-warning">
+									{formatPower(instance.production.powerConsumption)} MW
+								</div>
 							</div>
-							<div class="mt-1 text-xs opacity-60">
-								{productionInfo()?.item.displayName || 'Unknown'}
+						{/if}
+
+						<!-- Building Details -->
+						<div class="grid grid-cols-2 gap-3">
+							<div>
+								<div class="text-xs font-medium opacity-70">
+									{$t('productionInstances.building_count')}
+								</div>
+								<div class="font-mono text-sm font-semibold">
+									{parseFloat(instance.buildingCount)}
+								</div>
+							</div>
+							<div>
+								<div class="text-xs font-medium opacity-70">
+									{$t('productionInstances.efficiency')}
+								</div>
+								<div class="font-mono text-sm font-semibold {utilizationColor()}">
+									{efficiencyPercent()}%
+								</div>
 							</div>
 						</div>
 					</div>
+				{/if}
+			{:else if getInstanceType(instance) === 'extract'}
+				<!-- EXTRACT: Show extraction rate + power consumption -->
+				{#if productionInfo}
+					<div class="mt-3 grid grid-cols-1 gap-3">
+						<!-- Extraction Rate -->
+						<div class="tooltip tooltip-top">
+							{#if getProductionTooltip().length > 0}
+								<div class="tooltip-content">
+									{#if getProductionTooltip().length === 1}
+										Solde net: {getProductionTooltip()[0].balance}
+									{:else}
+										<div class="mb-1 text-xs font-medium">Solde net:</div>
+										<ul class="list-outside list-disc space-y-1 pl-4">
+											{#each getProductionTooltip() as item}
+												<li class="text-xs">{item.name}: {item.balance}</li>
+											{/each}
+										</ul>
+									{/if}
+								</div>
+							{/if}
+							<div class="rounded bg-base-200 p-3">
+								<div class="mb-1 text-xs font-medium opacity-70">
+									⛏️ {$t('productionInstances.extraction_rate')}
+								</div>
+								<div class="font-mono text-sm">
+									<span class="font-semibold">{formatRate(productionInfo()?.actualRate || 0)}</span>
+									<span class="opacity-70">/{$t('common.minute')}</span>
+								</div>
+								<div class="mt-1 text-xs opacity-60">
+									{productionInfo()?.item.displayName || 'Unknown'}
+									{#if instance.extractorPurity}
+										<span
+											class="ml-2 rounded bg-primary/20 px-1 py-0.5 text-xs font-medium text-primary"
+										>
+											{$t(`production.purity_${instance.extractorPurity.toLowerCase()}`)}
+										</span>
+									{/if}
+								</div>
+							</div>
+						</div>
 
-					<!-- Total Ingredients -->
+						<!-- Power Consumption -->
+						{#if instance.production.powerConsumption > 0}
+							<div class="rounded bg-base-200 p-3">
+								<div class="mb-1 text-xs font-medium opacity-70">
+									⚡ {$t('productionInstances.power_consumption')}
+								</div>
+								<div class="font-mono text-sm font-semibold text-warning">
+									{formatPower(instance.production.powerConsumption)} MW
+								</div>
+							</div>
+						{/if}
+
+						<!-- Building Details -->
+						<div class="grid grid-cols-2 gap-3">
+							<div>
+								<div class="text-xs font-medium opacity-70">
+									{$t('productionInstances.building_count')}
+								</div>
+								<div class="font-mono text-sm font-semibold">
+									{parseFloat(instance.buildingCount)}
+								</div>
+							</div>
+							<div>
+								<div class="text-xs font-medium opacity-70">
+									{$t('productionInstances.efficiency')}
+								</div>
+								<div class="font-mono text-sm font-semibold {utilizationColor()}">
+									{efficiencyPercent()}%
+								</div>
+							</div>
+						</div>
+					</div>
+				{/if}
+			{:else if getInstanceType(instance) === 'power'}
+				<!-- POWER: Show power production + fuel consumption -->
+				<div class="mt-3 grid grid-cols-1 gap-3">
+					<!-- Power Production -->
+					{#if instance.production.powerProduction > 0}
+						<div class="rounded bg-base-200 p-3">
+							<div class="mb-1 text-xs font-medium opacity-70">
+								⚡ {$t('productionInstances.power_production')}
+							</div>
+							<div class="font-mono text-sm font-semibold text-success">
+								{formatPower(instance.production.powerProduction)} MW
+							</div>
+						</div>
+					{/if}
+
+					<!-- Fuel Consumption -->
 					{#if instance.ingredients && instance.ingredients.length > 0}
 						<div class="tooltip tooltip-top">
 							{#if getConsumptionTooltip().length > 0}
@@ -236,7 +424,7 @@
 							{/if}
 							<div class="rounded bg-base-200 p-3">
 								<div class="mb-1 text-xs font-medium opacity-70">
-									{$t('productionInstances.total_ingredients')}
+									🔥 {$t('productionInstances.fuel_consumption')}
 								</div>
 								<div class="flex flex-col gap-1">
 									{#each instance.ingredients as ingredient (ingredient.item.className)}
@@ -252,49 +440,6 @@
 						</div>
 					{/if}
 
-					<!-- Total Products (if multiple) -->
-					{#if instance.products && instance.products.length > 1}
-						<div class="tooltip tooltip-top">
-							{#if getProductionTooltip().length > 0}
-								<div class="tooltip-content">
-									<div class="mb-1 text-xs font-medium">Solde net:</div>
-									<ul class="list-outside list-disc space-y-1 pl-4">
-										{#each getProductionTooltip() as item}
-											<li class="text-xs">{item.name}: {item.balance}</li>
-										{/each}
-									</ul>
-								</div>
-							{/if}
-							<div class="rounded bg-base-200 p-3">
-								<div class="mb-1 text-xs font-medium opacity-70">
-									{$t('productionInstances.total_products')}
-								</div>
-								<div class="flex flex-col gap-1">
-									{#each instance.products as product (product.item.className)}
-										<div class="flex justify-between text-xs">
-											<span>{product.item.displayName}</span>
-											<span class="font-mono font-semibold">
-												{formatRate(product.actualRate)}/{$t('common.minute')}
-											</span>
-										</div>
-									{/each}
-								</div>
-							</div>
-						</div>
-					{/if}
-
-					<!-- Power Consumption -->
-					{#if instance.production.powerConsumption > 0}
-						<div class="rounded bg-base-200 p-3">
-							<div class="mb-1 text-xs font-medium opacity-70">
-								⚡ {$t('productionInstances.power_consumption')}
-							</div>
-							<div class="font-mono text-sm font-semibold text-warning">
-								{formatPower(instance.production.powerConsumption)} MW
-							</div>
-						</div>
-					{/if}
-
 					<!-- Building Details -->
 					<div class="grid grid-cols-2 gap-3">
 						<div>
@@ -316,161 +461,18 @@
 					</div>
 				</div>
 			{/if}
-		{:else if getInstanceType(instance) === 'extract'}
-			<!-- EXTRACT: Show extraction rate + power consumption -->
-			{#if productionInfo}
-				<div class="mt-3 grid grid-cols-1 gap-3">
-					<!-- Extraction Rate -->
-					<div class="tooltip tooltip-top">
-						{#if getProductionTooltip().length > 0}
-							<div class="tooltip-content">
-								{#if getProductionTooltip().length === 1}
-									Solde net: {getProductionTooltip()[0].balance}
-								{:else}
-									<div class="mb-1 text-xs font-medium">Solde net:</div>
-									<ul class="list-outside list-disc space-y-1 pl-4">
-										{#each getProductionTooltip() as item}
-											<li class="text-xs">{item.name}: {item.balance}</li>
-										{/each}
-									</ul>
-								{/if}
-							</div>
-						{/if}
-						<div class="rounded bg-base-200 p-3">
-							<div class="mb-1 text-xs font-medium opacity-70">
-								⛏️ {$t('productionInstances.extraction_rate')}
-							</div>
-							<div class="font-mono text-sm">
-								<span class="font-semibold">{formatRate(productionInfo()?.actualRate || 0)}</span>
-								<span class="opacity-70">/{$t('common.minute')}</span>
-							</div>
-							<div class="mt-1 text-xs opacity-60">
-								{productionInfo()?.item.displayName || 'Unknown'}
-								{#if instance.extractorPurity}
-									<span class="ml-2 rounded bg-primary/20 px-1 py-0.5 text-xs font-medium text-primary">
-										{$t(`production.purity_${instance.extractorPurity.toLowerCase()}`)}
-									</span>
-								{/if}
-							</div>
-						</div>
+
+			<!-- Notes -->
+			{#if instance.notes}
+				<div class="mt-3 border-t border-base-300 pt-3">
+					<div class="mb-1 text-xs font-medium opacity-70">
+						{$t('productionInstances.notes')}
 					</div>
-
-					<!-- Power Consumption -->
-					{#if instance.production.powerConsumption > 0}
-						<div class="rounded bg-base-200 p-3">
-							<div class="mb-1 text-xs font-medium opacity-70">
-								⚡ {$t('productionInstances.power_consumption')}
-							</div>
-							<div class="font-mono text-sm font-semibold text-warning">
-								{formatPower(instance.production.powerConsumption)} MW
-							</div>
-						</div>
-					{/if}
-
-					<!-- Building Details -->
-					<div class="grid grid-cols-2 gap-3">
-						<div>
-							<div class="text-xs font-medium opacity-70">
-								{$t('productionInstances.building_count')}
-							</div>
-							<div class="font-mono text-sm font-semibold">
-								{parseFloat(instance.buildingCount)}
-							</div>
-						</div>
-						<div>
-							<div class="text-xs font-medium opacity-70">
-								{$t('productionInstances.efficiency')}
-							</div>
-							<div class="font-mono text-sm font-semibold {utilizationColor()}">
-								{efficiencyPercent()}%
-							</div>
-						</div>
+					<div class="text-sm break-words opacity-80">
+						{instance.notes}
 					</div>
 				</div>
 			{/if}
-		{:else if getInstanceType(instance) === 'power'}
-			<!-- POWER: Show power production + fuel consumption -->
-			<div class="mt-3 grid grid-cols-1 gap-3">
-				<!-- Power Production -->
-				{#if instance.production.powerProduction > 0}
-					<div class="rounded bg-base-200 p-3">
-						<div class="mb-1 text-xs font-medium opacity-70">
-							⚡ {$t('productionInstances.power_production')}
-						</div>
-						<div class="font-mono text-sm font-semibold text-success">
-							{formatPower(instance.production.powerProduction)} MW
-						</div>
-					</div>
-				{/if}
-
-				<!-- Fuel Consumption -->
-				{#if instance.ingredients && instance.ingredients.length > 0}
-					<div class="tooltip tooltip-top">
-						{#if getConsumptionTooltip().length > 0}
-							<div class="tooltip-content">
-								{#if getConsumptionTooltip().length === 1}
-									Solde net: {getConsumptionTooltip()[0].balance}
-								{:else}
-									<div class="mb-1 text-xs font-medium">Solde net:</div>
-									<ul class="list-outside list-disc space-y-1 pl-4">
-										{#each getConsumptionTooltip() as item}
-											<li class="text-xs">{item.name}: {item.balance}</li>
-										{/each}
-									</ul>
-								{/if}
-							</div>
-						{/if}
-						<div class="rounded bg-base-200 p-3">
-							<div class="mb-1 text-xs font-medium opacity-70">
-								🔥 {$t('productionInstances.fuel_consumption')}
-							</div>
-							<div class="flex flex-col gap-1">
-								{#each instance.ingredients as ingredient (ingredient.item.className)}
-									<div class="flex justify-between text-xs">
-										<span>{ingredient.item.displayName}</span>
-										<span class="font-mono font-semibold">
-											{formatRate(ingredient.actualRate)}/{$t('common.minute')}
-										</span>
-									</div>
-								{/each}
-							</div>
-						</div>
-					</div>
-				{/if}
-
-				<!-- Building Details -->
-				<div class="grid grid-cols-2 gap-3">
-					<div>
-						<div class="text-xs font-medium opacity-70">
-							{$t('productionInstances.building_count')}
-						</div>
-						<div class="font-mono text-sm font-semibold">
-							{parseFloat(instance.buildingCount)}
-						</div>
-					</div>
-					<div>
-						<div class="text-xs font-medium opacity-70">
-							{$t('productionInstances.efficiency')}
-						</div>
-						<div class="font-mono text-sm font-semibold {utilizationColor()}">
-							{efficiencyPercent()}%
-						</div>
-					</div>
-				</div>
-			</div>
-		{/if}
-
-		<!-- Notes -->
-		{#if instance.notes}
-			<div class="mt-3 border-t border-base-300 pt-3">
-				<div class="mb-1 text-xs font-medium opacity-70">
-					{$t('productionInstances.notes')}
-				</div>
-				<div class="text-sm break-words opacity-80">
-					{instance.notes}
-				</div>
-			</div>
-		{/if}
 		</div>
 
 		<!-- Timestamp -->

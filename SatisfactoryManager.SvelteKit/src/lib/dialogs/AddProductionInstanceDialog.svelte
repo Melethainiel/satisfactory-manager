@@ -14,6 +14,7 @@
 	let selectedBuildingId = $state('');
 	let buildingCount = $state(1);
 	let efficiencyRatio = $state(1.0);
+	let extractorPurity = $state('Normal');
 	let notes = $state('');
 
 	// Search state - now using recipeState
@@ -131,6 +132,7 @@
 		selectedBuildingId = '';
 		buildingCount = 1;
 		efficiencyRatio = 1.0;
+		extractorPurity = 'Normal';
 		notes = '';
 		// Note: currentSiteId is NOT cleared here - it should persist during dialog session
 		showSearchResults = false;
@@ -220,9 +222,10 @@
 				instanceData.recipeVersionId = recipeVersionId;
 			}
 
-			// For extraction, include the extracted item ID
+			// For extraction, include the extracted item ID and purity
 			if (itemState.selectedProductionType === 'extract' && itemState.selectedItem?.id) {
 				instanceData.extractedItemId = itemState.selectedItem.id;
+				instanceData.extractorPurity = extractorPurity;
 			}
 
 			// For power generation, include the fuel item ID
@@ -495,6 +498,27 @@
 							<span class="label-text-alt">{$t('production.loading_buildings')}</span>
 						</div>
 					{/if}
+				</div>
+			{/if}
+
+			<!-- Purity Selection (only shown for extraction) -->
+			{#if itemState.selectedProductionType === 'extract'}
+				<div class="form-control">
+					<label class="label" for="purity-select">
+						<span class="label-text">{$t('production.purity')}</span>
+					</label>
+					<select
+						id="purity-select"
+						class="select-bordered select w-full"
+						bind:value={extractorPurity}
+					>
+						<option value="Impure">{$t('production.purity_impure')} (×0.5)</option>
+						<option value="Normal">{$t('production.purity_normal')} (×1.0)</option>
+						<option value="Pure">{$t('production.purity_pure')} (×2.0)</option>
+					</select>
+					<div class="label">
+						<span class="label-text-alt">{$t('production.purity_affects_extraction')}</span>
+					</div>
 				</div>
 			{/if}
 

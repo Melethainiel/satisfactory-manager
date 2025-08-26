@@ -69,6 +69,7 @@ export const PATCH: RequestHandler = async ({ request, params }) => {
 		if (data.buildingCount !== undefined) updateData.buildingCount = data.buildingCount.toString();
 		if (data.efficiencyRatio !== undefined)
 			updateData.efficiencyRatio = data.efficiencyRatio.toString();
+		if (data.extractorPurity !== undefined) updateData.extractorPurity = data.extractorPurity;
 		if (data.notes !== undefined) updateData.notes = data.notes || null;
 
 		const instance = await productionInstanceService.updateProductionInstance(

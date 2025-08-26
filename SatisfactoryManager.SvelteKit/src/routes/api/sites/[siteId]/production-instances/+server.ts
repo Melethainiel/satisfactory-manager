@@ -39,6 +39,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
 			buildingId: data.buildingId,
 			extractedItemId: data.extractedItemId || null, // For extraction instances
 			fuelItemId: data.fuelItemId || null, // For power generation instances
+			extractorPurity: data.extractorPurity || 'Normal', // For extraction purity
 			buildingCount: data.buildingCount.toString(),
 			efficiencyRatio: data.efficiencyRatio?.toString() || '1.000',
 			notes: data.notes || null

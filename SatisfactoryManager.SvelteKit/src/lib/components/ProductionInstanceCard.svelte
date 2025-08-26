@@ -345,6 +345,11 @@
 							</div>
 							<div class="mt-1 text-xs opacity-60">
 								{productionInfo()?.item.displayName || 'Unknown'}
+								{#if instance.extractorPurity}
+									<span class="ml-2 rounded bg-primary/20 px-1 py-0.5 text-xs font-medium text-primary">
+										{$t(`production.purity_${instance.extractorPurity.toLowerCase()}`)}
+									</span>
+								{/if}
 							</div>
 						</div>
 					</div>

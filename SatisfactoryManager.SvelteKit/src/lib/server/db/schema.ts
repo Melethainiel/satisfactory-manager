@@ -117,6 +117,9 @@ export const gameUserRoleEnum = pgEnum('game_user_role', [
 // Building types for Satisfactory buildings
 export const buildingTypeEnum = pgEnum('building_type', ['Generator', 'Constructor', 'Miner']);
 
+// Extractor purity levels
+export const extractorPurityEnum = pgEnum('extractor_purity', ['Impure', 'Normal', 'Pure']);
+
 // Item forms for Satisfactory items
 export const itemFormEnum = pgEnum('item_form', ['RF_SOLID', 'RF_LIQUID', 'RF_GAS']);
 
@@ -144,6 +147,7 @@ export const items = pgTable(
 export type Item = typeof items.$inferSelect;
 export type NewItem = typeof items.$inferInsert;
 export type ItemForm = (typeof itemFormEnum.enumValues)[number];
+export type ExtractorPurity = (typeof extractorPurityEnum.enumValues)[number];
 
 // Item versions table - version-specific item data
 export const itemVersions = pgTable('item_versions', {
@@ -467,6 +471,7 @@ export const productionInstances = pgTable('production_instances', {
 		.references(() => buildings.id, { onDelete: 'cascade' }),
 	extractedItemId: uuid('extracted_item_id').references(() => items.id, { onDelete: 'cascade' }),
 	fuelItemId: uuid('fuel_item_id').references(() => items.id, { onDelete: 'cascade' }),
+	extractorPurity: extractorPurityEnum('extractor_purity').default('Normal'),
 	buildingCount: numeric('building_count', { precision: 10, scale: 2 }).notNull(),
 	efficiencyRatio: numeric('efficiency_ratio', { precision: 10, scale: 3 })
 		.notNull()

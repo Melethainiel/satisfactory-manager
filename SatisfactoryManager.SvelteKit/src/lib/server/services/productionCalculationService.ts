@@ -15,6 +15,19 @@ import {
 } from '../db/schema';
 import { eq, and, inArray } from 'drizzle-orm';
 
+// Purity multipliers for extractors
+function getPurityMultiplier(purity: string | null): number {
+	switch (purity) {
+		case 'Impure':
+			return 0.5;
+		case 'Pure':
+			return 2.0;
+		case 'Normal':
+		default:
+			return 1.0;
+	}
+}
+
 export interface ProductionInstanceDetail {
 	id: string;
 	siteId: string;
@@ -22,6 +35,7 @@ export interface ProductionInstanceDetail {
 	buildingId: string;
 	extractedItemId: string | null;
 	fuelItemId: string | null;
+	extractorPurity: string | null;
 	buildingCount: string;
 	efficiencyRatio: string;
 	notes: string | null;
@@ -164,7 +178,8 @@ export class ProductionCalculationService {
 		// Handle extraction (no recipe)
 		if (!instance.recipeVersionId) {
 			const buildingOutput = parseFloat(instance.buildingVersion?.output || '0');
-			const totalRate = buildingOutput * buildingCount * efficiency;
+			const purityMultiplier = getPurityMultiplier(instance.extractorPurity);
+			const totalRate = buildingOutput * buildingCount * efficiency * purityMultiplier;
 
 			return {
 				itemsPerMinute: totalRate,
@@ -205,6 +220,7 @@ export class ProductionCalculationService {
 				buildingId: productionInstances.buildingId,
 				extractedItemId: productionInstances.extractedItemId,
 				fuelItemId: productionInstances.fuelItemId,
+				extractorPurity: productionInstances.extractorPurity,
 				buildingCount: productionInstances.buildingCount,
 				efficiencyRatio: productionInstances.efficiencyRatio,
 				notes: productionInstances.notes,
@@ -442,7 +458,8 @@ export class ProductionCalculationService {
 					const buildingCount = parseFloat(instance.buildingCount);
 					const efficiency = parseFloat(instance.efficiencyRatio);
 					const buildingOutput = parseFloat(instance.buildingVersion?.output || '0');
-					const actualRate = buildingOutput * buildingCount * efficiency;
+					const purityMultiplier = getPurityMultiplier(instance.extractorPurity);
+					const actualRate = buildingOutput * buildingCount * efficiency * purityMultiplier;
 
 					products = [
 						{
@@ -521,6 +538,7 @@ export class ProductionCalculationService {
 				buildingId: instance.buildingId,
 				extractedItemId: instance.extractedItemId,
 				fuelItemId: instance.fuelItemId,
+				extractorPurity: instance.extractorPurity,
 				buildingCount: instance.buildingCount,
 				efficiencyRatio: instance.efficiencyRatio,
 				notes: instance.notes,

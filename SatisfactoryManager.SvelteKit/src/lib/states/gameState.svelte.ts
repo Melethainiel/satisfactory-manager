@@ -41,6 +41,7 @@ export interface ProductionInstanceData {
 	buildingId: string;
 	extractedItemId: string | null;
 	fuelItemId: string | null;
+	extractorPurity: string | null;
 	buildingCount: string;
 	efficiencyRatio: string;
 	notes: string | null;

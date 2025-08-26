@@ -12,12 +12,14 @@
 	// Form state - only editable fields
 	let buildingCount = $state(1);
 	let efficiencyRatio = $state(1.0);
+	let extractorPurity = $state('Normal');
 	let notes = $state('');
 
 	// Reset form with instance data
 	function resetForm(instance: ProductionInstanceData) {
 		buildingCount = parseFloat(instance.buildingCount);
 		efficiencyRatio = parseFloat(instance.efficiencyRatio);
+		extractorPurity = instance.extractorPurity || 'Normal';
 		notes = instance.notes || '';
 	}
 
@@ -36,11 +38,16 @@
 		}
 
 		try {
-			const updateData = {
+			const updateData: any = {
 				buildingCount: buildingCount,
 				efficiencyRatio: efficiencyRatio,
 				notes: notes.trim() || undefined
 			};
+
+			// Add purity for extractors
+			if (currentInstance.extractedItemId) {
+				updateData.extractorPurity = extractorPurity;
+			}
 
 			await gameState.updateProductionInstance(currentInstance.id, updateData);
 
@@ -179,6 +186,27 @@
 						</div>
 					</div>
 				</div>
+
+				<!-- Purity Selection (only shown for extraction) -->
+				{#if currentInstance.extractedItemId}
+					<div class="form-control">
+						<label class="label" for="purity-select">
+							<span class="label-text">{$t('production.purity')}</span>
+						</label>
+						<select
+							id="purity-select"
+							class="select-bordered select w-full"
+							bind:value={extractorPurity}
+						>
+							<option value="Impure">{$t('production.purity_impure')} (×0.5)</option>
+							<option value="Normal">{$t('production.purity_normal')} (×1.0)</option>
+							<option value="Pure">{$t('production.purity_pure')} (×2.0)</option>
+						</select>
+						<div class="label">
+							<span class="label-text-alt">{$t('production.purity_affects_extraction')}</span>
+						</div>
+					</div>
+				{/if}
 
 				<!-- Notes -->
 				<div class="form-control">

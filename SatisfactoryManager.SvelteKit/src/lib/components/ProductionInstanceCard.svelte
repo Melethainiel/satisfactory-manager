@@ -144,9 +144,9 @@
 </script>
 
 <div
-	class="card-compact card border border-base-300 bg-base-100 shadow-sm transition-shadow hover:shadow-md"
+	class="card-compact card border border-base-300 bg-base-100 shadow-sm transition-shadow hover:shadow-md h-full flex flex-col"
 >
-	<div class="card-body">
+	<div class="card-body flex-1 flex flex-col">
 		<!-- Header with Recipe Name and Actions -->
 		<div class="flex items-start justify-between gap-2">
 			<div class="min-w-0 flex-1">
@@ -182,6 +182,7 @@
 		</div>
 
 		<!-- Production Information - Different display based on type -->
+		<div class="flex-1 flex flex-col justify-start">
 		{#if getInstanceType(instance) === 'craft'}
 			<!-- CRAFT: Show primary production + ingredients/products totals + power consumption -->
 			{#if productionInfo}
@@ -470,6 +471,7 @@
 				</div>
 			</div>
 		{/if}
+		</div>
 
 		<!-- Timestamp -->
 		<div class="mt-3 border-t border-base-300 pt-3">

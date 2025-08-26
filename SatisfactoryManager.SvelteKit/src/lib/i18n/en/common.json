@@ -89,7 +89,10 @@
 		"site_name_placeholder": "Site name",
 		"site_name_validation": "Site name is required and cannot exceed 200 characters",
 		"select_site": "Select a site to view its content",
-		"content_placeholder": "This is where site-specific content will be displayed in the future."
+		"content_placeholder": "This is where site-specific content will be displayed in the future.",
+		"search_sites": "Search sites...",
+		"no_sites_found": "No sites found",
+		"clear_search": "Clear search"
 	},
 	"dialogs": {
 		"add_users": {
@@ -317,7 +320,10 @@
 		"efficiency": "Efficiency",
 		"ingredients": "Ingredients",
 		"products": "Products",
-		"notes": "Notes"
+		"notes": "Notes",
+		"search_instances": "Search production instances...",
+		"no_instances_found": "No instances found",
+		"clear_search": "Clear search"
 	},
 	"resourceBalance": {
 		"title": "Resource Balance",

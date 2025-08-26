@@ -1,9 +1,20 @@
 <script lang="ts">
 	import { getGameState, type ProductionInstanceData } from '$lib/states/gameState.svelte';
 	import { getAuthState } from '$lib/states/authState.svelte';
-	import { Icon, Plus, ChartBarSquare, ChevronDown, ChevronRight } from 'svelte-hero-icons';
+	import {
+		Icon,
+		Plus,
+		ChartBarSquare,
+		ChevronDown,
+		ChevronRight,
+		MagnifyingGlass,
+		XMark
+	} from 'svelte-hero-icons';
 	import { t } from '$lib/i18n';
 	import { onMount } from 'svelte';
+	import { fade, fly } from 'svelte/transition';
+	import { flip } from 'svelte/animate';
+	import { cubicOut } from 'svelte/easing';
 	import ProductionInstanceCard from './ProductionInstanceCard.svelte';
 	import AddProductionInstanceDialog from '$lib/dialogs/AddProductionInstanceDialog.svelte';
 	import type { AddProductionInstanceDialogHandle } from '$lib/dialogs/AddProductionInstanceDialogHandle';
@@ -32,6 +43,50 @@
 	let canManage = $derived(() => {
 		if (!authState.isAuthenticated || !authState.user?.email) return false;
 		return gameState.canManageSites(authState.user.email);
+	});
+
+	// Search functionality for production instances
+	let searchTerm = $state('');
+
+	// Filter production instances based on search term
+	let filteredInstances = $derived(() => {
+		if (!searchTerm.trim()) {
+			return gameState.siteProductionInstances;
+		}
+
+		const term = searchTerm.toLowerCase();
+		return gameState.siteProductionInstances.filter((instance) => {
+			// Search in recipe name
+			const recipeName = instance.recipe?.displayName?.toLowerCase() || '';
+			if (recipeName.includes(term)) return true;
+
+			// Search in building name
+			const buildingName = instance.building?.name?.toLowerCase() || '';
+			if (buildingName.includes(term)) return true;
+
+			// Search in products
+			const productMatch = instance.products?.some((product) =>
+				product.item?.displayName?.toLowerCase().includes(term)
+			);
+			if (productMatch) return true;
+
+			// Search in ingredients
+			const ingredientMatch = instance.ingredients?.some((ingredient) =>
+				ingredient.item?.displayName?.toLowerCase().includes(term)
+			);
+			if (ingredientMatch) return true;
+
+			return false;
+		});
+	});
+
+	// Sorted and filtered instances
+	let sortedFilteredInstances = $derived(() => {
+		return filteredInstances().toSorted((a, b) => {
+			const aItemName = a.products?.[0]?.item?.displayName || 'Unknown';
+			const bItemName = b.products?.[0]?.item?.displayName || 'Unknown';
+			return aItemName.localeCompare(bItemName);
+		});
 	});
 
 	// Removed unused productionStats
@@ -107,19 +162,32 @@
 		}
 	});
 
+	function clearSearch() {
+		searchTerm = '';
+	}
+
 	function handleAddRecipe() {
+		// Désactiver immédiatement les animations pour éviter les replays
+		isInitialLoad = false;
+		
 		if (addRecipeDialogRef?.open) {
 			addRecipeDialogRef.open(siteId);
 		}
 	}
 
 	function handleEditInstance(instance: ProductionInstanceData) {
+		// Désactiver les animations pour éviter les replays
+		isInitialLoad = false;
+		
 		if (editInstanceDialogRef?.open) {
 			editInstanceDialogRef.open(instance);
 		}
 	}
 
 	function handleDeleteInstance(instance: ProductionInstanceData) {
+		// Désactiver les animations pour éviter les replays
+		isInitialLoad = false;
+		
 		confirmDialogRef?.open({
 			title: $t('productionInstances.delete_instance'),
 			message: $t('productionInstances.delete_instance_confirm', {
@@ -156,14 +224,41 @@
 
 	// State for details expander
 	let isResourceDetailsOpen = $state(false);
-	let isEnergyDetailsOpen = $state(false);
+
+	// Animation state management
+	let isInitialLoad = $state(true);
+
+	// Effect pour désactiver les animations après le chargement initial
+	$effect(() => {
+		if (isInitialLoad && gameState.siteProductionInstances.length > 0) {
+			setTimeout(() => {
+				isInitialLoad = false;
+			}, 2500); // Après que toutes les animations initiales soient terminées
+		}
+	});
 </script>
 
 <div class="flex flex-col gap-6">
 	<!-- Site Header with Actions -->
-	<div class="flex items-center justify-between">
-		<div>
-			<h2 class="text-xl font-semibold">{siteName}</h2>
+	<div class="flex items-center justify-between" in:fly={{ y: -20, duration: 500, delay: 100 }}>
+		<div in:fly={{ x: -20, duration: 400, delay: 200 }}>
+			<div class="flex items-center gap-3">
+				<h2 class="text-xl font-semibold">{siteName}</h2>
+				{#if energyConsumption() && !gameState.isLoading}
+					{@const energy = energyConsumption()}
+					{#if energy && Math.abs(energy.netBalance) > 0.1}
+						<span class="badge {energy.netBalance > 0 ? 'badge-success' : 'badge-error'} font-mono">
+							{energy.netBalance > 0 ? '+' : ''}{formatEnergy(energy.netBalance).formatted}
+							{formatEnergy(energy.netBalance).unit}
+						</span>
+					{:else if energy}
+						<span class="badge badge-neutral font-mono">
+							±{formatEnergy(Math.abs(energy.netBalance)).formatted}
+							{formatEnergy(Math.abs(energy.netBalance)).unit}
+						</span>
+					{/if}
+				{/if}
+			</div>
 			<p class="mt-1 text-sm text-base-content/70">
 				{gameState.siteProductionInstances.length}
 				{gameState.siteProductionInstances.length === 1
@@ -174,12 +269,13 @@
 
 		{#if canManage()}
 			<button
-				class="btn btn-primary"
+				class="btn btn-primary transition-transform hover:scale-105"
 				onclick={() => {
 					console.log('🔍 Add Recipe button clicked');
 					handleAddRecipe();
 				}}
 				disabled={gameState.isLoading}
+				in:fly={{ x: 20, duration: 400, delay: 300 }}
 			>
 				<Icon src={Plus} class="size-4" />
 				{$t('productionInstances.add_recipe')}
@@ -187,105 +283,11 @@
 		{/if}
 	</div>
 
-	<!-- Energy Consumption Section -->
-	{#if energyConsumption() && !gameState.isLoading}
-		{@const energy = energyConsumption()}
-		{#if energy}
-			<div class="card border border-base-300 bg-base-100">
-				<div class="card-body">
-					<!-- Collapsible header -->
-					<details bind:open={isEnergyDetailsOpen} class="group">
-						<summary class="cursor-pointer list-none">
-							<div class="flex items-center justify-between">
-								<div class="flex items-center gap-2">
-									<h3 class="card-title text-lg">{$t('energy.title')}</h3>
-									<span class="badge badge-lg badge-primary">
-										{energy.total.formatted}
-										{energy.total.unit}
-									</span>
-								</div>
-								<Icon
-									src={isEnergyDetailsOpen ? ChevronDown : ChevronRight}
-									class="size-5 transition-transform group-hover:text-primary"
-								/>
-							</div>
-						</summary>
-
-						<!-- Collapsible content -->
-						<div class="mt-4">
-							<div class="grid grid-cols-1 gap-4 md:grid-cols-3">
-								<!-- Total Energy -->
-								<div class="card border border-primary/20 bg-primary/5">
-									<div class="card-body p-4">
-										<h4 class="card-title text-base">{$t('energy.total')}</h4>
-										<div class="font-mono text-2xl font-bold text-primary">
-											{energy.total.formatted}
-											{energy.total.unit}
-										</div>
-										<p class="text-sm text-base-content/70">{$t('energy.total_description')}</p>
-									</div>
-								</div>
-
-								<!-- Consumption -->
-								<div class="card border border-error/20 bg-error/5">
-									<div class="card-body p-4">
-										<h4 class="card-title text-base">{$t('energy.consumption')}</h4>
-										<div class="font-mono text-xl font-bold text-error">
-											{energy.consumption.formatted}
-											{energy.consumption.unit}
-										</div>
-										<p class="text-sm text-base-content/70">
-											{$t('energy.consumption_description')}
-										</p>
-									</div>
-								</div>
-
-								<!-- Production -->
-								<div class="card border border-success/20 bg-success/5">
-									<div class="card-body p-4">
-										<h4 class="card-title text-base">{$t('energy.production')}</h4>
-										<div class="font-mono text-xl font-bold text-success">
-											{energy.production.formatted}
-											{energy.production.unit}
-										</div>
-										<p class="text-sm text-base-content/70">
-											{$t('energy.production_description')}
-										</p>
-									</div>
-								</div>
-							</div>
-
-							{#if Math.abs(energy.netBalance) > 0.1}
-								<div class="mt-4 alert {energy.netBalance > 0 ? 'alert-success' : 'alert-warning'}">
-									<div>
-										<h4 class="font-bold">
-											{energy.netBalance > 0 ? $t('energy.surplus') : $t('energy.deficit')}
-										</h4>
-										<p>
-											{$t('energy.net_balance', {
-												values: {
-													balance: Math.abs(energy.netBalance).toFixed(1),
-													type:
-														energy.netBalance > 0
-															? $t('energy.surplus').toLowerCase()
-															: $t('energy.deficit').toLowerCase()
-												}
-											})}
-										</p>
-									</div>
-								</div>
-							{/if}
-						</div>
-					</details>
-				</div>
-			</div>
-		{/if}
-	{/if}
 
 	<!-- Resource Balance Section -->
 	{#if resourceBalance() && !gameState.isLoading}
 		{@const balance = resourceBalance()}
-		<div class="card border border-base-300 bg-base-100">
+		<div class="card border border-base-300 bg-base-100" in:fly={{ y: 20, duration: 400, delay: 500 }}>
 			<div class="card-body">
 				<!-- Collapsible header -->
 				<details bind:open={isResourceDetailsOpen} class="group">
@@ -387,35 +389,111 @@
 	{/if}
 
 	<!-- Recipe Instances List -->
-	{#if gameState.isLoading}
-		<div class="flex items-center justify-center py-8">
-			<span class="loading loading-lg loading-spinner"></span>
-		</div>
-	{:else if gameState.siteProductionInstances.length === 0}
-		<div class="py-12 text-center">
-			<div class="mb-4 opacity-50">
-				<Icon src={ChartBarSquare} class="mx-auto size-16" />
+	{#if gameState.siteProductionInstances.length === 0}
+		{#if gameState.isLoading}
+			<div class="flex items-center justify-center py-8">
+				<span class="loading loading-lg loading-spinner"></span>
 			</div>
-			<h3 class="mb-2 font-semibold">{$t('productionInstances.no_instances')}</h3>
-			<p class="mb-6 text-base-content/70">{$t('productionInstances.no_instances_description')}</p>
-			{#if canManage()}
-				<button class="btn btn-primary" onclick={handleAddRecipe}>
-					<Icon src={Plus} class="size-4" />
-					{$t('productionInstances.add_first_recipe')}
-				</button>
-			{/if}
-		</div>
+		{:else}
+			<div class="py-12 text-center" in:fade={{ duration: 400, delay: 200 }}>
+				<div class="mb-4 opacity-50" in:fly={{ y: 30, duration: 400, delay: 300 }}>
+					<Icon src={ChartBarSquare} class="mx-auto size-16" />
+				</div>
+				<h3 class="mb-2 font-semibold" in:fly={{ y: 20, duration: 400, delay: 400 }}>
+					{$t('productionInstances.no_instances')}
+				</h3>
+				<p class="mb-6 text-base-content/70" in:fly={{ y: 20, duration: 400, delay: 500 }}>
+					{$t('productionInstances.no_instances_description')}
+				</p>
+				{#if canManage()}
+					<button 
+						class="btn btn-primary transition-transform hover:scale-105" 
+						onclick={handleAddRecipe}
+						in:fly={{ y: 20, duration: 400, delay: 600 }}
+					>
+						<Icon src={Plus} class="size-4" />
+						{$t('productionInstances.add_first_recipe')}
+					</button>
+				{/if}
+			</div>
+		{/if}
 	{:else}
-		<div>
-			<h3 class="mb-4 font-medium">{$t('productionInstances.recipe_instances')}</h3>
-			<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-				{#each gameState.siteProductionInstances as instance (instance.id)}
-					<ProductionInstanceCard
-						{instance}
-						onEdit={handleEditInstance}
-						onDelete={handleDeleteInstance}
-					/>
-				{/each}
+		<div class="relative" in:fade={{ duration: 300, delay: 600 }}>
+			<!-- Loading overlay -->
+			{#if gameState.isLoading}
+				<div class="absolute inset-0 bg-base-100/80 flex items-center justify-center z-10 rounded-lg">
+					<span class="loading loading-lg loading-spinner"></span>
+				</div>
+			{/if}
+			
+			<div class="{gameState.isLoading ? 'opacity-50 pointer-events-none' : ''}">
+				<h3 class="mb-4 font-medium" in:fly={{ x: -20, duration: 400, delay: 700 }}>
+					{$t('productionInstances.recipe_instances')}
+				</h3>
+
+			<!-- Search Bar for Production Instances -->
+			{#if gameState.siteProductionInstances.length >= 1}
+				<div class="relative mb-6" in:fly={{ y: 20, duration: 400, delay: 800 }}>
+					<div class="relative">
+						<Icon
+							src={MagnifyingGlass}
+							class="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-base-content/50"
+						/>
+						<input
+							type="text"
+							bind:value={searchTerm}
+							placeholder={$t('productionInstances.search_instances')}
+							class="input-bordered input w-full pr-10 pl-10"
+						/>
+						{#if searchTerm}
+							<button
+								onclick={clearSearch}
+								class="btn absolute top-1/2 right-1 btn-circle -translate-y-1/2 btn-ghost btn-sm hover:bg-base-300"
+								title={$t('productionInstances.clear_search')}
+								in:fade={{ duration: 150 }}
+								out:fade={{ duration: 100 }}
+							>
+								<Icon src={XMark} class="size-3" />
+							</button>
+						{/if}
+					</div>
+				</div>
+			{/if}
+
+			<!-- Production Instances Grid -->
+			{#if sortedFilteredInstances().length === 0 && searchTerm}
+				<div class="py-6 text-center" in:fade={{ duration: 200 }}>
+					<p class="text-base-content/70">{$t('productionInstances.no_instances_found')}</p>
+					<button class="btn mt-2 btn-ghost btn-sm" onclick={clearSearch}>
+						{$t('productionInstances.clear_search')}
+					</button>
+				</div>
+			{:else}
+				<div 
+					class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
+					in:fade={{ duration: 300, delay: 900 }}
+				>
+					{#each sortedFilteredInstances() as instance, index (instance.id)}
+						<div
+							animate:flip={{ duration: 300 }}
+							in:fly={isInitialLoad ? { 
+								y: 30,
+								duration: 400,
+								delay: 1000 + index * 100,
+								easing: cubicOut
+							} : undefined}
+							out:fly={{ y: -10, duration: 200, easing: cubicOut }}
+							class="transition-all duration-300 hover:scale-105 hover:shadow-xl h-full"
+						>
+							<ProductionInstanceCard
+								{instance}
+								onEdit={handleEditInstance}
+								onDelete={handleDeleteInstance}
+							/>
+						</div>
+					{/each}
+				</div>
+			{/if}
 			</div>
 		</div>
 	{/if}

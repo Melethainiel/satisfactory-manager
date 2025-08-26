@@ -89,7 +89,10 @@
 		"site_name_placeholder": "Nom du site",
 		"site_name_validation": "Le nom du site est requis et ne peut pas dépasser 200 caractères",
 		"select_site": "Sélectionnez un site pour voir son contenu",
-		"content_placeholder": "C'est ici que le contenu spécifique au site sera affiché dans le futur."
+		"content_placeholder": "C'est ici que le contenu spécifique au site sera affiché dans le futur.",
+		"search_sites": "Rechercher des sites...",
+		"no_sites_found": "Aucun site trouvé",
+		"clear_search": "Effacer la recherche"
 	},
 	"dialogs": {
 		"add_users": {
@@ -317,7 +320,10 @@
 		"efficiency": "Efficacité",
 		"ingredients": "Ingrédients",
 		"products": "Produits",
-		"notes": "Notes"
+		"notes": "Notes",
+		"search_instances": "Rechercher des instances de production...",
+		"no_instances_found": "Aucune instance trouvée",
+		"clear_search": "Effacer la recherche"
 	},
 	"resourceBalance": {
 		"title": "Équilibre des ressources",

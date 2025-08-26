@@ -11,6 +11,7 @@
 	import type { EditProductionInstanceDialogHandle } from '$lib/dialogs/EditProductionInstanceDialogHandle';
 	import ConfirmDialog from '$lib/dialogs/ConfirmDialog.svelte';
 	import type { ConfirmDialogHandle } from '$lib/dialogs/ConfirmDialogHandle';
+	import { formatEnergy, calculateTotalEnergy } from '$lib/utils/energyFormatter';
 
 	interface Props {
 		siteId: string;
@@ -136,9 +137,26 @@
 		return rate < 10 ? rate.toFixed(2) : rate.toFixed(1);
 	}
 
+	// Energy consumption data
+	let energyConsumption = $derived(() => {
+		const overview = gameState.siteProductionOverview;
+		if (!overview) return null;
+
+		const totalConsumption = overview.totalPowerConsumption;
+		const totalProduction = overview.totalPowerProduction;
+		const totalEnergy = calculateTotalEnergy(totalConsumption, totalProduction);
+
+		return {
+			consumption: formatEnergy(totalConsumption),
+			production: formatEnergy(totalProduction),
+			total: formatEnergy(totalEnergy),
+			netBalance: totalProduction - totalConsumption
+		};
+	});
+
 	// State for details expander
 	let isResourceDetailsOpen = $state(false);
-
+	let isEnergyDetailsOpen = $state(false);
 </script>
 
 <div class="flex flex-col gap-6">
@@ -168,6 +186,101 @@
 			</button>
 		{/if}
 	</div>
+
+	<!-- Energy Consumption Section -->
+	{#if energyConsumption() && !gameState.isLoading}
+		{@const energy = energyConsumption()}
+		{#if energy}
+			<div class="card border border-base-300 bg-base-100">
+				<div class="card-body">
+					<!-- Collapsible header -->
+					<details bind:open={isEnergyDetailsOpen} class="group">
+						<summary class="cursor-pointer list-none">
+							<div class="flex items-center justify-between">
+								<div class="flex items-center gap-2">
+									<h3 class="card-title text-lg">{$t('energy.title')}</h3>
+									<span class="badge badge-lg badge-primary">
+										{energy.total.formatted}
+										{energy.total.unit}
+									</span>
+								</div>
+								<Icon
+									src={isEnergyDetailsOpen ? ChevronDown : ChevronRight}
+									class="size-5 transition-transform group-hover:text-primary"
+								/>
+							</div>
+						</summary>
+
+						<!-- Collapsible content -->
+						<div class="mt-4">
+							<div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+								<!-- Total Energy -->
+								<div class="card border border-primary/20 bg-primary/5">
+									<div class="card-body p-4">
+										<h4 class="card-title text-base">{$t('energy.total')}</h4>
+										<div class="font-mono text-2xl font-bold text-primary">
+											{energy.total.formatted}
+											{energy.total.unit}
+										</div>
+										<p class="text-sm text-base-content/70">{$t('energy.total_description')}</p>
+									</div>
+								</div>
+
+								<!-- Consumption -->
+								<div class="card border border-error/20 bg-error/5">
+									<div class="card-body p-4">
+										<h4 class="card-title text-base">{$t('energy.consumption')}</h4>
+										<div class="font-mono text-xl font-bold text-error">
+											{energy.consumption.formatted}
+											{energy.consumption.unit}
+										</div>
+										<p class="text-sm text-base-content/70">
+											{$t('energy.consumption_description')}
+										</p>
+									</div>
+								</div>
+
+								<!-- Production -->
+								<div class="card border border-success/20 bg-success/5">
+									<div class="card-body p-4">
+										<h4 class="card-title text-base">{$t('energy.production')}</h4>
+										<div class="font-mono text-xl font-bold text-success">
+											{energy.production.formatted}
+											{energy.production.unit}
+										</div>
+										<p class="text-sm text-base-content/70">
+											{$t('energy.production_description')}
+										</p>
+									</div>
+								</div>
+							</div>
+
+							{#if Math.abs(energy.netBalance) > 0.1}
+								<div class="mt-4 alert {energy.netBalance > 0 ? 'alert-success' : 'alert-warning'}">
+									<div>
+										<h4 class="font-bold">
+											{energy.netBalance > 0 ? $t('energy.surplus') : $t('energy.deficit')}
+										</h4>
+										<p>
+											{$t('energy.net_balance', {
+												values: {
+													balance: Math.abs(energy.netBalance).toFixed(1),
+													type:
+														energy.netBalance > 0
+															? $t('energy.surplus').toLowerCase()
+															: $t('energy.deficit').toLowerCase()
+												}
+											})}
+										</p>
+									</div>
+								</div>
+							{/if}
+						</div>
+					</details>
+				</div>
+			</div>
+		{/if}
+	{/if}
 
 	<!-- Resource Balance Section -->
 	{#if resourceBalance() && !gameState.isLoading}

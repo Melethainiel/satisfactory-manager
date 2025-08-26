@@ -335,5 +335,19 @@
 		"resource_count": "{count} ressources",
 		"resource_count_singular": "{count} ressource",
 		"tooltip_net_balance": "Solde net pour cette instance de production"
+	},
+	"energy": {
+		"title": "Vue d'ensemble énergétique",
+		"total": "Énergie totale",
+		"total_description": "Somme de la consommation et de la production",
+		"consumption": "Consommation",
+		"consumption_description": "Énergie utilisée par les bâtiments",
+		"production": "Production",
+		"production_description": "Énergie générée par les générateurs",
+		"surplus": "Excédent énergétique",
+		"deficit": "Déficit énergétique",
+		"net_balance": "Solde net : {balance} MW {type}",
+		"MW": "MW",
+		"GW": "GW"
 	}
 }

@@ -81,24 +81,24 @@
 	}
 
 	// Generate tooltip for production output (net balance only)
-	function getProductionTooltip(): Array<{name: string, balance: string}> {
-		const items: Array<{name: string, balance: string}> = [];
+	function getProductionTooltip(): Array<{ name: string; balance: string }> {
+		const items: Array<{ name: string; balance: string }> = [];
 		const overview = gameState.siteProductionOverview;
 
 		instance.products?.forEach((product) => {
 			const netBalanceItem = overview?.netBalance.find(
 				(item) => item.itemName === product.item.displayName
 			);
-			
+
 			if (netBalanceItem) {
 				const netBalance = netBalanceItem.balance;
 				const sign = netBalance >= 0 ? '+' : '';
 				const balanceText = `${sign}${formatRate(netBalance)}${$t('resourceBalance.per_minute')}`;
-				items.push({name: product.item.displayName, balance: balanceText});
+				items.push({ name: product.item.displayName, balance: balanceText });
 			} else {
 				// Item not found in net balance, show as neutral
 				const balanceText = `0${$t('resourceBalance.per_minute')}`;
-				items.push({name: product.item.displayName, balance: balanceText});
+				items.push({ name: product.item.displayName, balance: balanceText });
 			}
 		});
 
@@ -106,30 +106,29 @@
 	}
 
 	// Generate tooltip for consumption (net balance only)
-	function getConsumptionTooltip(): Array<{name: string, balance: string}> {
-		const items: Array<{name: string, balance: string}> = [];
+	function getConsumptionTooltip(): Array<{ name: string; balance: string }> {
+		const items: Array<{ name: string; balance: string }> = [];
 		const overview = gameState.siteProductionOverview;
 
 		instance.ingredients?.forEach((ingredient) => {
 			const netBalanceItem = overview?.netBalance.find(
 				(item) => item.itemName === ingredient.item.displayName
 			);
-			
+
 			if (netBalanceItem) {
 				const netBalance = netBalanceItem.balance;
 				const sign = netBalance >= 0 ? '+' : '';
 				const balanceText = `${sign}${formatRate(netBalance)}${$t('resourceBalance.per_minute')}`;
-				items.push({name: ingredient.item.displayName, balance: balanceText});
+				items.push({ name: ingredient.item.displayName, balance: balanceText });
 			} else {
 				// Item not found in net balance, show as neutral
 				const balanceText = `0${$t('resourceBalance.per_minute')}`;
-				items.push({name: ingredient.item.displayName, balance: balanceText});
+				items.push({ name: ingredient.item.displayName, balance: balanceText });
 			}
 		});
 
 		return items;
 	}
-
 
 	function handleEdit() {
 		if (canEdit() && onEdit) {
@@ -194,8 +193,8 @@
 								{#if getProductionTooltip().length === 1}
 									Solde net: {getProductionTooltip()[0].balance}
 								{:else}
-									<div class="text-xs font-medium mb-1">Solde net:</div>
-									<ul class="list-disc list-outside pl-4 space-y-1">
+									<div class="mb-1 text-xs font-medium">Solde net:</div>
+									<ul class="list-outside list-disc space-y-1 pl-4">
 										{#each getProductionTooltip() as item}
 											<li class="text-xs">{item.name}: {item.balance}</li>
 										{/each}
@@ -225,8 +224,8 @@
 									{#if getConsumptionTooltip().length === 1}
 										Solde net: {getConsumptionTooltip()[0].balance}
 									{:else}
-										<div class="text-xs font-medium mb-1">Solde net:</div>
-										<ul class="list-disc list-outside pl-4 space-y-1">
+										<div class="mb-1 text-xs font-medium">Solde net:</div>
+										<ul class="list-outside list-disc space-y-1 pl-4">
 											{#each getConsumptionTooltip() as item}
 												<li class="text-xs">{item.name}: {item.balance}</li>
 											{/each}
@@ -257,8 +256,8 @@
 						<div class="tooltip tooltip-top">
 							{#if getProductionTooltip().length > 0}
 								<div class="tooltip-content">
-									<div class="text-xs font-medium mb-1">Solde net:</div>
-									<ul class="list-disc list-outside pl-4 space-y-1">
+									<div class="mb-1 text-xs font-medium">Solde net:</div>
+									<ul class="list-outside list-disc space-y-1 pl-4">
 										{#each getProductionTooltip() as item}
 											<li class="text-xs">{item.name}: {item.balance}</li>
 										{/each}
@@ -266,10 +265,10 @@
 								</div>
 							{/if}
 							<div class="rounded bg-base-200 p-3">
-							<div class="mb-1 text-xs font-medium opacity-70">
-								{$t('productionInstances.total_products')}
-							</div>
-							<div class="flex flex-col gap-1">
+								<div class="mb-1 text-xs font-medium opacity-70">
+									{$t('productionInstances.total_products')}
+								</div>
+								<div class="flex flex-col gap-1">
 									{#each instance.products as product (product.item.className)}
 										<div class="flex justify-between text-xs">
 											<span>{product.item.displayName}</span>
@@ -327,8 +326,8 @@
 								{#if getProductionTooltip().length === 1}
 									Solde net: {getProductionTooltip()[0].balance}
 								{:else}
-									<div class="text-xs font-medium mb-1">Solde net:</div>
-									<ul class="list-disc list-outside pl-4 space-y-1">
+									<div class="mb-1 text-xs font-medium">Solde net:</div>
+									<ul class="list-outside list-disc space-y-1 pl-4">
 										{#each getProductionTooltip() as item}
 											<li class="text-xs">{item.name}: {item.balance}</li>
 										{/each}
@@ -337,13 +336,13 @@
 							</div>
 						{/if}
 						<div class="rounded bg-base-200 p-3">
-						<div class="mb-1 text-xs font-medium opacity-70">
-							⛏️ {$t('productionInstances.extraction_rate')}
-						</div>
-						<div class="font-mono text-sm">
-							<span class="font-semibold">{formatRate(productionInfo()?.actualRate || 0)}</span>
-							<span class="opacity-70">/{$t('common.minute')}</span>
-						</div>
+							<div class="mb-1 text-xs font-medium opacity-70">
+								⛏️ {$t('productionInstances.extraction_rate')}
+							</div>
+							<div class="font-mono text-sm">
+								<span class="font-semibold">{formatRate(productionInfo()?.actualRate || 0)}</span>
+								<span class="opacity-70">/{$t('common.minute')}</span>
+							</div>
 							<div class="mt-1 text-xs opacity-60">
 								{productionInfo()?.item.displayName || 'Unknown'}
 							</div>
@@ -406,8 +405,8 @@
 								{#if getConsumptionTooltip().length === 1}
 									Solde net: {getConsumptionTooltip()[0].balance}
 								{:else}
-									<div class="text-xs font-medium mb-1">Solde net:</div>
-									<ul class="list-disc list-outside pl-4 space-y-1">
+									<div class="mb-1 text-xs font-medium">Solde net:</div>
+									<ul class="list-outside list-disc space-y-1 pl-4">
 										{#each getConsumptionTooltip() as item}
 											<li class="text-xs">{item.name}: {item.balance}</li>
 										{/each}
@@ -416,10 +415,10 @@
 							</div>
 						{/if}
 						<div class="rounded bg-base-200 p-3">
-						<div class="mb-1 text-xs font-medium opacity-70">
-							🔥 {$t('productionInstances.fuel_consumption')}
-						</div>
-						<div class="flex flex-col gap-1">
+							<div class="mb-1 text-xs font-medium opacity-70">
+								🔥 {$t('productionInstances.fuel_consumption')}
+							</div>
+							<div class="flex flex-col gap-1">
 								{#each instance.ingredients as ingredient (ingredient.item.className)}
 									<div class="flex justify-between text-xs">
 										<span>{ingredient.item.displayName}</span>

@@ -2,6 +2,8 @@ import { db } from '../db';
 import {
 	items,
 	itemVersions,
+	itemExtractionBuildings,
+	itemFuelGenerators,
 	buildings,
 	buildingVersions,
 	recipeVersions,
@@ -14,6 +16,10 @@ import {
 	type NewItem,
 	type ItemVersion,
 	type NewItemVersion,
+	type ItemExtractionBuilding,
+	type NewItemExtractionBuilding,
+	type ItemFuelGenerator,
+	type NewItemFuelGenerator,
 	type ItemForm,
 	type Building as DBBuilding
 } from '../db/schema';
@@ -62,6 +68,15 @@ export interface IItemService {
 	getItemProductionOptions(gameId: string, itemId: string): Promise<ProductionOptions>;
 	getExtractorsForItem(gameId: string, itemId: string): Promise<Building[]>;
 	getGeneratorsForItem(gameId: string, itemId: string): Promise<Building[]>;
+
+	// Building association methods for import
+	addItemExtractionBuildings(
+		itemVersionId: string,
+		buildingIds: string[]
+	): Promise<ItemExtractionBuilding[]>;
+	addItemFuelGenerators(itemVersionId: string, buildingIds: string[]): Promise<ItemFuelGenerator[]>;
+	clearItemBuildingAssociations(itemVersionId: string): Promise<void>;
+	getBuildingIdsByClassNames(classNames: string[], moduleId: string): Promise<Map<string, string>>;
 }
 
 // New interfaces for production system
@@ -369,6 +384,67 @@ class ItemService implements IItemService {
 		});
 
 		return generators;
+	}
+
+	// Building association methods for import
+	async addItemExtractionBuildings(
+		itemVersionId: string,
+		buildingIds: string[]
+	): Promise<ItemExtractionBuilding[]> {
+		if (buildingIds.length === 0) return [];
+
+		const associationData = buildingIds.map((buildingId) => ({
+			itemVersionId,
+			buildingId
+		}));
+
+		return await db.insert(itemExtractionBuildings).values(associationData).returning();
+	}
+
+	async addItemFuelGenerators(
+		itemVersionId: string,
+		buildingIds: string[]
+	): Promise<ItemFuelGenerator[]> {
+		if (buildingIds.length === 0) return [];
+
+		const associationData = buildingIds.map((buildingId) => ({
+			itemVersionId,
+			buildingId
+		}));
+
+		return await db.insert(itemFuelGenerators).values(associationData).returning();
+	}
+
+	async clearItemBuildingAssociations(itemVersionId: string): Promise<void> {
+		// Clear existing associations for this item version
+		await Promise.all([
+			db
+				.delete(itemExtractionBuildings)
+				.where(eq(itemExtractionBuildings.itemVersionId, itemVersionId)),
+			db.delete(itemFuelGenerators).where(eq(itemFuelGenerators.itemVersionId, itemVersionId))
+		]);
+	}
+
+	async getBuildingIdsByClassNames(
+		classNames: string[],
+		moduleId: string
+	): Promise<Map<string, string>> {
+		if (classNames.length === 0) return new Map();
+
+		const results = await db
+			.select({
+				className: buildings.className,
+				id: buildings.id
+			})
+			.from(buildings)
+			.where(and(inArray(buildings.className, classNames), eq(buildings.moduleId, moduleId)));
+
+		const classNameToIdMap = new Map<string, string>();
+		results.forEach((result) => {
+			classNameToIdMap.set(result.className, result.id);
+		});
+
+		return classNameToIdMap;
 	}
 
 	private async getRecipesProducingItem(gameId: string, itemId: string): Promise<Recipe[]> {

@@ -250,6 +250,36 @@ export const recipeBuildings = pgTable('recipe_buildings', {
 export type RecipeBuilding = typeof recipeBuildings.$inferSelect;
 export type NewRecipeBuilding = typeof recipeBuildings.$inferInsert;
 
+// Item extraction buildings table - buildings that can extract each item
+export const itemExtractionBuildings = pgTable('item_extraction_buildings', {
+	id: uuid('id').defaultRandom().primaryKey(),
+	itemVersionId: uuid('item_version_id')
+		.notNull()
+		.references(() => itemVersions.id, { onDelete: 'cascade' }),
+	buildingId: uuid('building_id')
+		.notNull()
+		.references(() => buildings.id, { onDelete: 'cascade' }),
+	createdAt: timestamp('created_at').defaultNow().notNull()
+});
+
+export type ItemExtractionBuilding = typeof itemExtractionBuildings.$inferSelect;
+export type NewItemExtractionBuilding = typeof itemExtractionBuildings.$inferInsert;
+
+// Item fuel generators table - buildings that can use each item as fuel
+export const itemFuelGenerators = pgTable('item_fuel_generators', {
+	id: uuid('id').defaultRandom().primaryKey(),
+	itemVersionId: uuid('item_version_id')
+		.notNull()
+		.references(() => itemVersions.id, { onDelete: 'cascade' }),
+	buildingId: uuid('building_id')
+		.notNull()
+		.references(() => buildings.id, { onDelete: 'cascade' }),
+	createdAt: timestamp('created_at').defaultNow().notNull()
+});
+
+export type ItemFuelGenerator = typeof itemFuelGenerators.$inferSelect;
+export type NewItemFuelGenerator = typeof itemFuelGenerators.$inferInsert;
+
 // Buildings table - base building definitions
 export const buildings = pgTable(
 	'buildings',

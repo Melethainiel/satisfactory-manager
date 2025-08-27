@@ -133,9 +133,9 @@
 			const purityMultiplier = getPurityMultiplier(currentInstance.extractorPurity || 'Normal');
 			ratePerBuilding = buildingOutput * parseFloat(currentInstance.efficiencyRatio) * purityMultiplier;
 		} else if (currentInstance.recipe && currentInstance.products && currentInstance.products.length > 0) {
-			const currentRate = parseFloat(currentInstance.buildingCount) * parseFloat(currentInstance.efficiencyRatio);
-			const baseRate = currentRate / (parseFloat(currentInstance.buildingCount) * parseFloat(currentInstance.efficiencyRatio));
-			ratePerBuilding = baseRate * parseFloat(currentInstance.efficiencyRatio);
+			// Use the production count directly from products data (already in items/min per building)
+			const outputPerMinutePerBuilding = parseFloat(currentInstance.products[0].count);
+			ratePerBuilding = outputPerMinutePerBuilding * parseFloat(currentInstance.efficiencyRatio);
 		}
 
 		return ratePerBuilding * parseFloat(currentInstance.buildingCount);

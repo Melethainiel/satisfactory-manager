@@ -14,6 +14,8 @@
 	let selectedBuildingId = $state('');
 	let buildingCount = $state(1);
 	let efficiencyRatio = $state(1.0);
+	let extractorPurity = $state('Normal');
+	let isBuilt = $state(false);
 	let notes = $state('');
 
 	// Search state - now using recipeState
@@ -26,6 +28,17 @@
 		const apiFetch = gameState.getApiFetch();
 		if (apiFetch) {
 			itemState.attachAuth(apiFetch);
+		}
+	});
+
+	// Auto-select building when only one is available
+	$effect(() => {
+		if (
+			itemState.availableBuildings.length === 1 &&
+			selectedBuildingId === '' &&
+			!itemState.isLoadingBuildings
+		) {
+			selectedBuildingId = itemState.availableBuildings[0].id;
 		}
 	});
 
@@ -131,6 +144,8 @@
 		selectedBuildingId = '';
 		buildingCount = 1;
 		efficiencyRatio = 1.0;
+		extractorPurity = 'Normal';
+		isBuilt = false;
 		notes = '';
 		// Note: currentSiteId is NOT cleared here - it should persist during dialog session
 		showSearchResults = false;
@@ -209,9 +224,10 @@
 
 		try {
 			const instanceData: any = {
-				buildingId: selectedBuildingId,
+				buildingVersionId: selectedBuildingId,
 				buildingCount: buildingCount,
 				efficiencyRatio: efficiencyRatio,
+				isBuilt: isBuilt,
 				notes: notes.trim() || undefined
 			};
 
@@ -220,14 +236,15 @@
 				instanceData.recipeVersionId = recipeVersionId;
 			}
 
-			// For extraction, include the extracted item ID
-			if (itemState.selectedProductionType === 'extract' && itemState.selectedItem?.id) {
-				instanceData.extractedItemId = itemState.selectedItem.id;
+			// For extraction, include the extracted item version ID and purity
+			if (itemState.selectedProductionType === 'extract' && itemState.selectedItem?.itemVersionId) {
+				instanceData.extractedItemVersionId = itemState.selectedItem.itemVersionId;
+				instanceData.extractorPurity = extractorPurity;
 			}
 
-			// For power generation, include the fuel item ID
-			if (itemState.selectedProductionType === 'power' && itemState.selectedItem?.id) {
-				instanceData.fuelItemId = itemState.selectedItem.id;
+			// For power generation, include the fuel item version ID
+			if (itemState.selectedProductionType === 'power' && itemState.selectedItem?.itemVersionId) {
+				instanceData.fuelItemVersionId = itemState.selectedItem.itemVersionId;
 			}
 
 			await gameState.createProductionInstance(currentSiteId, instanceData);
@@ -242,11 +259,9 @@
 
 	// Expose methods for external use using Svelte 5 syntax
 	export async function open(siteId: string): Promise<void> {
-		console.log('🔍 AddRecipeInstanceDialog.open() called with siteId:', siteId);
 		currentSiteId = siteId;
 		resetForm();
 		dialog?.showModal();
-		console.log('🔍 Dialog should now be open, dialog element:', dialog);
 	}
 </script>
 
@@ -500,6 +515,27 @@
 				</div>
 			{/if}
 
+			<!-- Purity Selection (only shown for extraction) -->
+			{#if itemState.selectedProductionType === 'extract'}
+				<div class="form-control">
+					<label class="label" for="purity-select">
+						<span class="label-text">{$t('production.purity')}</span>
+					</label>
+					<select
+						id="purity-select"
+						class="select-bordered select w-full"
+						bind:value={extractorPurity}
+					>
+						<option value="Impure">{$t('production.purity_impure')} (×0.5)</option>
+						<option value="Normal">{$t('production.purity_normal')} (×1.0)</option>
+						<option value="Pure">{$t('production.purity_pure')} (×2.0)</option>
+					</select>
+					<div class="label">
+						<span class="label-text-alt">{$t('production.purity_affects_extraction')}</span>
+					</div>
+				</div>
+			{/if}
+
 			<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 				<!-- Building Count -->
 				<div class="form-control">
@@ -513,9 +549,9 @@
 						type="number"
 						class="input-bordered input w-full"
 						bind:value={buildingCount}
-						min="0.1"
+						min="1"
 						max="1000"
-						step="0.1"
+						step="1"
 						required
 					/>
 				</div>
@@ -539,6 +575,14 @@
 						<span class="label-text-alt">0.1 - 2.5 (1.0 = 100%)</span>
 					</div>
 				</div>
+			</div>
+
+			<!-- Built Status -->
+			<div class="form-control">
+				<label class="label cursor-pointer">
+					<span class="label-text">Marquer comme construite</span>
+					<input type="checkbox" bind:checked={isBuilt} class="checkbox checkbox-success" />
+				</label>
 			</div>
 
 			<!-- Notes -->

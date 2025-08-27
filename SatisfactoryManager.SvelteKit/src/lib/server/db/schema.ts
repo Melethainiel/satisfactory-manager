@@ -6,6 +6,7 @@ import {
 	pgEnum,
 	timestamp,
 	numeric,
+	boolean,
 	index,
 	unique
 } from 'drizzle-orm/pg-core';
@@ -117,6 +118,9 @@ export const gameUserRoleEnum = pgEnum('game_user_role', [
 // Building types for Satisfactory buildings
 export const buildingTypeEnum = pgEnum('building_type', ['Generator', 'Constructor', 'Miner']);
 
+// Extractor purity levels
+export const extractorPurityEnum = pgEnum('extractor_purity', ['Impure', 'Normal', 'Pure']);
+
 // Item forms for Satisfactory items
 export const itemFormEnum = pgEnum('item_form', ['RF_SOLID', 'RF_LIQUID', 'RF_GAS']);
 
@@ -144,6 +148,7 @@ export const items = pgTable(
 export type Item = typeof items.$inferSelect;
 export type NewItem = typeof items.$inferInsert;
 export type ItemForm = (typeof itemFormEnum.enumValues)[number];
+export type ExtractorPurity = (typeof extractorPurityEnum.enumValues)[number];
 
 // Item versions table - version-specific item data
 export const itemVersions = pgTable('item_versions', {
@@ -245,6 +250,36 @@ export const recipeBuildings = pgTable('recipe_buildings', {
 
 export type RecipeBuilding = typeof recipeBuildings.$inferSelect;
 export type NewRecipeBuilding = typeof recipeBuildings.$inferInsert;
+
+// Item extraction buildings table - buildings that can extract each item
+export const itemExtractionBuildings = pgTable('item_extraction_buildings', {
+	id: uuid('id').defaultRandom().primaryKey(),
+	itemVersionId: uuid('item_version_id')
+		.notNull()
+		.references(() => itemVersions.id, { onDelete: 'cascade' }),
+	buildingId: uuid('building_id')
+		.notNull()
+		.references(() => buildings.id, { onDelete: 'cascade' }),
+	createdAt: timestamp('created_at').defaultNow().notNull()
+});
+
+export type ItemExtractionBuilding = typeof itemExtractionBuildings.$inferSelect;
+export type NewItemExtractionBuilding = typeof itemExtractionBuildings.$inferInsert;
+
+// Item fuel generators table - buildings that can use each item as fuel
+export const itemFuelGenerators = pgTable('item_fuel_generators', {
+	id: uuid('id').defaultRandom().primaryKey(),
+	itemVersionId: uuid('item_version_id')
+		.notNull()
+		.references(() => itemVersions.id, { onDelete: 'cascade' }),
+	buildingId: uuid('building_id')
+		.notNull()
+		.references(() => buildings.id, { onDelete: 'cascade' }),
+	createdAt: timestamp('created_at').defaultNow().notNull()
+});
+
+export type ItemFuelGenerator = typeof itemFuelGenerators.$inferSelect;
+export type NewItemFuelGenerator = typeof itemFuelGenerators.$inferInsert;
 
 // Buildings table - base building definitions
 export const buildings = pgTable(
@@ -462,15 +497,21 @@ export const productionInstances = pgTable('production_instances', {
 	recipeVersionId: uuid('recipe_version_id').references(() => recipeVersions.id, {
 		onDelete: 'cascade'
 	}),
-	buildingId: uuid('building_id')
+	buildingVersionId: uuid('building_version_id')
 		.notNull()
-		.references(() => buildings.id, { onDelete: 'cascade' }),
-	extractedItemId: uuid('extracted_item_id').references(() => items.id, { onDelete: 'cascade' }),
-	fuelItemId: uuid('fuel_item_id').references(() => items.id, { onDelete: 'cascade' }),
+		.references(() => buildingVersions.id, { onDelete: 'cascade' }),
+	extractedItemVersionId: uuid('extracted_item_version_id').references(() => itemVersions.id, {
+		onDelete: 'cascade'
+	}),
+	fuelItemVersionId: uuid('fuel_item_version_id').references(() => itemVersions.id, {
+		onDelete: 'cascade'
+	}),
+	extractorPurity: extractorPurityEnum('extractor_purity').default('Normal'),
 	buildingCount: numeric('building_count', { precision: 10, scale: 2 }).notNull(),
 	efficiencyRatio: numeric('efficiency_ratio', { precision: 10, scale: 3 })
 		.notNull()
 		.default('1.000'),
+	isBuilt: boolean('is_built').notNull().default(false),
 	notes: varchar('notes', { length: 1000 }),
 	createdAt: timestamp('created_at').defaultNow().notNull(),
 	updatedAt: timestamp('updated_at').defaultNow().notNull()
@@ -488,17 +529,17 @@ export const productionInstancesRelations = relations(productionInstances, ({ on
 		fields: [productionInstances.recipeVersionId],
 		references: [recipeVersions.id]
 	}),
-	building: one(buildings, {
-		fields: [productionInstances.buildingId],
-		references: [buildings.id]
+	buildingVersion: one(buildingVersions, {
+		fields: [productionInstances.buildingVersionId],
+		references: [buildingVersions.id]
 	}),
-	extractedItem: one(items, {
-		fields: [productionInstances.extractedItemId],
-		references: [items.id]
+	extractedItemVersion: one(itemVersions, {
+		fields: [productionInstances.extractedItemVersionId],
+		references: [itemVersions.id]
 	}),
-	fuelItem: one(items, {
-		fields: [productionInstances.fuelItemId],
-		references: [items.id]
+	fuelItemVersion: one(itemVersions, {
+		fields: [productionInstances.fuelItemVersionId],
+		references: [itemVersions.id]
 	})
 }));
 

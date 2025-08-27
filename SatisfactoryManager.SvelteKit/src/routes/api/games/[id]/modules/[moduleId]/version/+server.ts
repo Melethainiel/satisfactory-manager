@@ -21,12 +21,15 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 			return json({ error: 'Version ID is required' }, { status: 400 });
 		}
 
-		const success = await gameService.setModuleVersion(gameId, moduleId, versionId);
-		if (!success) {
+		const result = await gameService.setModuleVersion(gameId, moduleId, versionId);
+		if (!result.success) {
 			return json({ error: 'Module not found in game or version update failed' }, { status: 404 });
 		}
 
-		return json({ success });
+		return json({
+			success: result.success,
+			migrationResult: result.migrationResult
+		});
 	} catch (error) {
 		console.error('Error setting module version:', error);
 		return json({ error: 'Failed to set module version' }, { status: 500 });

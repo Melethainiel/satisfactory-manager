@@ -9,11 +9,13 @@ import {
 	recipeProducts,
 	recipeIngredients,
 	items,
+	itemVersions,
 	moduleGames,
 	modules,
 	type ProductionInstance,
 	type NewProductionInstance
 } from '../db/schema';
+import { alias } from 'drizzle-orm/pg-core';
 import { eq, desc, and } from 'drizzle-orm';
 import { productionCalculationService } from './productionCalculationService';
 
@@ -105,10 +107,13 @@ class ProductionInstanceService implements IProductionInstanceService {
 				id: productionInstances.id,
 				siteId: productionInstances.siteId,
 				recipeVersionId: productionInstances.recipeVersionId,
-				buildingId: productionInstances.buildingId,
-				extractedItemId: productionInstances.extractedItemId,
+				buildingVersionId: productionInstances.buildingVersionId,
+				extractedItemVersionId: productionInstances.extractedItemVersionId,
+				fuelItemVersionId: productionInstances.fuelItemVersionId,
+				extractorPurity: productionInstances.extractorPurity,
 				buildingCount: productionInstances.buildingCount,
 				efficiencyRatio: productionInstances.efficiencyRatio,
+				isBuilt: productionInstances.isBuilt,
 				notes: productionInstances.notes,
 				createdAt: productionInstances.createdAt,
 				updatedAt: productionInstances.updatedAt,
@@ -144,19 +149,8 @@ class ProductionInstanceService implements IProductionInstanceService {
 			.leftJoin(sites, eq(productionInstances.siteId, sites.id))
 			.leftJoin(recipeVersions, eq(productionInstances.recipeVersionId, recipeVersions.id))
 			.leftJoin(recipes, eq(recipeVersions.recipeId, recipes.id))
-			.leftJoin(buildings, eq(productionInstances.buildingId, buildings.id))
-			.leftJoin(modules, eq(buildings.moduleId, modules.id))
-			.leftJoin(
-				moduleGames,
-				and(eq(moduleGames.moduleId, modules.id), eq(moduleGames.gameId, sites.gameId))
-			)
-			.leftJoin(
-				buildingVersions,
-				and(
-					eq(buildingVersions.buildingId, buildings.id),
-					eq(buildingVersions.moduleVersionId, moduleGames.selectedVersionId)
-				)
-			)
+			.leftJoin(buildingVersions, eq(productionInstances.buildingVersionId, buildingVersions.id))
+			.leftJoin(buildings, eq(buildingVersions.buildingId, buildings.id))
 			.where(eq(productionInstances.id, id))
 			.limit(1);
 
@@ -215,28 +209,58 @@ class ProductionInstanceService implements IProductionInstanceService {
 					.innerJoin(items, eq(recipeIngredients.itemId, items.id))
 					.where(eq(recipeIngredients.recipeVersionId, instanceData.recipeVersionId))
 			]);
-		} else if (instanceData.extractedItemId) {
-			// For extraction instances - create synthetic product from extractedItemId
-			const extractedItem = await db
+		} else if (instanceData.extractedItemVersionId) {
+			// For extraction instances - create synthetic product from extractedItemVersionId
+			const extractedItemVersion = await db
 				.select({
-					id: items.id,
+					id: itemVersions.id,
+					itemId: itemVersions.itemId,
 					displayName: items.displayName,
 					className: items.className,
 					form: items.form
 				})
-				.from(items)
-				.where(eq(items.id, instanceData.extractedItemId))
+				.from(itemVersions)
+				.innerJoin(items, eq(itemVersions.itemId, items.id))
+				.where(eq(itemVersions.id, instanceData.extractedItemVersionId))
 				.limit(1);
 
-			if (extractedItem.length > 0) {
+			if (extractedItemVersion.length > 0) {
 				products = [
 					{
-						itemId: extractedItem[0].id,
+						itemId: extractedItemVersion[0].itemId,
 						count: '1', // Placeholder count for extraction
 						item: {
-							displayName: extractedItem[0].displayName,
-							className: extractedItem[0].className,
-							form: extractedItem[0].form
+							displayName: extractedItemVersion[0].displayName,
+							className: extractedItemVersion[0].className,
+							form: extractedItemVersion[0].form
+						}
+					}
+				];
+			}
+		} else if (instanceData.fuelItemVersionId) {
+			// For generator instances - create synthetic ingredient from fuelItemVersionId
+			const fuelItemVersion = await db
+				.select({
+					id: itemVersions.id,
+					itemId: itemVersions.itemId,
+					displayName: items.displayName,
+					className: items.className,
+					form: items.form
+				})
+				.from(itemVersions)
+				.innerJoin(items, eq(itemVersions.itemId, items.id))
+				.where(eq(itemVersions.id, instanceData.fuelItemVersionId))
+				.limit(1);
+
+			if (fuelItemVersion.length > 0) {
+				ingredients = [
+					{
+						itemId: fuelItemVersion[0].itemId,
+						count: '1', // Placeholder count for fuel
+						item: {
+							displayName: fuelItemVersion[0].displayName,
+							className: fuelItemVersion[0].className,
+							form: fuelItemVersion[0].form
 						}
 					}
 				];
@@ -347,16 +371,16 @@ class ProductionInstanceService implements IProductionInstanceService {
 			}
 		}
 
-		// Check if building exists
-		if (data.buildingId) {
-			const building = await db
+		// Check if building version exists
+		if (data.buildingVersionId) {
+			const buildingVersion = await db
 				.select()
-				.from(buildings)
-				.where(eq(buildings.id, data.buildingId))
+				.from(buildingVersions)
+				.where(eq(buildingVersions.id, data.buildingVersionId))
 				.limit(1);
 
-			if (building.length === 0) {
-				errors.push('Building does not exist');
+			if (buildingVersion.length === 0) {
+				errors.push('Building version does not exist');
 			}
 		}
 

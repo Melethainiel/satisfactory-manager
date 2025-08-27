@@ -9,19 +9,36 @@ import {
 	recipeProducts,
 	recipeIngredients,
 	items,
+	itemVersions,
 	moduleGames,
 	modules
 } from '../db/schema';
 import { eq, and, inArray } from 'drizzle-orm';
 
+// Purity multipliers for extractors
+function getPurityMultiplier(purity: string | null): number {
+	switch (purity) {
+		case 'Impure':
+			return 0.5;
+		case 'Pure':
+			return 2.0;
+		case 'Normal':
+		default:
+			return 1.0;
+	}
+}
+
 export interface ProductionInstanceDetail {
 	id: string;
 	siteId: string;
 	recipeVersionId: string | null;
-	buildingId: string;
-	extractedItemId: string | null;
+	buildingVersionId: string;
+	extractedItemVersionId: string | null;
+	fuelItemVersionId: string | null;
+	extractorPurity: string | null;
 	buildingCount: string;
 	efficiencyRatio: string;
+	isBuilt: boolean;
 	notes: string | null;
 	createdAt: Date;
 	updatedAt: Date;
@@ -53,6 +70,7 @@ export interface ProductionInstanceDetail {
 		output: string | null;
 		energyConsumption: string | null;
 		energyProduction: string | null;
+		supplementalLoadAmount: string | null;
 	} | null;
 	products: Array<{
 		itemId: string;
@@ -161,7 +179,8 @@ export class ProductionCalculationService {
 		// Handle extraction (no recipe)
 		if (!instance.recipeVersionId) {
 			const buildingOutput = parseFloat(instance.buildingVersion?.output || '0');
-			const totalRate = buildingOutput * buildingCount * efficiency;
+			const purityMultiplier = getPurityMultiplier(instance.extractorPurity);
+			const totalRate = buildingOutput * buildingCount * efficiency * purityMultiplier;
 
 			return {
 				itemsPerMinute: totalRate,
@@ -199,10 +218,13 @@ export class ProductionCalculationService {
 				id: productionInstances.id,
 				siteId: productionInstances.siteId,
 				recipeVersionId: productionInstances.recipeVersionId,
-				buildingId: productionInstances.buildingId,
-				extractedItemId: productionInstances.extractedItemId,
+				buildingVersionId: productionInstances.buildingVersionId,
+				extractedItemVersionId: productionInstances.extractedItemVersionId,
+				fuelItemVersionId: productionInstances.fuelItemVersionId,
+				extractorPurity: productionInstances.extractorPurity,
 				buildingCount: productionInstances.buildingCount,
 				efficiencyRatio: productionInstances.efficiencyRatio,
+				isBuilt: productionInstances.isBuilt,
 				notes: productionInstances.notes,
 				createdAt: productionInstances.createdAt,
 				updatedAt: productionInstances.updatedAt,
@@ -231,26 +253,16 @@ export class ProductionCalculationService {
 					id: buildingVersions.id,
 					output: buildingVersions.output,
 					energyConsumption: buildingVersions.energyConsumption,
-					energyProduction: buildingVersions.energyProduction
+					energyProduction: buildingVersions.energyProduction,
+					supplementalLoadAmount: buildingVersions.supplementalLoadAmount
 				}
 			})
 			.from(productionInstances)
 			.leftJoin(sites, eq(productionInstances.siteId, sites.id))
 			.leftJoin(recipeVersions, eq(productionInstances.recipeVersionId, recipeVersions.id))
 			.leftJoin(recipes, eq(recipeVersions.recipeId, recipes.id))
-			.leftJoin(buildings, eq(productionInstances.buildingId, buildings.id))
-			.leftJoin(modules, eq(buildings.moduleId, modules.id))
-			.leftJoin(
-				moduleGames,
-				and(eq(moduleGames.moduleId, modules.id), eq(moduleGames.gameId, sites.gameId))
-			)
-			.leftJoin(
-				buildingVersions,
-				and(
-					eq(buildingVersions.buildingId, buildings.id),
-					eq(buildingVersions.moduleVersionId, moduleGames.selectedVersionId)
-				)
-			)
+			.leftJoin(buildingVersions, eq(productionInstances.buildingVersionId, buildingVersions.id))
+			.leftJoin(buildings, eq(buildingVersions.buildingId, buildings.id))
 			.where(eq(productionInstances.siteId, siteId));
 
 		// Get all recipe version IDs for batch fetching products/ingredients
@@ -258,12 +270,30 @@ export class ProductionCalculationService {
 			.filter((i) => i.recipeVersionId)
 			.map((i) => i.recipeVersionId!);
 
-		const extractedItemIds = instancesQuery
-			.filter((i) => i.extractedItemId)
-			.map((i) => i.extractedItemId!);
+		const extractedItemVersionIds = instancesQuery
+			.filter((i) => i.extractedItemVersionId)
+			.map((i) => i.extractedItemVersionId!);
 
-		// Batch fetch products and ingredients
-		const [productsData, ingredientsData, extractedItemsData] = await Promise.all([
+		const fuelItemVersionIds = instancesQuery
+			.filter((i) => i.fuelItemVersionId)
+			.map((i) => i.fuelItemVersionId!);
+
+		// Check if any generator has supplemental load amount (water consumption)
+		const needsWaterItem = instancesQuery.some(
+			(i) => i.fuelItemVersionId && parseFloat(i.buildingVersion?.supplementalLoadAmount || '0') > 0
+		);
+
+		// Get gameId from the first instance (all instances in a site have the same gameId)
+		const gameId = instancesQuery.length > 0 ? instancesQuery[0].site?.gameId : null;
+
+		// Batch fetch products, ingredients, and item versions
+		const [
+			productsData,
+			ingredientsData,
+			extractedItemVersionsData,
+			fuelItemVersionsData,
+			waterItemData
+		] = await Promise.all([
 			recipeVersionIds.length > 0
 				? db
 						.select({
@@ -298,7 +328,37 @@ export class ProductionCalculationService {
 						.where(inArray(recipeIngredients.recipeVersionId, recipeVersionIds))
 				: [],
 
-			extractedItemIds.length > 0
+			extractedItemVersionIds.length > 0
+				? db
+						.select({
+							id: itemVersions.id,
+							itemId: itemVersions.itemId,
+							displayName: items.displayName,
+							className: items.className,
+							form: items.form
+						})
+						.from(itemVersions)
+						.innerJoin(items, eq(itemVersions.itemId, items.id))
+						.where(inArray(itemVersions.id, extractedItemVersionIds))
+				: [],
+
+			fuelItemVersionIds.length > 0
+				? db
+						.select({
+							id: itemVersions.id,
+							itemId: itemVersions.itemId,
+							displayName: items.displayName,
+							className: items.className,
+							form: items.form,
+							energyValue: itemVersions.energyValue
+						})
+						.from(itemVersions)
+						.innerJoin(items, eq(itemVersions.itemId, items.id))
+						.where(inArray(itemVersions.id, fuelItemVersionIds))
+				: [],
+
+			// Fetch water item if needed for generators with supplemental load amount
+			needsWaterItem && gameId
 				? db
 						.select({
 							id: items.id,
@@ -307,14 +367,24 @@ export class ProductionCalculationService {
 							form: items.form
 						})
 						.from(items)
-						.where(inArray(items.id, extractedItemIds))
+						.leftJoin(modules, eq(items.moduleId, modules.id))
+						.leftJoin(
+							moduleGames,
+							and(eq(moduleGames.moduleId, modules.id), eq(moduleGames.gameId, gameId))
+						)
+						.where(eq(items.className, 'Desc_Water_C'))
+						.limit(1)
 				: []
 		]);
 
 		// Group products and ingredients by recipe version ID
 		const productsByRecipeVersion = new Map();
 		const ingredientsByRecipeVersion = new Map();
-		const extractedItemsMap = new Map();
+		const extractedItemVersionsMap = new Map();
+		const fuelItemVersionsMap = new Map();
+
+		// Water item for generators
+		const waterItem = waterItemData.length > 0 ? waterItemData[0] : null;
 
 		productsData.forEach((p) => {
 			if (!productsByRecipeVersion.has(p.recipeVersionId)) {
@@ -330,8 +400,12 @@ export class ProductionCalculationService {
 			ingredientsByRecipeVersion.get(i.recipeVersionId).push(i);
 		});
 
-		extractedItemsData.forEach((item) => {
-			extractedItemsMap.set(item.id, item);
+		extractedItemVersionsData.forEach((itemVersion) => {
+			extractedItemVersionsMap.set(itemVersion.id, itemVersion);
+		});
+
+		fuelItemVersionsData.forEach((itemVersion) => {
+			fuelItemVersionsMap.set(itemVersion.id, itemVersion);
 		});
 
 		// Build detailed instances with calculations
@@ -368,27 +442,80 @@ export class ProductionCalculationService {
 						item: i.item
 					};
 				});
-			} else if (instance.extractedItemId) {
+			} else if (instance.extractedItemVersionId) {
 				// Handle extraction
-				const extractedItem = extractedItemsMap.get(instance.extractedItemId);
-				if (extractedItem) {
+				const extractedItemVersion = extractedItemVersionsMap.get(instance.extractedItemVersionId);
+				if (extractedItemVersion) {
 					const buildingCount = parseFloat(instance.buildingCount);
 					const efficiency = parseFloat(instance.efficiencyRatio);
 					const buildingOutput = parseFloat(instance.buildingVersion?.output || '0');
-					const actualRate = buildingOutput * buildingCount * efficiency;
+					const purityMultiplier = getPurityMultiplier(instance.extractorPurity);
+					const actualRate = buildingOutput * buildingCount * efficiency * purityMultiplier;
 
 					products = [
 						{
-							itemId: extractedItem.id,
+							itemId: extractedItemVersion.itemId,
 							count: '1',
 							actualRate,
 							item: {
-								displayName: extractedItem.displayName,
-								className: extractedItem.className,
-								form: extractedItem.form
+								displayName: extractedItemVersion.displayName,
+								className: extractedItemVersion.className,
+								form: extractedItemVersion.form
 							}
 						}
 					];
+				}
+			} else if (instance.fuelItemVersionId) {
+				// Handle generators with fuel
+				const fuelItemVersion = fuelItemVersionsMap.get(instance.fuelItemVersionId);
+				if (fuelItemVersion) {
+					const buildingCount = parseFloat(instance.buildingCount);
+					const efficiency = parseFloat(instance.efficiencyRatio);
+					const powerProduction = parseFloat(instance.buildingVersion?.energyProduction || '0');
+
+					// Calculate fuel consumption using correct formula: 60 / (Item.EnergyValue / Building.EnergyProduction)
+					// Convert GJ to MJ: Item.EnergyValue * 1000
+					const fuelEnergyValueMJ = (fuelItemVersion.energyValue || 0) * 1000; // Convert GJ to MJ
+					const buildingEnergyProductionMW = powerProduction; // Already in MW
+
+					let fuelConsumptionRate = 0;
+					if (fuelEnergyValueMJ > 0 && buildingEnergyProductionMW > 0) {
+						// Formula: 60 / (Item.EnergyValue / Building.EnergyProduction)
+						const fuelConsumptionPerBuilding =
+							60 / (fuelEnergyValueMJ / buildingEnergyProductionMW);
+						fuelConsumptionRate = fuelConsumptionPerBuilding * buildingCount * efficiency;
+					}
+
+					ingredients = [
+						{
+							itemId: fuelItemVersion.itemId,
+							count: '1',
+							actualRate: fuelConsumptionRate,
+							item: {
+								displayName: fuelItemVersion.displayName,
+								className: fuelItemVersion.className,
+								form: fuelItemVersion.form
+							}
+						}
+					];
+
+					// Add water consumption if generator has supplemental load amount (water consumption)
+					const supplementalLoadAmount = parseFloat(
+						instance.buildingVersion?.supplementalLoadAmount || '0'
+					);
+					if (supplementalLoadAmount > 0 && waterItem) {
+						const waterConsumptionRate = supplementalLoadAmount * buildingCount * efficiency;
+						ingredients.push({
+							itemId: waterItem.id,
+							count: '1',
+							actualRate: waterConsumptionRate,
+							item: {
+								displayName: waterItem.displayName,
+								className: waterItem.className,
+								form: waterItem.form
+							}
+						});
+					}
 				}
 			}
 
@@ -399,10 +526,13 @@ export class ProductionCalculationService {
 				id: instance.id,
 				siteId: instance.siteId,
 				recipeVersionId: instance.recipeVersionId,
-				buildingId: instance.buildingId,
-				extractedItemId: instance.extractedItemId,
+				buildingVersionId: instance.buildingVersionId,
+				extractedItemVersionId: instance.extractedItemVersionId,
+				fuelItemVersionId: instance.fuelItemVersionId,
+				extractorPurity: instance.extractorPurity,
 				buildingCount: instance.buildingCount,
 				efficiencyRatio: instance.efficiencyRatio,
+				isBuilt: instance.isBuilt,
 				notes: instance.notes,
 				createdAt: instance.createdAt,
 				updatedAt: instance.updatedAt,

@@ -18,8 +18,14 @@ export const ArchiveItemSchema = z
 		description: z.string().max(YAML_SECURITY_LIMITS.MAX_STRING_LENGTH).optional(),
 		form: z.enum(['RF_SOLID', 'RF_LIQUID', 'RF_GAS']),
 		energyValue: z.number().nonnegative().optional(),
-		stackSize: z.number().positive().optional(),
-		radioactiveDecay: z.number().nonnegative().optional()
+		extractionBuildings: z
+			.array(z.string().min(1).max(YAML_SECURITY_LIMITS.MAX_STRING_LENGTH))
+			.max(50)
+			.optional(),
+		fuelGenerators: z
+			.array(z.string().min(1).max(YAML_SECURITY_LIMITS.MAX_STRING_LENGTH))
+			.max(50)
+			.optional()
 	})
 	.strict();
 

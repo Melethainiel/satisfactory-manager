@@ -14,8 +14,8 @@ interface ArchiveItemData {
 	description?: string;
 	form: 'RF_SOLID' | 'RF_LIQUID' | 'RF_GAS';
 	energyValue?: number;
-	stackSize?: number;
-	radioactiveDecay?: number;
+	extractionBuildings?: string[];
+	fuelGenerators?: string[];
 	// Additional fields that might exist but we don't use yet
 	[key: string]: any;
 }
@@ -27,6 +27,8 @@ interface ImportItemData {
 	description?: string;
 	form: 'RF_SOLID' | 'RF_LIQUID' | 'RF_GAS';
 	energyValue?: number;
+	extractionBuildings?: string[];
+	fuelGenerators?: string[];
 }
 
 export interface ArchiveImportResult {
@@ -249,7 +251,9 @@ class ArchiveItemService implements IArchiveItemService {
 			displayName: archiveItem.displayName,
 			description: archiveItem.description || undefined,
 			form: archiveItem.form,
-			energyValue: archiveItem.energyValue || undefined
+			energyValue: archiveItem.energyValue || undefined,
+			extractionBuildings: archiveItem.extractionBuildings || undefined,
+			fuelGenerators: archiveItem.fuelGenerators || undefined
 		};
 	}
 
@@ -372,11 +376,136 @@ class ArchiveItemService implements IArchiveItemService {
 				const createdVersions = await itemService.bulkCreateItemVersions(versionsToCreate);
 				results.versionsCreated = createdVersions.length;
 			}
+
+			// Process building associations for items that have them
+			await this.processBuildingAssociations(items, existingItemsMap, moduleVersionId, results);
 		} catch (error) {
 			results.errors.push(`Bulk import failed: ${error}`);
 		}
 
 		return results;
+	}
+
+	/**
+	 * Process building associations for imported items
+	 * @param items Imported item data
+	 * @param existingItemsMap Map of existing items by className
+	 * @param moduleVersionId Module version ID to find item versions and resolve building classNames
+	 * @param results Results object to add errors to
+	 */
+	private async processBuildingAssociations(
+		items: ImportItemData[],
+		existingItemsMap: Map<string, Item>,
+		moduleVersionId: string,
+		results: { created: number; updated: number; versionsCreated: number; errors: string[] }
+	): Promise<void> {
+		// Collect all building classNames that need to be resolved
+		const allBuildingClassNames = new Set<string>();
+
+		for (const itemData of items) {
+			if (itemData.extractionBuildings) {
+				itemData.extractionBuildings.forEach((className) => allBuildingClassNames.add(className));
+			}
+			if (itemData.fuelGenerators) {
+				itemData.fuelGenerators.forEach((className) => allBuildingClassNames.add(className));
+			}
+		}
+
+		if (allBuildingClassNames.size === 0) {
+			// No building associations to process
+			return;
+		}
+
+		// Get the moduleId from the moduleVersionId
+		const [moduleVersion] = await db
+			.select()
+			.from(moduleVersions)
+			.where(eq(moduleVersions.id, moduleVersionId));
+
+		if (!moduleVersion) {
+			results.errors.push(`Module version ${moduleVersionId} not found for building resolution`);
+			return;
+		}
+
+		// Resolve all building classNames to IDs in one query
+		const buildingClassNamesArray = Array.from(allBuildingClassNames);
+		const buildingIdMap = await itemService.getBuildingIdsByClassNames(
+			buildingClassNamesArray,
+			moduleVersion.moduleId
+		);
+
+		// Process each item's building associations
+		for (const itemData of items) {
+			const item = existingItemsMap.get(itemData.className);
+			if (!item) {
+				// Item should exist at this point, skip if not found
+				continue;
+			}
+
+			// Get the item version ID for this module version
+			const itemVersion = await itemService.getItemVersionByModuleAndItem(item.id, moduleVersionId);
+
+			if (!itemVersion) {
+				results.errors.push(`Could not find item version for ${itemData.className}`);
+				continue;
+			}
+
+			try {
+				// Process extraction building associations
+				if (itemData.extractionBuildings && itemData.extractionBuildings.length > 0) {
+					const extractionBuildingIds: string[] = [];
+					const missingClassNames: string[] = [];
+
+					for (const className of itemData.extractionBuildings) {
+						const buildingId = buildingIdMap.get(className);
+						if (buildingId) {
+							extractionBuildingIds.push(buildingId);
+						} else {
+							missingClassNames.push(className);
+						}
+					}
+
+					if (extractionBuildingIds.length > 0) {
+						await itemService.addItemExtractionBuildings(itemVersion.id, extractionBuildingIds);
+					}
+
+					if (missingClassNames.length > 0) {
+						results.errors.push(
+							`Item ${itemData.className}: extraction buildings not found: ${missingClassNames.join(', ')}`
+						);
+					}
+				}
+
+				// Process fuel generator associations
+				if (itemData.fuelGenerators && itemData.fuelGenerators.length > 0) {
+					const fuelGeneratorIds: string[] = [];
+					const missingClassNames: string[] = [];
+
+					for (const className of itemData.fuelGenerators) {
+						const buildingId = buildingIdMap.get(className);
+						if (buildingId) {
+							fuelGeneratorIds.push(buildingId);
+						} else {
+							missingClassNames.push(className);
+						}
+					}
+
+					if (fuelGeneratorIds.length > 0) {
+						await itemService.addItemFuelGenerators(itemVersion.id, fuelGeneratorIds);
+					}
+
+					if (missingClassNames.length > 0) {
+						results.errors.push(
+							`Item ${itemData.className}: fuel generators not found: ${missingClassNames.join(', ')}`
+						);
+					}
+				}
+			} catch (error) {
+				results.errors.push(
+					`Failed to process building associations for ${itemData.className}: ${error}`
+				);
+			}
+		}
 	}
 }
 

@@ -11,6 +11,8 @@ interface ImportItemData {
 	description?: string;
 	form: 'RF_SOLID' | 'RF_LIQUID' | 'RF_GAS';
 	energyValue?: number;
+	extractionBuildings?: string[];
+	fuelGenerators?: string[];
 }
 
 // POST /api/items/import - Bulk import item data
@@ -55,6 +57,19 @@ export const POST: RequestHandler = async ({ request }) => {
 			errors: [] as string[]
 		};
 
+		// Collect all unique building class names from all items to resolve them in batch
+		const allBuildingClassNames = new Set<string>();
+		for (const itemData of itemsData as ImportItemData[]) {
+			itemData.extractionBuildings?.forEach((className) => allBuildingClassNames.add(className));
+			itemData.fuelGenerators?.forEach((className) => allBuildingClassNames.add(className));
+		}
+
+		// Pre-resolve building class names to IDs for performance
+		const buildingClassNameToIdMap = await itemService.getBuildingIdsByClassNames(
+			Array.from(allBuildingClassNames),
+			moduleVersion.moduleId
+		);
+
 		for (const itemData of itemsData as ImportItemData[]) {
 			try {
 				// Validate required fields
@@ -98,6 +113,73 @@ export const POST: RequestHandler = async ({ request }) => {
 					}
 				}
 
+				// Validate extractionBuildings if provided
+				if (itemData.extractionBuildings !== undefined && itemData.extractionBuildings !== null) {
+					if (!Array.isArray(itemData.extractionBuildings)) {
+						results.errors.push(
+							`Invalid item data: extractionBuildings must be an array for ${itemData.className}`
+						);
+						continue;
+					}
+					for (const buildingClassName of itemData.extractionBuildings) {
+						if (typeof buildingClassName !== 'string' || !buildingClassName.trim()) {
+							results.errors.push(
+								`Invalid item data: extractionBuildings must contain valid string classNames for ${itemData.className}`
+							);
+							continue;
+						}
+					}
+				}
+
+				// Validate fuelGenerators if provided
+				if (itemData.fuelGenerators !== undefined && itemData.fuelGenerators !== null) {
+					if (!Array.isArray(itemData.fuelGenerators)) {
+						results.errors.push(
+							`Invalid item data: fuelGenerators must be an array for ${itemData.className}`
+						);
+						continue;
+					}
+					for (const buildingClassName of itemData.fuelGenerators) {
+						if (typeof buildingClassName !== 'string' || !buildingClassName.trim()) {
+							results.errors.push(
+								`Invalid item data: fuelGenerators must contain valid string classNames for ${itemData.className}`
+							);
+							continue;
+						}
+					}
+				}
+
+				// Validate that all referenced building class names exist
+				const missingExtractionBuildings: string[] = [];
+				const missingFuelGenerators: string[] = [];
+
+				if (itemData.extractionBuildings) {
+					for (const className of itemData.extractionBuildings) {
+						if (!buildingClassNameToIdMap.has(className)) {
+							missingExtractionBuildings.push(className);
+						}
+					}
+				}
+
+				if (itemData.fuelGenerators) {
+					for (const className of itemData.fuelGenerators) {
+						if (!buildingClassNameToIdMap.has(className)) {
+							missingFuelGenerators.push(className);
+						}
+					}
+				}
+
+				if (missingExtractionBuildings.length > 0 || missingFuelGenerators.length > 0) {
+					const missingClassNames = [
+						...missingExtractionBuildings.map((cn) => `extraction: ${cn}`),
+						...missingFuelGenerators.map((cn) => `fuel: ${cn}`)
+					];
+					results.errors.push(
+						`Invalid item data: Building class names not found in module for ${itemData.className}: ${missingClassNames.join(', ')}`
+					);
+					continue;
+				}
+
 				// Check if item exists
 				let item = await itemService.getItemByClassName(itemData.className.trim());
 
@@ -130,18 +212,46 @@ export const POST: RequestHandler = async ({ request }) => {
 
 				if (item) {
 					// Check if item version already exists for this module version
-					const existingVersion = await itemService.getItemVersionByModuleAndItem(
+					let itemVersion = await itemService.getItemVersionByModuleAndItem(
 						item.id,
 						moduleVersionId
 					);
 
-					if (!existingVersion) {
+					if (!itemVersion) {
 						// Create item version with energy value
-						await itemService.addItemVersion(item.id, {
+						itemVersion = await itemService.addItemVersion(item.id, {
 							moduleVersionId,
 							energyValue: itemData.energyValue?.toString() || '0'
 						});
 						results.versionsCreated++;
+					}
+
+					// Handle building associations if the item version exists
+					if (itemVersion) {
+						// Clear existing building associations first
+						await itemService.clearItemBuildingAssociations(itemVersion.id);
+
+						// Add new extraction building associations
+						if (itemData.extractionBuildings && itemData.extractionBuildings.length > 0) {
+							const extractionBuildingIds = itemData.extractionBuildings
+								.map((className) => buildingClassNameToIdMap.get(className))
+								.filter((id): id is string => id !== undefined);
+
+							if (extractionBuildingIds.length > 0) {
+								await itemService.addItemExtractionBuildings(itemVersion.id, extractionBuildingIds);
+							}
+						}
+
+						// Add new fuel generator associations
+						if (itemData.fuelGenerators && itemData.fuelGenerators.length > 0) {
+							const fuelGeneratorIds = itemData.fuelGenerators
+								.map((className) => buildingClassNameToIdMap.get(className))
+								.filter((id): id is string => id !== undefined);
+
+							if (fuelGeneratorIds.length > 0) {
+								await itemService.addItemFuelGenerators(itemVersion.id, fuelGeneratorIds);
+							}
+						}
 					}
 				}
 			} catch (error) {

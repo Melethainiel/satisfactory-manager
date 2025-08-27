@@ -1,0 +1,2 @@
+CREATE TYPE "public"."extractor_purity" AS ENUM('Impure', 'Normal', 'Pure');--> statement-breakpoint
+ALTER TABLE "production_instances" ADD COLUMN "extractor_purity" "extractor_purity" DEFAULT 'Normal';

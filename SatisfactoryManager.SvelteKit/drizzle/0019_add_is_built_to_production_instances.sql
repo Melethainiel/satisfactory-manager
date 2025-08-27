@@ -1,0 +1,1 @@
+ALTER TABLE "production_instances" ADD COLUMN "is_built" boolean DEFAULT false NOT NULL;

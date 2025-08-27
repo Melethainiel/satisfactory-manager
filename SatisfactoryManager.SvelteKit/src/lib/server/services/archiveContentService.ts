@@ -110,14 +110,25 @@ class ArchiveContentService implements IArchiveContentService {
 					}
 				};
 
-				// Import items and buildings in parallel (no dependencies between them)
-				const [itemsResult, buildingsResult] = await Promise.all([
-					this.importItemsFromYaml(archiveContent.extractedContent.itemsYaml, moduleVersionId),
-					this.importBuildingsFromYaml(
-						archiveContent.extractedContent.buildingsYaml,
-						moduleVersionId
-					)
-				]);
+
+
+				const buildingsResult = await this.importBuildingsFromYaml(
+					archiveContent.extractedContent.buildingsYaml,
+					moduleVersionId
+				)
+				// Process buildings results
+				if (buildingsResult) {
+					result.buildings = {
+						totalBuildings: buildingsResult.totalBuildings,
+						validBuildings: buildingsResult.validBuildings,
+						created: buildingsResult.importResults.created,
+						updated: buildingsResult.importResults.updated,
+						versionsCreated: buildingsResult.importResults.versionsCreated
+					};
+					result.errors.push(...buildingsResult.importResults.errors);
+				}
+
+				const itemsResult = await this.importItemsFromYaml(archiveContent.extractedContent.itemsYaml, moduleVersionId);
 
 				// Process items results
 				if (itemsResult) {
@@ -131,17 +142,7 @@ class ArchiveContentService implements IArchiveContentService {
 					result.errors.push(...itemsResult.importResults.errors);
 				}
 
-				// Process buildings results
-				if (buildingsResult) {
-					result.buildings = {
-						totalBuildings: buildingsResult.totalBuildings,
-						validBuildings: buildingsResult.validBuildings,
-						created: buildingsResult.importResults.created,
-						updated: buildingsResult.importResults.updated,
-						versionsCreated: buildingsResult.importResults.versionsCreated
-					};
-					result.errors.push(...buildingsResult.importResults.errors);
-				}
+
 
 				// Import recipes after items and buildings (has dependencies)
 				const recipesResult = await this.importRecipesFromYaml(

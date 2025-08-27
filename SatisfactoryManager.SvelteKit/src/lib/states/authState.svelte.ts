@@ -1,5 +1,7 @@
 import { getContext, setContext } from 'svelte';
-import { API_USER_ACCESS_SCOPE, azureB2CConfig } from '$lib/auth/config.js';
+// API scope moved inline to avoid import issues
+const API_USER_ACCESS_SCOPE =
+	'https://SatisfactoryManager.onmicrosoft.com/71d43619-ad3d-49d4-bae9-97e38ec57dc4/access_users';
 import { notificationService } from '$lib/services/notificationService.svelte';
 import {
 	PublicClientApplication,
@@ -46,8 +48,15 @@ export interface AuthState {
 	) => Promise<T | Response>;
 }
 
-// Use the configuration from auth/config.ts
-const defaultConfig: AzureB2CConfig = azureB2CConfig;
+// Default empty config - will be initialized properly with initializeMsal
+const defaultConfig: AzureB2CConfig = {
+	clientId: '',
+	authority: '',
+	knownAuthorities: [],
+	redirectUri: undefined,
+	postLogoutRedirectUri: undefined,
+	scopes: ['openid', 'profile', 'email', API_USER_ACCESS_SCOPE]
+};
 
 class AuthStateClass implements AuthState {
 	// Reactive state using Svelte 5 $state rune

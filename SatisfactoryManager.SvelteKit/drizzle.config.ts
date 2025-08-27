@@ -21,9 +21,9 @@ function isAspireConnectionString(connectionString: string): boolean {
  */
 function convertAspireConnectionStringToUrl(connectionString: string): string {
 	const params: Record<string, string> = {};
-	
+
 	// Parse key=value pairs separated by semicolons
-	connectionString.split(';').forEach(pair => {
+	connectionString.split(';').forEach((pair) => {
 		if (pair.trim()) {
 			const [key, value] = pair.split('=');
 			if (key && value) {
@@ -38,16 +38,16 @@ function convertAspireConnectionStringToUrl(connectionString: string): string {
 	const username = params['Username'] || params['User Id'] || 'postgres';
 	const password = params['Password'] || '';
 	const database = params['Database'] || params['Initial Catalog'] || 'postgres';
-	
+
 	// Encode password to handle special characters
 	const encodedPassword = encodeURIComponent(password);
-	
+
 	// For Aspire local containers, disable SSL by default
 	const sslMode = params['SSL Mode'] || params['SslMode'] || 'disable';
-	
+
 	const url = `postgresql://${username}:${encodedPassword}@${host}:${port}/${database}?sslmode=${sslMode}`;
 	console.log(`🔄 Converted Aspire connection string to URL for Drizzle Kit`);
-	
+
 	return url;
 }
 
@@ -64,13 +64,13 @@ function getDatabaseUrl(): string {
 		}
 		return aspireConnectionString;
 	}
-	
+
 	// Priority 2: Manual DATABASE_URL override
 	if (process.env.DATABASE_URL) {
 		console.log('🔧 Using manual DATABASE_URL for Drizzle Kit');
 		return process.env.DATABASE_URL;
 	}
-	
+
 	// Priority 3: Fallback for local development
 	console.log('⚠️ Using fallback local database URL for Drizzle Kit');
 	return 'postgres://app:app@localhost:5432/satisfactory';

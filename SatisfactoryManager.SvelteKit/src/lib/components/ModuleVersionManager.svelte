@@ -38,6 +38,8 @@
 		{}
 	);
 	let importingVersions = $state<Set<string>>(new Set());
+	let importResults = $state<Record<string, { importResult: any }>>({});
+	let showImportDetails = $state<Record<string, boolean>>({});
 
 	async function loadVersions() {
 		if (!authState.apiFetch) return;
@@ -215,7 +217,11 @@
 				}
 			};
 
-			// Show success feedback (could be enhanced with more detailed results)
+			// Store import results for display
+			importResults = {
+				...importResults,
+				[versionId]: importResult
+			};
 			console.log('Version content imported successfully:', importResult);
 		} catch (e: unknown) {
 			error = e instanceof Error ? e.message : 'Failed to import version content';
@@ -225,6 +231,13 @@
 			newImportingVersions.delete(versionId);
 			importingVersions = newImportingVersions;
 		}
+	}
+
+	function toggleImportDetails(versionId: string) {
+		showImportDetails = {
+			...showImportDetails,
+			[versionId]: !showImportDetails[versionId]
+		};
 	}
 
 	// Load versions when component mounts or module changes
@@ -399,6 +412,74 @@
 						{/if}
 					</div>
 				</div>
+
+				<!-- Import Results Display -->
+				{#if importResults[version.id]}
+					{@const result = importResults[version.id].importResult}
+					<div class="mt-2 ml-4 rounded border-l-4 border-primary bg-base-200 p-3">
+						<div class="flex items-center justify-between">
+							<h4 class="font-semibold">{$t('dialogs.module_version.import_results')}</h4>
+							<button class="btn btn-ghost btn-xs" onclick={() => toggleImportDetails(version.id)}>
+								{#if showImportDetails[version.id]}
+									{$t('dialogs.module_version.hide_details')}
+								{:else}
+									{$t('dialogs.module_version.show_details')}
+								{/if}
+							</button>
+						</div>
+
+						<!-- Summary -->
+						<div class="mt-2 grid grid-cols-3 gap-4 text-sm">
+							<div class="text-center">
+								<div class="text-2xl font-bold text-success">
+									{result.items.created + result.items.updated}
+								</div>
+								<div class="text-xs opacity-70">{$t('dialogs.module_version.items_processed')}</div>
+							</div>
+							<div class="text-center">
+								<div class="text-2xl font-bold text-success">
+									{result.buildings.created + result.buildings.updated}
+								</div>
+								<div class="text-xs opacity-70">
+									{$t('dialogs.module_version.buildings_processed')}
+								</div>
+							</div>
+							<div class="text-center">
+								<div class="text-2xl font-bold text-success">
+									{result.recipes.created + result.recipes.updated}
+								</div>
+								<div class="text-xs opacity-70">
+									{$t('dialogs.module_version.recipes_processed')}
+								</div>
+							</div>
+						</div>
+
+						<!-- Errors Section -->
+						{#if result.errors && result.errors.length > 0}
+							<div class="mt-3 alert alert-warning py-2">
+								<div class="flex items-center gap-2">
+									<span class="font-semibold"
+										>{$t('dialogs.module_version.errors_found')}: {result.errors.length}</span
+									>
+								</div>
+							</div>
+
+							{#if showImportDetails[version.id]}
+								<div class="mt-2 space-y-1">
+									{#each result.errors as error, index (index)}
+										<div class="rounded border-l-2 border-warning bg-warning/10 p-2 text-sm">
+											{error}
+										</div>
+									{/each}
+								</div>
+							{/if}
+						{:else}
+							<div class="mt-3 alert alert-success py-2">
+								<span class="font-semibold">{$t('dialogs.module_version.no_errors')}</span>
+							</div>
+						{/if}
+					</div>
+				{/if}
 			{/each}
 		</div>
 	{/if}

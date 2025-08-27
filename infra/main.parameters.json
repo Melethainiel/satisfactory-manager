@@ -1,0 +1,36 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "principalId": {
+      "value": "${AZURE_PRINCIPAL_ID}"
+    },
+    "azure_b2c_authority": {
+      "value": "${AZURE_AZURE_B2C_AUTHORITY}"
+    },
+    "azure_b2c_client_id": {
+      "value": "${AZURE_AZURE_B2C_CLIENT_ID}"
+    },
+    "azure_b2c_known_authorities": {
+      "value": "${AZURE_AZURE_B2C_KNOWN_AUTHORITIES}"
+    },
+    "azure_b2c_tenant_id": {
+      "value": "${AZURE_AZURE_B2C_TENANT_ID}"
+    },
+    "environmentName": {
+      "value": "${AZURE_ENV_NAME}"
+    },
+    "location": {
+      "value": "${AZURE_LOCATION}"
+    },
+    "resourceToken": {
+      "value": "${AZURE_RESOURCE_TOKEN}"
+    },
+    "domainName": {
+      "value": "${AZURE_DOMAIN_NAME}"
+    },
+    "certificateName": {
+      "value": "${MANAGED_CERTIFICATE_NAME}"
+    }
+  }
+}

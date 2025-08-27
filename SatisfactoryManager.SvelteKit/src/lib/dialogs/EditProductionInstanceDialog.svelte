@@ -89,12 +89,18 @@
 			const buildingOutput = parseFloat(currentInstance.buildingVersion.output || '0');
 			const purityMultiplier = getPurityMultiplier(extractorPurity);
 			ratePerBuilding = buildingOutput * efficiencyRatio * purityMultiplier;
-		} else if (currentInstance.recipe && currentInstance.products && currentInstance.products.length > 0) {
+		} else if (
+			currentInstance.recipe &&
+			currentInstance.products &&
+			currentInstance.products.length > 0
+		) {
 			// Crafting - use the production calculation from existing instance
 			// We can derive the rate from the current setup
 			const currentRate = parseFloat(currentInstance.buildingCount) * efficiencyRatio;
 			// Get base rate per building at 100% efficiency
-			const baseRate = currentRate / (parseFloat(currentInstance.buildingCount) * parseFloat(currentInstance.efficiencyRatio));
+			const baseRate =
+				currentRate /
+				(parseFloat(currentInstance.buildingCount) * parseFloat(currentInstance.efficiencyRatio));
 			ratePerBuilding = baseRate * efficiencyRatio;
 		}
 
@@ -113,10 +119,16 @@
 			const buildingOutput = parseFloat(currentInstance.buildingVersion.output || '0');
 			const purityMultiplier = getPurityMultiplier(extractorPurity);
 			ratePerBuilding = buildingOutput * efficiencyRatio * purityMultiplier;
-		} else if (currentInstance.recipe && currentInstance.products && currentInstance.products.length > 0) {
+		} else if (
+			currentInstance.recipe &&
+			currentInstance.products &&
+			currentInstance.products.length > 0
+		) {
 			// Crafting - derive rate from current production data
 			const currentRate = parseFloat(currentInstance.buildingCount) * efficiencyRatio;
-			const baseRate = currentRate / (parseFloat(currentInstance.buildingCount) * parseFloat(currentInstance.efficiencyRatio));
+			const baseRate =
+				currentRate /
+				(parseFloat(currentInstance.buildingCount) * parseFloat(currentInstance.efficiencyRatio));
 			ratePerBuilding = baseRate * efficiencyRatio;
 		}
 
@@ -131,8 +143,13 @@
 		if (currentInstance.extractedItemVersionId && currentInstance.buildingVersion) {
 			const buildingOutput = parseFloat(currentInstance.buildingVersion.output || '0');
 			const purityMultiplier = getPurityMultiplier(currentInstance.extractorPurity || 'Normal');
-			ratePerBuilding = buildingOutput * parseFloat(currentInstance.efficiencyRatio) * purityMultiplier;
-		} else if (currentInstance.recipe && currentInstance.products && currentInstance.products.length > 0) {
+			ratePerBuilding =
+				buildingOutput * parseFloat(currentInstance.efficiencyRatio) * purityMultiplier;
+		} else if (
+			currentInstance.recipe &&
+			currentInstance.products &&
+			currentInstance.products.length > 0
+		) {
 			// Use the production count directly from products data (already in items/min per building)
 			const outputPerMinutePerBuilding = parseFloat(currentInstance.products[0].count);
 			ratePerBuilding = outputPerMinutePerBuilding * parseFloat(currentInstance.efficiencyRatio);
@@ -269,7 +286,11 @@
 					<div class="form-control">
 						<label class="label cursor-pointer">
 							<span class="label-text">Calcul automatique du nombre de bâtiments</span>
-							<input type="checkbox" bind:checked={autoCalculateMode} class="checkbox checkbox-primary" />
+							<input
+								type="checkbox"
+								bind:checked={autoCalculateMode}
+								class="checkbox checkbox-primary"
+							/>
 						</label>
 					</div>
 				{/if}
@@ -278,7 +299,9 @@
 				{#if autoCalculateMode}
 					<div class="form-control">
 						<label class="label" for="desired-rate-edit">
-							<span class="label-text">Production souhaitée (items/min)<span class="text-error">*</span></span>
+							<span class="label-text"
+								>Production souhaitée (items/min)<span class="text-error">*</span></span
+							>
 						</label>
 						<input
 							id="desired-rate-edit"

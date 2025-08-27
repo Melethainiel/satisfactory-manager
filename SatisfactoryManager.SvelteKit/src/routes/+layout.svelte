@@ -2,7 +2,7 @@
 	import '../app.css';
 	import { onMount } from 'svelte';
 	import { setAuthState } from '$lib/states/authState.svelte';
-	import { azureB2CConfig } from '$lib/auth/config';
+	import { getClientAzureB2CConfig, CLIENT_AUTH_SCOPES } from '$lib/config/auth.config.client';
 	import { setGameState } from '$lib/states/gameState.svelte';
 	import { setPermissionState } from '$lib/states/permissionState.svelte';
 	import Header from '$lib/components/Header.svelte';
@@ -24,7 +24,15 @@
 	// Initialize MSAL when the app starts
 	onMount(async () => {
 		try {
-			await authState.initializeMsal(azureB2CConfig);
+			const azureConfig = await getClientAzureB2CConfig();
+			const configWithScopes = {
+				...azureConfig,
+				scopes: [
+					...CLIENT_AUTH_SCOPES.DEFAULT,
+					'https://SatisfactoryManager.onmicrosoft.com/71d43619-ad3d-49d4-bae9-97e38ec57dc4/access_users'
+				]
+			};
+			await authState.initializeMsal(configWithScopes);
 			// Provide authenticated fetch helper to game state once auth is ready
 			gameState.attachAuth(authState.apiFetch);
 			// Poll until user loaded then fetch games once

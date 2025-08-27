@@ -30,6 +30,7 @@
 		"@eslint/compat": "^1.2.5",
 		"@eslint/js": "^9.18.0",
 		"@sveltejs/adapter-auto": "^6.0.0",
+		"@sveltejs/adapter-node": "^5.3.1",
 		"@sveltejs/kit": "^2.22.0",
 		"@sveltejs/vite-plugin-svelte": "^6.0.0",
 		"@tailwindcss/vite": "^4.0.0",
@@ -58,6 +59,7 @@
 		"vitest": "^3.2.4"
 	},
 	"dependencies": {
+		"@azure/identity": "^4.11.1",
 		"@azure/msal-browser": "^4.19.0",
 		"@types/tmp": "^0.2.6",
 		"daisyui": "^5.0.50",

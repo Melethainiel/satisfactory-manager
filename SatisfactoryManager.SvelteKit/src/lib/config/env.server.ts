@@ -8,15 +8,8 @@
 import { z } from 'zod';
 import type { ServerEnv, EnvValidationError } from './env.types.js';
 
-// Import static environment variables using SvelteKit native modules
-// Only import variables that are actually defined in .env and available in static
-import {
-	DATABASE_URL,
-	AZURE_B2C_CLIENT_ID,
-	AZURE_B2C_AUTHORITY,
-	AZURE_B2C_KNOWN_AUTHORITIES,
-	AZURE_B2C_TENANT_ID
-} from '$env/static/private';
+// Note: In Aspire deployments, environment variables are injected at runtime
+// so we use dynamic imports only to avoid build-time dependency issues
 
 // Import dynamic environment variables
 import { env as dynamicEnv } from '$env/dynamic/private';
@@ -26,10 +19,8 @@ import { env as dynamicEnv } from '$env/dynamic/private';
  * Validates types, formats, and required fields
  */
 const serverEnvSchema = z.object({
-	// Database Configuration
-	DATABASE_URL: z
-		.url('DATABASE_URL must be a valid URL')
-		.min(1, 'DATABASE_URL is required'),
+	// Database Configuration (optional - Aspire connection strings take priority)
+	DATABASE_URL: z.url('DATABASE_URL must be a valid URL').optional(),
 
 	// Azure B2C Server Configuration
 	AZURE_B2C_CLIENT_ID: z
@@ -50,12 +41,14 @@ const serverEnvSchema = z.object({
 		.min(1, 'AZURE_B2C_KNOWN_AUTHORITIES is required')
 		.refine((val) => {
 			try {
+				// Try to parse as JSON array first
 				const authorities = JSON.parse(val);
 				return Array.isArray(authorities) && authorities.every((a) => typeof a === 'string');
 			} catch {
-				return false;
+				// If not JSON, treat as single authority string
+				return typeof val === 'string' && val.length > 0;
 			}
-		}, 'AZURE_B2C_KNOWN_AUTHORITIES must be a valid JSON array of strings'),
+		}, 'AZURE_B2C_KNOWN_AUTHORITIES must be a valid JSON array of strings or a single authority string'),
 
 	AZURE_B2C_TENANT_ID: z.string().min(1, 'AZURE_B2C_TENANT_ID must not be empty').optional(),
 
@@ -97,17 +90,15 @@ export function getServerConfig(forceReload = false): ServerEnv {
 	validationErrors = [];
 
 	try {
-		// Combine static and dynamic environment variables
-		// Static variables are preferred for performance (injected at build time)
-		// Dynamic variables are used for runtime-only secrets and optional variables
+		// Use only dynamic environment variables for Aspire compatibility
+		// In Aspire deployments, all variables are injected at runtime
 		const envVars = {
-			DATABASE_URL: DATABASE_URL || dynamicEnv.DATABASE_URL,
-			AZURE_B2C_CLIENT_ID: AZURE_B2C_CLIENT_ID || dynamicEnv.AZURE_B2C_CLIENT_ID,
-			AZURE_B2C_AUTHORITY: AZURE_B2C_AUTHORITY || dynamicEnv.AZURE_B2C_AUTHORITY,
-			AZURE_B2C_KNOWN_AUTHORITIES:
-				AZURE_B2C_KNOWN_AUTHORITIES || dynamicEnv.AZURE_B2C_KNOWN_AUTHORITIES,
-			AZURE_B2C_CLIENT_SECRET: dynamicEnv.AZURE_B2C_CLIENT_SECRET, // Only in dynamic (sensitive)
-			AZURE_B2C_TENANT_ID: AZURE_B2C_TENANT_ID || dynamicEnv.AZURE_B2C_TENANT_ID,
+			DATABASE_URL: dynamicEnv.DATABASE_URL, // Optional - Aspire connections take priority
+			AZURE_B2C_CLIENT_ID: dynamicEnv.AZURE_B2C_CLIENT_ID,
+			AZURE_B2C_AUTHORITY: dynamicEnv.AZURE_B2C_AUTHORITY,
+			AZURE_B2C_KNOWN_AUTHORITIES: dynamicEnv.AZURE_B2C_KNOWN_AUTHORITIES,
+			AZURE_B2C_CLIENT_SECRET: dynamicEnv.AZURE_B2C_CLIENT_SECRET, // Sensitive
+			AZURE_B2C_TENANT_ID: dynamicEnv.AZURE_B2C_TENANT_ID,
 			AZURE_B2C_POLICY: dynamicEnv.AZURE_B2C_POLICY,
 			AZURE_B2C_API_SCOPE: dynamicEnv.AZURE_B2C_API_SCOPE,
 			API_BASE_URL: dynamicEnv.API_BASE_URL,
@@ -192,17 +183,7 @@ export function getServerEnvVar<K extends keyof ServerEnv>(
 }
 
 /**
- * Validates server configuration during module initialization
- * This ensures early detection of configuration issues
+ * Note: Validation is skipped during module initialization for Aspire compatibility
+ * Environment variables are injected at runtime, not build time
+ * Validation will occur when getServerConfig() is explicitly called
  */
-try {
-	if (typeof window === 'undefined') {
-		// Only validate on server-side (not during client-side hydration)
-		getServerConfig();
-		console.log('✅ Server environment configuration validated successfully');
-	}
-} catch (error) {
-	console.error('💥 Failed to initialize server environment configuration');
-	// Don't throw during module loading to avoid breaking the entire app
-	// Errors will be thrown when getServerConfig() is called
-}

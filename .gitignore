@@ -82,7 +82,6 @@ android
 build
 # SvelteKit output directory
 dist
-.github/*
 .copilot/*
 
 #DevDB

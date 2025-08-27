@@ -9,15 +9,8 @@ import { z } from 'zod';
 import { browser } from '$app/environment';
 import type { PublicEnv, EnvValidationError } from './env.types.js';
 
-// Import static public environment variables using SvelteKit native modules
-// Only import variables that are actually defined in .env and available in static
-import {
-	PUBLIC_AZURE_B2C_CLIENT_ID,
-	PUBLIC_AZURE_B2C_AUTHORITY,
-	PUBLIC_AZURE_B2C_KNOWN_AUTHORITIES,
-	PUBLIC_AZURE_B2C_REDIRECT_URI,
-	PUBLIC_AZURE_B2C_POST_LOGOUT_REDIRECT_URI
-} from '$env/static/public';
+// Note: In Aspire deployments, public environment variables are injected at runtime
+// so we use dynamic imports only to avoid build-time dependency issues
 
 // Import dynamic public environment variables
 import { env as dynamicPublicEnv } from '$env/dynamic/public';
@@ -41,12 +34,14 @@ const publicEnvSchema = z.object({
 		.min(1, 'PUBLIC_AZURE_B2C_KNOWN_AUTHORITIES is required')
 		.refine((val) => {
 			try {
+				// Try to parse as JSON array first
 				const authorities = JSON.parse(val);
 				return Array.isArray(authorities) && authorities.every((a) => typeof a === 'string');
 			} catch {
-				return false;
+				// If not JSON, treat as single authority string
+				return typeof val === 'string' && val.length > 0;
 			}
-		}, 'PUBLIC_AZURE_B2C_KNOWN_AUTHORITIES must be a valid JSON array of strings'),
+		}, 'PUBLIC_AZURE_B2C_KNOWN_AUTHORITIES must be a valid JSON array of strings or a single authority string'),
 
 	PUBLIC_AZURE_B2C_REDIRECT_URI: z
 		.url('PUBLIC_AZURE_B2C_REDIRECT_URI must be a valid URL')
@@ -91,25 +86,22 @@ export function getPublicConfig(forceReload = false): PublicEnv {
 		return publicConfig;
 	}
 
+	if (window === undefined) {
+		console.error(`❌ gn ? `);
+	}
+
 	// Clear previous errors
 	validationErrors = [];
 
 	try {
-		// Combine static and dynamic public environment variables
-		// Static variables are preferred for performance (injected at build time)
-		// Dynamic variables are used for runtime configuration
+		// Use only dynamic public environment variables for Aspire compatibility
+		// In Aspire deployments, all variables are injected at runtime
 		const envVars = {
-			PUBLIC_AZURE_B2C_CLIENT_ID:
-				PUBLIC_AZURE_B2C_CLIENT_ID || dynamicPublicEnv.PUBLIC_AZURE_B2C_CLIENT_ID,
-			PUBLIC_AZURE_B2C_AUTHORITY:
-				PUBLIC_AZURE_B2C_AUTHORITY || dynamicPublicEnv.PUBLIC_AZURE_B2C_AUTHORITY,
-			PUBLIC_AZURE_B2C_KNOWN_AUTHORITIES:
-				PUBLIC_AZURE_B2C_KNOWN_AUTHORITIES || dynamicPublicEnv.PUBLIC_AZURE_B2C_KNOWN_AUTHORITIES,
-			PUBLIC_AZURE_B2C_REDIRECT_URI:
-				PUBLIC_AZURE_B2C_REDIRECT_URI || dynamicPublicEnv.PUBLIC_AZURE_B2C_REDIRECT_URI,
-			PUBLIC_AZURE_B2C_POST_LOGOUT_REDIRECT_URI:
-				PUBLIC_AZURE_B2C_POST_LOGOUT_REDIRECT_URI ||
-				dynamicPublicEnv.PUBLIC_AZURE_B2C_POST_LOGOUT_REDIRECT_URI,
+			PUBLIC_AZURE_B2C_CLIENT_ID: dynamicPublicEnv.PUBLIC_AZURE_B2C_CLIENT_ID,
+			PUBLIC_AZURE_B2C_AUTHORITY: dynamicPublicEnv.PUBLIC_AZURE_B2C_AUTHORITY,
+			PUBLIC_AZURE_B2C_KNOWN_AUTHORITIES: dynamicPublicEnv.PUBLIC_AZURE_B2C_KNOWN_AUTHORITIES,
+			PUBLIC_AZURE_B2C_REDIRECT_URI: window.location.origin,
+			PUBLIC_AZURE_B2C_POST_LOGOUT_REDIRECT_URI: window.location.origin,
 			PUBLIC_AZURE_B2C_API_USER_ACCESS_SCOPE:
 				dynamicPublicEnv.PUBLIC_AZURE_B2C_API_USER_ACCESS_SCOPE,
 			PUBLIC_API_BASE_URL: dynamicPublicEnv.PUBLIC_API_BASE_URL,
@@ -201,23 +193,23 @@ export function getPublicEnvVar<K extends keyof PublicEnv>(
 export function getKnownAuthorities(): string[] {
 	try {
 		const config = getPublicConfig();
-		return JSON.parse(config.PUBLIC_AZURE_B2C_KNOWN_AUTHORITIES);
+		const authoritiesValue = config.PUBLIC_AZURE_B2C_KNOWN_AUTHORITIES;
+		
+		try {
+			// Try to parse as JSON array first
+			const parsed = JSON.parse(authoritiesValue);
+			return Array.isArray(parsed) ? parsed : [authoritiesValue];
+		} catch {
+			// If not JSON, treat as single authority string
+			return [authoritiesValue];
+		}
 	} catch {
 		return [];
 	}
 }
 
 /**
- * Validates public configuration during module initialization
- * This ensures early detection of configuration issues
+ * Note: Validation is skipped during module initialization for Aspire compatibility
+ * Environment variables are injected at runtime, not build time
+ * Validation will occur when getPublicConfig() is explicitly called
  */
-try {
-	getPublicConfig();
-	const context = browser ? 'Client' : 'Server';
-	console.log(`✅ ${context} public environment configuration validated successfully`);
-} catch (error) {
-	const context = browser ? 'Client' : 'Server';
-	console.error(`💥 Failed to initialize ${context} public environment configuration`);
-	// Don't throw during module loading to avoid breaking the entire app
-	// Errors will be thrown when getPublicConfig() is called
-}

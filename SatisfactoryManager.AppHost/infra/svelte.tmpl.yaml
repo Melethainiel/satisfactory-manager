@@ -1,0 +1,61 @@
+api-version: 2024-02-02-preview
+location: {{ .Env.AZURE_LOCATION }}
+identity:
+  type: UserAssigned
+  userAssignedIdentities:
+    ? "{{ .Env.AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID }}"
+    : {}
+properties:
+  environmentId: {{ .Env.AZURE_CONTAINER_APPS_ENVIRONMENT_ID }}
+  configuration:
+    activeRevisionsMode: single
+    runtime:
+      dotnet:
+        autoConfigureDataProtection: true
+    ingress:
+      external: true
+      targetPort: 5173
+      transport: http
+      allowInsecure: false
+      customDomains:
+        - name: "{{ .Env.AZURE_DOMAIN_NAME }}"
+          certificateId: "{{ .Env.MANAGED_CERTIFICATE_ID }}"
+          bindingType: SniEnabled
+    registries:
+      - server: {{ .Env.AZURE_CONTAINER_REGISTRY_ENDPOINT }}
+        identity: {{ .Env.AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID }}
+    secrets:
+      - name: connectionstrings--satisfactory
+        value: '{{ .Env.POSTGRES_CONNECTIONSTRING }};Database=satisfactory'
+  template:
+    containers:
+      - image: {{ .Image }}
+        name: svelte
+        env:
+          - name: AZURE_CLIENT_ID
+            value: {{ .Env.MANAGED_IDENTITY_CLIENT_ID }}
+          - name: AZURE_B2C_AUTHORITY
+            value: '{{ parameter "azure_b2c_authority" }}'
+          - name: AZURE_B2C_CLIENT_ID
+            value: '{{ parameter "azure_b2c_client_id" }}'
+          - name: AZURE_B2C_KNOWN_AUTHORITIES
+            value: '{{ parameter "azure_b2c_known_authorities" }}'
+          - name: AZURE_B2C_TENANT_ID
+            value: '{{ parameter "azure_b2c_tenant_id" }}'
+          - name: NODE_ENV
+            value: production
+          - name: PORT
+            value: "5173"
+          - name: PUBLIC_AZURE_B2C_AUTHORITY
+            value: '{{ parameter "azure_b2c_authority" }}'
+          - name: PUBLIC_AZURE_B2C_CLIENT_ID
+            value: '{{ parameter "azure_b2c_client_id" }}'
+          - name: PUBLIC_AZURE_B2C_KNOWN_AUTHORITIES
+            value: '{{ parameter "azure_b2c_known_authorities" }}'
+          - name: ConnectionStrings__satisfactory
+            secretRef: connectionstrings--satisfactory
+    scale:
+      minReplicas: 1
+tags:
+  azd-service-name: svelte
+  aspire-resource-name: svelte

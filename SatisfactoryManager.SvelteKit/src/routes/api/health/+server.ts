@@ -7,7 +7,7 @@ export const GET: RequestHandler = async () => {
 	try {
 		// Simple database connectivity check
 		await db.execute(sql`SELECT 1`);
-		
+
 		return json({
 			status: 'healthy',
 			timestamp: new Date().toISOString(),

@@ -177,7 +177,15 @@
 			"import_version": "Importer",
 			"importing": "Import en cours...",
 			"already_imported": "Déjà importé",
-			"imported_badge": "Importé"
+			"imported_badge": "Importé",
+			"import_results": "Résultats d'importation",
+			"show_details": "Afficher les détails",
+			"hide_details": "Masquer les détails",
+			"items_processed": "Objets",
+			"buildings_processed": "Bâtiments",
+			"recipes_processed": "Recettes",
+			"errors_found": "Erreurs trouvées",
+			"no_errors": "Importation terminée avec succès sans erreurs"
 		}
 	},
 	"common": {

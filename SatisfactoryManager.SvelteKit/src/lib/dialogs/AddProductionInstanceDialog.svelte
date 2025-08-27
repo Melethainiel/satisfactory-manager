@@ -159,7 +159,7 @@
 	function calculateBuildingCount(): number {
 		if (!desiredItemsPerMin || desiredItemsPerMin <= 0) return 1;
 
-		const selectedBuilding = itemState.availableBuildings.find(b => b.id === selectedBuildingId);
+		const selectedBuilding = itemState.availableBuildings.find((b) => b.id === selectedBuildingId);
 		if (!selectedBuilding) return 1;
 
 		let ratePerBuilding = 0;
@@ -183,7 +183,7 @@
 	}
 
 	function calculateActualProduction(): number {
-		const selectedBuilding = itemState.availableBuildings.find(b => b.id === selectedBuildingId);
+		const selectedBuilding = itemState.availableBuildings.find((b) => b.id === selectedBuildingId);
 		if (!selectedBuilding) return 0;
 
 		let ratePerBuilding = 0;
@@ -614,7 +614,11 @@
 				<div class="form-control">
 					<label class="label cursor-pointer">
 						<span class="label-text">Calcul automatique du nombre de bâtiments</span>
-						<input type="checkbox" bind:checked={autoCalculateMode} class="checkbox checkbox-primary" />
+						<input
+							type="checkbox"
+							bind:checked={autoCalculateMode}
+							class="checkbox checkbox-primary"
+						/>
 					</label>
 				</div>
 			{/if}
@@ -623,7 +627,9 @@
 			{#if autoCalculateMode}
 				<div class="form-control">
 					<label class="label" for="desired-rate">
-						<span class="label-text">Production souhaitée (items/min)<span class="text-error">*</span></span>
+						<span class="label-text"
+							>Production souhaitée (items/min)<span class="text-error">*</span></span
+						>
 					</label>
 					<input
 						id="desired-rate"

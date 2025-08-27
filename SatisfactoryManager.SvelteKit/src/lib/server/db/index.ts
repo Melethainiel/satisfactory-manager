@@ -1,52 +1,28 @@
 /**
- * Database connection setup using Drizzle ORM and PostgreSQL
+ * Database connection setup using Drizzle ORM and PostgreSQL with Azure authentication support
  *
- * This module creates a database connection using the centralized configuration
- * system with proper environment variable validation and type safety.
+ * This module provides access to the centralized database connection
+ * that supports both traditional password authentication and Azure Managed Identity.
  * Includes automatic database migration on startup.
  */
 
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
-import * as schema from './schema.js';
-import { getDatabaseConfig, getDatabasePoolConfig } from '../../config/database.config.js';
-import { getServerEnvVar } from '../../config/env.server.js';
+import { getDatabase, closeDatabase } from './drizzle.js';
 import { initializeDatabase } from '../migrations/migrate.js';
 
-// Get validated database configuration
-const dbConfig = getDatabaseConfig();
-const poolConfig = getDatabasePoolConfig();
-const environment = getServerEnvVar('NODE_ENV', 'development');
+// Get the database instance with Azure authentication support
+// Use a lazy getter to handle the async initialization
+let dbInstance: Awaited<ReturnType<typeof getDatabase>> | null = null;
 
-// Create PostgreSQL client with connection pooling
-const client = postgres(dbConfig.url, {
-	// Connection pool configuration
-	max: poolConfig.max,
-	idle_timeout: Math.floor(poolConfig.idleTimeoutMillis / 1000), // Convert to seconds
-	connect_timeout: Math.floor(poolConfig.createTimeoutMillis / 1000), // Convert to seconds
-
-	// SSL configuration
-	ssl: dbConfig.ssl ? 'require' : false,
-
-	// Query logging in development
-	debug: environment === 'development',
-
-	// Connection options
-	prepare: false, // Disable prepared statements for better compatibility
-	max_lifetime: 300, // 5 minutes connection lifetime
-
-	// Error handling
-	onnotice: environment === 'development' ? console.log : undefined
+export const db = new Proxy({} as Awaited<ReturnType<typeof getDatabase>>, {
+	get(target, prop) {
+		if (!dbInstance) {
+			throw new Error(
+				'Database not initialized. Make sure to call getDatabaseInitialization() first.'
+			);
+		}
+		return (dbInstance as any)[prop];
+	}
 });
-
-// Create Drizzle database instance with schema
-export const db = drizzle(client, {
-	schema,
-	logger: environment === 'development' // Enable query logging in development
-});
-
-// Export the raw client for direct queries if needed
-export { client as postgresClient };
 
 /**
  * Gracefully close database connections
@@ -54,7 +30,7 @@ export { client as postgresClient };
  */
 export async function closeDatabaseConnections(): Promise<void> {
 	try {
-		await client.end();
+		await closeDatabase();
 		console.log('✅ Database connections closed successfully');
 	} catch (error) {
 		console.error('❌ Error closing database connections:', error);
@@ -70,9 +46,12 @@ let initializationPromise: Promise<void> | null = null;
  */
 export function getDatabaseInitialization(): Promise<void> {
 	if (!initializationPromise) {
-		initializationPromise = initializeDatabase().then(() => {
-			console.log(`✅ Database connection initialized for ${environment} environment`);
-		});
+		initializationPromise = Promise.all([initializeDatabase(), getDatabase()]).then(
+			([, database]) => {
+				dbInstance = database;
+				console.log(`✅ Database connection initialized with Azure authentication support`);
+			}
+		);
 	}
 	return initializationPromise;
 }

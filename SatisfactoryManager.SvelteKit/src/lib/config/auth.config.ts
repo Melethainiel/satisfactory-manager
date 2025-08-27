@@ -6,8 +6,6 @@
  */
 
 import { browser } from '$app/environment';
-import type { ServerEnv } from './env.types.js';
-import { getPublicConfig, getKnownAuthorities } from './env.client.js';
 
 /**
  * Azure B2C configuration interface
@@ -54,29 +52,13 @@ export interface MSALConfig {
  */
 export async function getAzureB2CConfig(): Promise<AzureB2CConfig> {
 	if (browser) {
-		// Client-side: use public environment variables
-		const publicConfig = getPublicConfig();
-
-		return {
-			clientId: publicConfig.PUBLIC_AZURE_B2C_CLIENT_ID,
-			authority: publicConfig.PUBLIC_AZURE_B2C_AUTHORITY,
-			knownAuthorities: getKnownAuthorities(),
-			redirectUri: publicConfig.PUBLIC_AZURE_B2C_REDIRECT_URI,
-			postLogoutRedirectUri: publicConfig.PUBLIC_AZURE_B2C_POST_LOGOUT_REDIRECT_URI
-		};
+		// Client-side: import and use client-only configuration
+		const { getClientAzureB2CConfig } = await import('./auth.config.client.js');
+		return getClientAzureB2CConfig();
 	} else {
-		// Server-side: import environment variables directly to avoid client-side exposure
-		// This is safe because the browser check ensures this code never runs on the client
-		const { getServerConfig } = await import('./env.server.js');
-		const serverConfig = getServerConfig();
-		const knownAuthorities = JSON.parse(serverConfig.AZURE_B2C_KNOWN_AUTHORITIES);
-
-		return {
-			clientId: serverConfig.AZURE_B2C_CLIENT_ID,
-			authority: serverConfig.AZURE_B2C_AUTHORITY,
-			knownAuthorities,
-			clientSecret: serverConfig.AZURE_B2C_CLIENT_SECRET
-		};
+		// Server-side: import and use server-only configuration
+		const { getServerAzureB2CConfig } = await import('../server/auth.config.server.js');
+		return getServerAzureB2CConfig();
 	}
 }
 
@@ -151,14 +133,9 @@ export async function getClientSecret(): Promise<string | undefined> {
 		throw new Error('Client secret is not available in browser context');
 	}
 
-	const { getServerConfig, hasServerEnvVar } = await import('./env.server.js');
-
-	if (!hasServerEnvVar('AZURE_B2C_CLIENT_SECRET')) {
-		return undefined;
-	}
-
-	const serverConfig = getServerConfig();
-	return serverConfig.AZURE_B2C_CLIENT_SECRET;
+	// Import server-side client secret function
+	const { getServerClientSecret } = await import('../server/auth.config.server.js');
+	return getServerClientSecret();
 }
 
 /**
@@ -237,7 +214,7 @@ if (typeof window === 'undefined') {
 		.then(() => {
 			console.log(`✅ Server auth configuration validated successfully`);
 		})
-		.catch((error) => {
+		.catch(() => {
 			console.error(`💥 Failed to initialize server auth configuration`);
 			// Don't throw during module loading
 		});
@@ -248,7 +225,7 @@ if (typeof window === 'undefined') {
 			.then(() => {
 				console.log(`✅ Client auth configuration validated successfully`);
 			})
-			.catch((error) => {
+			.catch(() => {
 				console.error(`💥 Failed to initialize client auth configuration`);
 			});
 	} catch (error) {

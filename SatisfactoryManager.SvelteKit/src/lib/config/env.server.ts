@@ -28,18 +28,15 @@ import { env as dynamicEnv } from '$env/dynamic/private';
 const serverEnvSchema = z.object({
 	// Database Configuration
 	DATABASE_URL: z
-		.string()
 		.url('DATABASE_URL must be a valid URL')
 		.min(1, 'DATABASE_URL is required'),
 
 	// Azure B2C Server Configuration
 	AZURE_B2C_CLIENT_ID: z
-		.string()
 		.uuid('AZURE_B2C_CLIENT_ID must be a valid UUID')
 		.min(1, 'AZURE_B2C_CLIENT_ID is required'),
 
 	AZURE_B2C_AUTHORITY: z
-		.string()
 		.url('AZURE_B2C_AUTHORITY must be a valid URL')
 		.min(1, 'AZURE_B2C_AUTHORITY is required'),
 

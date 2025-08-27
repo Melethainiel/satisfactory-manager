@@ -46,14 +46,76 @@ export interface DatabasePoolConfig {
 }
 
 /**
+ * Converts Aspire/ADO.NET connection string to PostgreSQL URL format
+ * 
+ * @param connectionString - Connection string in format "Host=localhost;Port=5432;Username=user;Password=pass;Database=db"
+ * @returns PostgreSQL URL in format "postgresql://user:pass@host:port/db"
+ */
+function convertAspireConnectionStringToUrl(connectionString: string): string {
+	const params: Record<string, string> = {};
+	
+	// Parse key=value pairs separated by semicolons
+	connectionString.split(';').forEach(pair => {
+		const [key, value] = pair.split('=');
+		if (key && value) {
+			params[key.trim()] = value.trim();
+		}
+	});
+	
+	// Extract required components
+	const host = params['Host'] || 'localhost';
+	const port = params['Port'] || '5432';
+	const username = params['Username'] || params['User'] || 'postgres';
+	const password = params['Password'] || '';
+	const database = params['Database'] || params['Initial Catalog'] || 'postgres';
+	
+	// Encode password to handle special characters
+	const encodedPassword = encodeURIComponent(password);
+	
+	// For Aspire local containers, typically SSL is not required
+	// Add sslmode=disable by default unless explicitly specified
+	const sslMode = params['SSL Mode'] || params['SslMode'] || 'disable';
+	
+	return `postgresql://${username}:${encodedPassword}@${host}:${port}/${database}?sslmode=${sslMode}`;
+}
+
+/**
+ * Checks if a connection string is in Aspire/ADO.NET format
+ * 
+ * @param connectionString - The connection string to check
+ * @returns True if it's in ADO.NET format (contains semicolons and key=value pairs)
+ */
+function isAspireConnectionString(connectionString: string): boolean {
+	return connectionString.includes(';') && connectionString.includes('=') && !connectionString.startsWith('postgresql://') && !connectionString.startsWith('postgres://');
+}
+
+/**
  * Gets the validated database configuration
  *
  * @returns Database configuration object
  * @throws Error if configuration is invalid
  */
 export function getDatabaseConfig(): DatabaseConfig {
+	// Try to get connection string from Aspire first (injected via WithReference)
+	// Note: Aspire injects these variables dynamically, so we access process.env directly
+	const aspireConnectionString = process.env.ConnectionStrings__satisfactory || 
+								   process.env['ConnectionStrings_postgres-db'] ||
+								   process.env.ConnectionStrings__postgres_db;
+	
+	// Fallback to traditional DATABASE_URL for local development
 	const serverConfig = getServerConfig();
-	const databaseUrl = serverConfig.DATABASE_URL;
+	let databaseUrl = aspireConnectionString || serverConfig.DATABASE_URL;
+
+	// Log which connection source is being used and convert if needed
+	if (aspireConnectionString) {
+		console.log('🚀 Using Aspire-injected database connection');
+		if (isAspireConnectionString(aspireConnectionString)) {
+			console.log('🔄 Converting Aspire connection string to PostgreSQL URL format');
+			databaseUrl = convertAspireConnectionStringToUrl(aspireConnectionString);
+		}
+	} else {
+		console.log('🔧 Using fallback DATABASE_URL connection');
+	}
 
 	// Parse database URL to extract components
 	let parsedUrl: URL;
@@ -94,7 +156,14 @@ export function getDatabaseConfig(): DatabaseConfig {
  * @returns Parsed URL components
  */
 export function parseDatabaseUrl(url?: string): DatabaseUrlComponents {
-	const databaseUrl = url || getServerEnvVar('DATABASE_URL');
+	// If URL is provided, use it directly, otherwise get from config
+	let databaseUrl: string;
+	if (url) {
+		databaseUrl = url;
+	} else {
+		const config = getDatabaseConfig();
+		databaseUrl = config.url;
+	}
 
 	if (!databaseUrl) {
 		throw new Error('DATABASE_URL is required');
@@ -275,8 +344,17 @@ export const DB_CONNECTION_OPTIONS = {
 try {
 	if (typeof window === 'undefined') {
 		// Only validate on server-side
-		validateDatabaseConfig();
-		console.log('✅ Database configuration validated successfully');
+		// Skip validation if using Aspire connection (which might not be URL format)
+		const aspireConnectionString = process.env.ConnectionStrings__satisfactory || 
+									   process.env['ConnectionStrings_postgres-db'] ||
+									   process.env.ConnectionStrings__postgres_db;
+		
+		if (!aspireConnectionString) {
+			validateDatabaseConfig();
+			console.log('✅ Database configuration validated successfully');
+		} else {
+			console.log('✅ Database configuration (Aspire) loaded successfully');
+		}
 	}
 } catch (error) {
 	console.error('💥 Failed to initialize database configuration');

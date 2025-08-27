@@ -3,6 +3,7 @@
  *
  * This module creates a database connection using the centralized configuration
  * system with proper environment variable validation and type safety.
+ * Includes automatic database migration on startup.
  */
 
 import { drizzle } from 'drizzle-orm/postgres-js';
@@ -10,6 +11,7 @@ import postgres from 'postgres';
 import * as schema from './schema.js';
 import { getDatabaseConfig, getDatabasePoolConfig } from '../../config/database.config.js';
 import { getServerEnvVar } from '../../config/env.server.js';
+import { initializeDatabase } from '../migrations/migrate.js';
 
 // Get validated database configuration
 const dbConfig = getDatabaseConfig();
@@ -59,5 +61,25 @@ export async function closeDatabaseConnections(): Promise<void> {
 	}
 }
 
-// Log successful connection initialization
-console.log(`✅ Database connection initialized for ${environment} environment`);
+// Initialize database with automatic migrations
+let initializationPromise: Promise<void> | null = null;
+
+/**
+ * Get the database initialization promise
+ * Ensures migrations are run only once during application startup
+ */
+export function getDatabaseInitialization(): Promise<void> {
+	if (!initializationPromise) {
+		initializationPromise = initializeDatabase().then(() => {
+			console.log(`✅ Database connection initialized for ${environment} environment`);
+		});
+	}
+	return initializationPromise;
+}
+
+// Start database initialization immediately when this module is imported
+getDatabaseInitialization().catch((error) => {
+	console.error('💥 Critical: Database initialization failed during startup:', error);
+	// Allow the application to continue, but log the error
+	// The error will be propagated to any code that awaits getDatabaseInitialization()
+});

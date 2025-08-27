@@ -1,5 +1,5 @@
 import { getContext, setContext } from 'svelte';
-import { API_USER_ACCESS_SCOPE, azureB2CConfig } from '$lib/auth/config';
+import { API_USER_ACCESS_SCOPE, azureB2CConfig } from '$lib/auth/config.js';
 import { notificationService } from '$lib/services/notificationService.svelte';
 import {
 	PublicClientApplication,
@@ -9,7 +9,6 @@ import {
 	type SilentRequest,
 	type EndSessionRequest,
 	LogLevel,
-	BrowserAuthError,
 	InteractionRequiredAuthError
 } from '@azure/msal-browser';
 
@@ -47,7 +46,7 @@ export interface AuthState {
 	) => Promise<T | Response>;
 }
 
-// Use the configuration from config.ts instead of hardcoded values
+// Use the configuration from auth/config.ts
 const defaultConfig: AzureB2CConfig = azureB2CConfig;
 
 class AuthStateClass implements AuthState {

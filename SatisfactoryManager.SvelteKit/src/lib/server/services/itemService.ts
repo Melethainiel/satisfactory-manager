@@ -102,6 +102,7 @@ export interface Recipe {
 	className: string;
 	recipeVersionId: string;
 	manufacturingDuration: string;
+	outputCount: string; // Production count for the specific item (items/min)
 }
 
 export interface Building {
@@ -109,6 +110,8 @@ export interface Building {
 	name: string;
 	type: string;
 	className: string;
+	// Production data
+	output?: string | null; // Production rate for extractors (items/min)
 	// Energy data for generators (stored in original DB units)
 	energyProduction?: string;
 	burnTime?: number;
@@ -308,7 +311,8 @@ class ItemService implements IItemService {
 					id: buildingVersions.id, // Now returning buildingVersionId
 					name: buildings.name,
 					className: buildings.className,
-					type: buildings.type
+					type: buildings.type,
+					output: buildingVersions.output // Include output for production calculation
 				})
 				.from(buildingVersions)
 				.innerJoin(buildings, eq(buildingVersions.buildingId, buildings.id))
@@ -487,7 +491,8 @@ class ItemService implements IItemService {
 				displayName: recipes.displayName,
 				className: recipes.className,
 				recipeVersionId: recipeVersions.id,
-				manufacturingDuration: recipeVersions.manufacturingDuration
+				manufacturingDuration: recipeVersions.manufacturingDuration,
+				outputCount: recipeProducts.count // Include production count for the specific item
 			})
 			.from(recipes)
 			.innerJoin(recipeVersions, eq(recipes.id, recipeVersions.recipeId))

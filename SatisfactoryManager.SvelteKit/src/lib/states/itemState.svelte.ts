@@ -23,6 +23,7 @@ export interface Recipe {
 	className: string;
 	recipeVersionId: string;
 	manufacturingDuration: string;
+	outputCount: string; // Production count for the specific item (items/min)
 }
 
 export interface Building {
@@ -30,6 +31,8 @@ export interface Building {
 	name: string;
 	type: string;
 	className: string;
+	// Production data
+	output?: string | null; // Production rate for extractors (items/min)
 	// Energy data for generators (stored in original DB units)
 	energyProduction?: string;
 	burnTime?: number;

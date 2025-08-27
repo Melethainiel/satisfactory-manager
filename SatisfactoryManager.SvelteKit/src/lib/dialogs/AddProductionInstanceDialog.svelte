@@ -18,6 +18,10 @@
 	let isBuilt = $state(false);
 	let notes = $state('');
 
+	// Auto-calculation state
+	let autoCalculateMode = $state(false);
+	let desiredItemsPerMin = $state(0);
+
 	// Search state - now using recipeState
 	let searchQuery = $state('');
 	let showSearchResults = $state(false);
@@ -139,6 +143,73 @@
 		);
 	}
 
+	// Auto-calculation functions
+	function getPurityMultiplier(purity: string): number {
+		switch (purity) {
+			case 'Impure':
+				return 0.5;
+			case 'Pure':
+				return 2.0;
+			case 'Normal':
+			default:
+				return 1.0;
+		}
+	}
+
+	function calculateBuildingCount(): number {
+		if (!desiredItemsPerMin || desiredItemsPerMin <= 0) return 1;
+
+		const selectedBuilding = itemState.availableBuildings.find(b => b.id === selectedBuildingId);
+		if (!selectedBuilding) return 1;
+
+		let ratePerBuilding = 0;
+
+		if (itemState.selectedProductionType === 'extract') {
+			const buildingOutput = parseFloat(selectedBuilding.output || '0');
+			const purityMultiplier = getPurityMultiplier(extractorPurity);
+			ratePerBuilding = buildingOutput * efficiencyRatio * purityMultiplier;
+		} else if (itemState.selectedProductionType === 'craft' && itemState.selectedRecipe) {
+			const recipeOutput = parseFloat(itemState.selectedRecipe.outputCount || '0');
+			ratePerBuilding = recipeOutput * efficiencyRatio;
+		} else if (itemState.selectedProductionType === 'power') {
+			// For power generation, we use consumptionPerMinute if available
+			const consumptionRate = selectedBuilding.consumptionPerMinute || 0;
+			ratePerBuilding = consumptionRate * efficiencyRatio;
+		}
+
+		if (ratePerBuilding <= 0) return 1;
+
+		return Math.ceil(desiredItemsPerMin / ratePerBuilding);
+	}
+
+	function calculateActualProduction(): number {
+		const selectedBuilding = itemState.availableBuildings.find(b => b.id === selectedBuildingId);
+		if (!selectedBuilding) return 0;
+
+		let ratePerBuilding = 0;
+
+		if (itemState.selectedProductionType === 'extract') {
+			const buildingOutput = parseFloat(selectedBuilding.output || '0');
+			const purityMultiplier = getPurityMultiplier(extractorPurity);
+			ratePerBuilding = buildingOutput * efficiencyRatio * purityMultiplier;
+		} else if (itemState.selectedProductionType === 'craft' && itemState.selectedRecipe) {
+			const recipeOutput = parseFloat(itemState.selectedRecipe.outputCount || '0');
+			ratePerBuilding = recipeOutput * efficiencyRatio;
+		} else if (itemState.selectedProductionType === 'power') {
+			const consumptionRate = selectedBuilding.consumptionPerMinute || 0;
+			ratePerBuilding = consumptionRate * efficiencyRatio;
+		}
+
+		return ratePerBuilding * buildingCount;
+	}
+
+	// Effect to auto-calculate building count when in auto mode
+	$effect(() => {
+		if (autoCalculateMode && desiredItemsPerMin > 0 && selectedBuildingId) {
+			buildingCount = calculateBuildingCount();
+		}
+	});
+
 	function resetForm() {
 		searchQuery = '';
 		selectedBuildingId = '';
@@ -147,6 +218,8 @@
 		extractorPurity = 'Normal';
 		isBuilt = false;
 		notes = '';
+		autoCalculateMode = false;
+		desiredItemsPerMin = 0;
 		// Note: currentSiteId is NOT cleared here - it should persist during dialog session
 		showSearchResults = false;
 
@@ -536,6 +609,42 @@
 				</div>
 			{/if}
 
+			<!-- Auto-calculation toggle -->
+			{#if selectedBuildingId && (itemState.selectedProductionType === 'extract' || itemState.selectedProductionType === 'craft')}
+				<div class="form-control">
+					<label class="label cursor-pointer">
+						<span class="label-text">Calcul automatique du nombre de bâtiments</span>
+						<input type="checkbox" bind:checked={autoCalculateMode} class="checkbox checkbox-primary" />
+					</label>
+				</div>
+			{/if}
+
+			<!-- Desired production rate (only shown in auto mode) -->
+			{#if autoCalculateMode}
+				<div class="form-control">
+					<label class="label" for="desired-rate">
+						<span class="label-text">Production souhaitée (items/min)<span class="text-error">*</span></span>
+					</label>
+					<input
+						id="desired-rate"
+						type="number"
+						class="input-bordered input w-full"
+						bind:value={desiredItemsPerMin}
+						min="0.1"
+						step="0.1"
+						placeholder="60"
+						required
+					/>
+					{#if selectedBuildingId && desiredItemsPerMin > 0}
+						<div class="label">
+							<span class="label-text-alt text-info">
+								→ {buildingCount} bâtiments = {calculateActualProduction().toFixed(1)} items/min
+							</span>
+						</div>
+					{/if}
+				</div>
+			{/if}
+
 			<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 				<!-- Building Count -->
 				<div class="form-control">
@@ -547,13 +656,19 @@
 					<input
 						id="building-count"
 						type="number"
-						class="input-bordered input w-full"
+						class="input-bordered input w-full {autoCalculateMode ? 'input-disabled' : ''}"
 						bind:value={buildingCount}
 						min="1"
 						max="1000"
 						step="1"
+						readonly={autoCalculateMode}
 						required
 					/>
+					{#if autoCalculateMode}
+						<div class="label">
+							<span class="label-text-alt text-warning">Calculé automatiquement</span>
+						</div>
+					{/if}
 				</div>
 
 				<!-- Efficiency Ratio -->

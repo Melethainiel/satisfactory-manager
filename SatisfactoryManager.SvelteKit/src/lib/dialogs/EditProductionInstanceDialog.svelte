@@ -16,6 +16,10 @@
 	let isBuilt = $state(false);
 	let notes = $state('');
 
+	// Auto-calculation state
+	let autoCalculateMode = $state(false);
+	let desiredItemsPerMin = $state(0);
+
 	// Reset form with instance data
 	function resetForm(instance: ProductionInstanceData) {
 		buildingCount = parseFloat(instance.buildingCount);
@@ -61,6 +65,95 @@
 			console.error('❌ Failed to update production instance:', error);
 		}
 	}
+
+	// Auto-calculation functions
+	function getPurityMultiplier(purity: string): number {
+		switch (purity) {
+			case 'Impure':
+				return 0.5;
+			case 'Pure':
+				return 2.0;
+			case 'Normal':
+			default:
+				return 1.0;
+		}
+	}
+
+	function calculateBuildingCount(): number {
+		if (!desiredItemsPerMin || desiredItemsPerMin <= 0 || !currentInstance) return 1;
+
+		let ratePerBuilding = 0;
+
+		if (currentInstance.extractedItemVersionId && currentInstance.buildingVersion) {
+			// Extraction
+			const buildingOutput = parseFloat(currentInstance.buildingVersion.output || '0');
+			const purityMultiplier = getPurityMultiplier(extractorPurity);
+			ratePerBuilding = buildingOutput * efficiencyRatio * purityMultiplier;
+		} else if (currentInstance.recipe && currentInstance.products && currentInstance.products.length > 0) {
+			// Crafting - use the production calculation from existing instance
+			// We can derive the rate from the current setup
+			const currentRate = parseFloat(currentInstance.buildingCount) * efficiencyRatio;
+			// Get base rate per building at 100% efficiency
+			const baseRate = currentRate / (parseFloat(currentInstance.buildingCount) * parseFloat(currentInstance.efficiencyRatio));
+			ratePerBuilding = baseRate * efficiencyRatio;
+		}
+
+		if (ratePerBuilding <= 0) return 1;
+
+		return Math.ceil(desiredItemsPerMin / ratePerBuilding);
+	}
+
+	function calculateActualProduction(): number {
+		if (!currentInstance) return 0;
+
+		let ratePerBuilding = 0;
+
+		if (currentInstance.extractedItemVersionId && currentInstance.buildingVersion) {
+			// Extraction
+			const buildingOutput = parseFloat(currentInstance.buildingVersion.output || '0');
+			const purityMultiplier = getPurityMultiplier(extractorPurity);
+			ratePerBuilding = buildingOutput * efficiencyRatio * purityMultiplier;
+		} else if (currentInstance.recipe && currentInstance.products && currentInstance.products.length > 0) {
+			// Crafting - derive rate from current production data
+			const currentRate = parseFloat(currentInstance.buildingCount) * efficiencyRatio;
+			const baseRate = currentRate / (parseFloat(currentInstance.buildingCount) * parseFloat(currentInstance.efficiencyRatio));
+			ratePerBuilding = baseRate * efficiencyRatio;
+		}
+
+		return ratePerBuilding * buildingCount;
+	}
+
+	function calculateCurrentProduction(): number {
+		if (!currentInstance) return 0;
+
+		let ratePerBuilding = 0;
+
+		if (currentInstance.extractedItemVersionId && currentInstance.buildingVersion) {
+			const buildingOutput = parseFloat(currentInstance.buildingVersion.output || '0');
+			const purityMultiplier = getPurityMultiplier(currentInstance.extractorPurity || 'Normal');
+			ratePerBuilding = buildingOutput * parseFloat(currentInstance.efficiencyRatio) * purityMultiplier;
+		} else if (currentInstance.recipe && currentInstance.products && currentInstance.products.length > 0) {
+			// Use the production count directly from products data (already in items/min per building)
+			const outputPerMinutePerBuilding = parseFloat(currentInstance.products[0].count);
+			ratePerBuilding = outputPerMinutePerBuilding * parseFloat(currentInstance.efficiencyRatio);
+		}
+
+		return ratePerBuilding * parseFloat(currentInstance.buildingCount);
+	}
+
+	// Effect to auto-calculate building count when in auto mode
+	$effect(() => {
+		if (autoCalculateMode && desiredItemsPerMin > 0 && currentInstance) {
+			buildingCount = calculateBuildingCount();
+		}
+	});
+
+	// Initialize desired items per min with current production when opening
+	$effect(() => {
+		if (currentInstance && !autoCalculateMode && desiredItemsPerMin === 0) {
+			desiredItemsPerMin = calculateCurrentProduction();
+		}
+	});
 
 	// Expose methods for external use using Svelte 5 syntax
 	export const open: EditProductionInstanceDialogHandle['open'] = function (
@@ -149,6 +242,64 @@
 				<!-- Editable Fields -->
 				<div class="divider">{$t('production.editable_settings')}</div>
 
+				<!-- Current Production Display -->
+				{#if currentInstance}
+					<div class="form-control">
+						<div class="alert alert-info">
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								fill="none"
+								viewBox="0 0 24 24"
+								class="h-6 w-6 shrink-0 stroke-current"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+								></path>
+							</svg>
+							<span>Production actuelle : {calculateCurrentProduction().toFixed(1)} items/min</span>
+						</div>
+					</div>
+				{/if}
+
+				<!-- Auto-calculation toggle -->
+				{#if currentInstance && (currentInstance.extractedItemVersionId || currentInstance.recipe)}
+					<div class="form-control">
+						<label class="label cursor-pointer">
+							<span class="label-text">Calcul automatique du nombre de bâtiments</span>
+							<input type="checkbox" bind:checked={autoCalculateMode} class="checkbox checkbox-primary" />
+						</label>
+					</div>
+				{/if}
+
+				<!-- Desired production rate (only shown in auto mode) -->
+				{#if autoCalculateMode}
+					<div class="form-control">
+						<label class="label" for="desired-rate-edit">
+							<span class="label-text">Production souhaitée (items/min)<span class="text-error">*</span></span>
+						</label>
+						<input
+							id="desired-rate-edit"
+							type="number"
+							class="input-bordered input w-full"
+							bind:value={desiredItemsPerMin}
+							min="0.1"
+							step="0.1"
+							placeholder="60"
+							required
+						/>
+						{#if currentInstance && desiredItemsPerMin > 0}
+							<div class="label">
+								<span class="label-text-alt text-info">
+									→ {buildingCount} bâtiments = {calculateActualProduction().toFixed(1)} items/min
+								</span>
+							</div>
+						{/if}
+					</div>
+				{/if}
+
 				<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 					<!-- Building Count -->
 					<div class="form-control">
@@ -160,13 +311,19 @@
 						<input
 							id="building-count"
 							type="number"
-							class="input-bordered input w-full"
+							class="input-bordered input w-full {autoCalculateMode ? 'input-disabled' : ''}"
 							bind:value={buildingCount}
 							min="1"
 							max="1000"
 							step="1"
+							readonly={autoCalculateMode}
 							required
 						/>
+						{#if autoCalculateMode}
+							<div class="label">
+								<span class="label-text-alt text-warning">Calculé automatiquement</span>
+							</div>
+						{/if}
 					</div>
 
 					<!-- Efficiency Ratio -->

@@ -89,13 +89,16 @@ class ProductionInstanceMigrationService implements IProductionInstanceMigration
 				}
 			}
 
-			// Invalidate cache for all affected sites
-			const uniqueSiteIds = [...new Set(affectedInstances.map(i => i.siteId))];
-			await Promise.all(
-				uniqueSiteIds.map(siteId => 
-					productionCalculationService.onProductionInstanceChanged(siteId)
-				)
-			);
+			// Invalidate cache for all affected sites (sequential processing to avoid race conditions)
+			const uniqueSiteIds = [...new Set(affectedInstances.map((i) => i.siteId))];
+			for (const siteId of uniqueSiteIds) {
+				try {
+					await productionCalculationService.onProductionInstanceChanged(siteId);
+				} catch (cacheError) {
+					console.error(`Failed to invalidate cache for site ${siteId}:`, cacheError);
+					// Continue with other sites even if one fails
+				}
+			}
 
 			result.success = result.failedInstancesCount === 0;
 			return result;
@@ -146,7 +149,10 @@ class ProductionInstanceMigrationService implements IProductionInstanceMigration
 			.leftJoin(buildings, eq(buildingVersions.buildingId, buildings.id))
 			.leftJoin(recipeVersions, eq(productionInstances.recipeVersionId, recipeVersions.id))
 			.leftJoin(recipes, eq(recipeVersions.recipeId, recipes.id))
-			.leftJoin(extractedItemVersions, eq(productionInstances.extractedItemVersionId, extractedItemVersions.id))
+			.leftJoin(
+				extractedItemVersions,
+				eq(productionInstances.extractedItemVersionId, extractedItemVersions.id)
+			)
 			.leftJoin(extractedItems, eq(extractedItemVersions.itemId, extractedItems.id))
 			.leftJoin(fuelItemVersions, eq(productionInstances.fuelItemVersionId, fuelItemVersions.id))
 			.leftJoin(fuelItems, eq(fuelItemVersions.itemId, fuelItems.id))
@@ -173,7 +179,7 @@ class ProductionInstanceMigrationService implements IProductionInstanceMigration
 				.innerJoin(buildingVersions, eq(buildings.id, buildingVersions.buildingId))
 				.where(eq(buildingVersions.id, instance.buildingVersionId))
 				.limit(1);
-			
+
 			if (buildingModule.length > 0 && buildingModule[0].moduleId === moduleId) {
 				return true;
 			}
@@ -187,7 +193,7 @@ class ProductionInstanceMigrationService implements IProductionInstanceMigration
 				.innerJoin(recipeVersions, eq(recipes.id, recipeVersions.recipeId))
 				.where(eq(recipeVersions.id, instance.recipeVersionId))
 				.limit(1);
-			
+
 			if (recipeModule.length > 0 && recipeModule[0].moduleId === moduleId) {
 				return true;
 			}
@@ -201,7 +207,7 @@ class ProductionInstanceMigrationService implements IProductionInstanceMigration
 				.innerJoin(itemVersions, eq(items.id, itemVersions.itemId))
 				.where(eq(itemVersions.id, instance.extractedItemVersionId))
 				.limit(1);
-			
+
 			if (itemModule.length > 0 && itemModule[0].moduleId === moduleId) {
 				return true;
 			}
@@ -215,7 +221,7 @@ class ProductionInstanceMigrationService implements IProductionInstanceMigration
 				.innerJoin(itemVersions, eq(items.id, itemVersions.itemId))
 				.where(eq(itemVersions.id, instance.fuelItemVersionId))
 				.limit(1);
-			
+
 			if (itemModule.length > 0 && itemModule[0].moduleId === moduleId) {
 				return true;
 			}
@@ -277,7 +283,9 @@ class ProductionInstanceMigrationService implements IProductionInstanceMigration
 			if (newItemVersion) {
 				updates.extractedItemVersionId = newItemVersion.id;
 			} else {
-				migrationErrors.push(`Extracted item ${instance.extractedItemName} not found in new version`);
+				migrationErrors.push(
+					`Extracted item ${instance.extractedItemName} not found in new version`
+				);
 			}
 		}
 
@@ -366,10 +374,7 @@ class ProductionInstanceMigrationService implements IProductionInstanceMigration
 			.from(itemVersions)
 			.innerJoin(items, eq(itemVersions.itemId, items.id))
 			.where(
-				and(
-					eq(items.className, itemClassName),
-					eq(itemVersions.moduleVersionId, newVersionId)
-				)
+				and(eq(items.className, itemClassName), eq(itemVersions.moduleVersionId, newVersionId))
 			)
 			.limit(1);
 

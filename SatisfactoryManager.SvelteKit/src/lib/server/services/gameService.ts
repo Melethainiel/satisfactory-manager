@@ -12,7 +12,10 @@ import {
 	type GameUserRole
 } from '../db/schema';
 import { eq, and, asc, desc, like } from 'drizzle-orm';
-import { productionInstanceMigrationService, type MigrationResult } from './productionInstanceMigrationService';
+import {
+	productionInstanceMigrationService,
+	type MigrationResult
+} from './productionInstanceMigrationService';
 
 export interface IGameService {
 	getAll(): Promise<Game[]>;
@@ -69,7 +72,11 @@ export interface IGameService {
 			updatedAt: Date;
 		}[]
 	>;
-	setModuleVersion(gameId: string, moduleId: string, versionId: string): Promise<{
+	setModuleVersion(
+		gameId: string,
+		moduleId: string,
+		versionId: string
+	): Promise<{
 		success: boolean;
 		migrationResult?: MigrationResult;
 	}>;
@@ -260,7 +267,11 @@ class GameService implements IGameService {
 		return result.length > 0;
 	}
 
-	async setModuleVersion(gameId: string, moduleId: string, versionId: string): Promise<{
+	async setModuleVersion(
+		gameId: string,
+		moduleId: string,
+		versionId: string
+	): Promise<{
 		success: boolean;
 		migrationResult?: MigrationResult;
 	}> {
@@ -276,12 +287,16 @@ class GameService implements IGameService {
 		}
 
 		// Migrate production instances to the new version
-		const migrationResult = await productionInstanceMigrationService
-			.migrateProductionInstancesForGameModule(gameId, moduleId, versionId);
+		const migrationResult =
+			await productionInstanceMigrationService.migrateProductionInstancesForGameModule(
+				gameId,
+				moduleId,
+				versionId
+			);
 
-		return { 
-			success: true, 
-			migrationResult 
+		return {
+			success: true,
+			migrationResult
 		};
 	}
 }

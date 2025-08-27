@@ -80,9 +80,9 @@
 			<form onsubmit={handleSubmit} class="flex flex-col gap-4">
 				<!-- Read-only Item Information -->
 				<div class="form-control">
-					<label class="label">
+					<div class="label">
 						<span class="label-text">{$t('production.selected_item')}</span>
-					</label>
+					</div>
 					<div class="rounded-lg bg-base-200 p-3">
 						{#if currentInstance.products && currentInstance.products.length > 0}
 							{@const primaryItem = currentInstance.products[0].item}
@@ -98,9 +98,9 @@
 
 				<!-- Read-only Production Type -->
 				<div class="form-control">
-					<label class="label">
+					<div class="label">
 						<span class="label-text">{$t('production.production_method')}</span>
-					</label>
+					</div>
 					<div class="rounded-lg bg-base-200 p-3">
 						{#if currentInstance.recipe}
 							<span>🏭 {$t('production.craft_via_recipe')}</span>
@@ -117,9 +117,9 @@
 				<!-- Read-only Recipe (if applicable) -->
 				{#if currentInstance.recipe}
 					<div class="form-control">
-						<label class="label">
+						<div class="label">
 							<span class="label-text">{$t('production.selected_recipe')}</span>
-						</label>
+						</div>
 						<div class="rounded-lg bg-base-200 p-3">
 							<div class="font-medium">{currentInstance.recipe.displayName}</div>
 							{#if currentInstance.recipeVersion}
@@ -135,9 +135,9 @@
 
 				<!-- Read-only Building -->
 				<div class="form-control">
-					<label class="label">
+					<div class="label">
 						<span class="label-text">{$t('production.selected_building')}</span>
-					</label>
+					</div>
 					<div class="rounded-lg bg-base-200 p-3">
 						<div class="font-medium">{currentInstance.building?.name || 'Unknown Building'}</div>
 						<div class="text-sm text-base-content/70">
@@ -215,11 +215,7 @@
 				<div class="form-control">
 					<label class="label cursor-pointer">
 						<span class="label-text">Marquer comme construite</span>
-						<input
-							type="checkbox"
-							bind:checked={isBuilt}
-							class="checkbox checkbox-success"
-						/>
+						<input type="checkbox" bind:checked={isBuilt} class="checkbox checkbox-success" />
 					</label>
 				</div>
 

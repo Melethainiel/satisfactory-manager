@@ -1,6 +1,9 @@
 import type { RequestHandler } from '@sveltejs/kit';
 import { json } from '@sveltejs/kit';
 import { userService } from '../services/userService';
+import { gameService } from '../services/gameService';
+import { siteService } from '../services/siteService';
+import type { GameUserRole } from '../db/schema';
 
 export interface AuthenticatedUser {
 	id: string;
@@ -150,4 +153,89 @@ export function requireAdmin(
 export function isValidUUID(uuid: string): boolean {
 	const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 	return uuidRegex.test(uuid);
+}
+
+/**
+ * Check if user has permission to access a site
+ */
+export async function canUserAccessSite(
+	userId: string,
+	siteId: string,
+	requiredRole: GameUserRole = 'Reader'
+): Promise<{ allowed: boolean; userRole?: GameUserRole; error?: string }> {
+	try {
+		// Validate siteId
+		if (!isValidUUID(siteId)) {
+			return { allowed: false, error: 'Invalid site ID format' };
+		}
+
+		// Get site to find the game
+		const site = await siteService.getById(siteId);
+		if (!site) {
+			return { allowed: false, error: 'Site not found' };
+		}
+
+		// Check user's role in the game
+		const userGameRole = await gameService.getUserDetailed(site.gameId, userId);
+		if (!userGameRole) {
+			return { allowed: false, error: 'User not authorized for this game' };
+		}
+
+		// Define role hierarchy
+		const roleHierarchy: Record<GameUserRole, number> = {
+			Reader: 1,
+			Contributor: 2,
+			Administrator: 3,
+			Owner: 4
+		};
+
+		const userRoleLevel = roleHierarchy[userGameRole.role];
+		const requiredRoleLevel = roleHierarchy[requiredRole];
+
+		if (userRoleLevel >= requiredRoleLevel) {
+			return { allowed: true, userRole: userGameRole.role };
+		} else {
+			return {
+				allowed: false,
+				userRole: userGameRole.role,
+				error: `Insufficient permissions. Required: ${requiredRole}, Current: ${userGameRole.role}`
+			};
+		}
+	} catch (error) {
+		console.error('Error checking site access:', error);
+		return { allowed: false, error: 'Failed to check site access' };
+	}
+}
+
+/**
+ * Higher-order function that wraps RequestHandler with site access authorization
+ */
+export function requireSiteAccess(requiredRole: GameUserRole = 'Reader', siteIdParam = 'siteId') {
+	return function (
+		handler: (params: { user: AuthenticatedUser; [key: string]: any }) => Promise<Response>
+	): RequestHandler {
+		return async (event) => {
+			// Authenticate user first
+			const authResult = await authenticateUser(event.request);
+			if (!authResult.success || !authResult.user) {
+				return json({ error: authResult.error || 'Authentication failed' }, { status: 401 });
+			}
+
+			// Get site ID from params
+			const siteId = (event.params as Record<string, string>)?.[siteIdParam];
+			if (!siteId) {
+				return json({ error: `Missing ${siteIdParam} parameter` }, { status: 400 });
+			}
+
+			// Check site access
+			const accessResult = await canUserAccessSite(authResult.user.id, siteId, requiredRole);
+			if (!accessResult.allowed) {
+				const statusCode = accessResult.error?.includes('not found') ? 404 : 403;
+				return json({ error: accessResult.error }, { status: statusCode });
+			}
+
+			// Call the original handler with authenticated user and site access confirmation
+			return handler({ ...event, user: authResult.user });
+		};
+	};
 }

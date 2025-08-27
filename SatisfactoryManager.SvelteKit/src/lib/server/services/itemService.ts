@@ -325,10 +325,7 @@ class ItemService implements IItemService {
 				)
 				.innerJoin(
 					itemVersions,
-					and(
-						eq(itemVersions.itemId, itemId),
-						eq(itemVersions.moduleVersionId, moduleVersions.id)
-					)
+					and(eq(itemVersions.itemId, itemId), eq(itemVersions.moduleVersionId, moduleVersions.id))
 				)
 				.innerJoin(
 					itemExtractionBuildings,

@@ -1,10 +1,22 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { productionInstanceService } from '$lib/server/services/productionInstanceService';
+import { requireSiteAccess, isValidUUID } from '$lib/server/auth/authUtils';
 
-export const GET: RequestHandler = async ({ params }) => {
+export const GET: RequestHandler = requireSiteAccess('Reader')(async ({ params, user }) => {
 	try {
 		const { instanceId } = params;
+
+		if (!isValidUUID(instanceId)) {
+			return json(
+				{
+					success: false,
+					error: 'Invalid instance ID format'
+				},
+				{ status: 400 }
+			);
+		}
+
 		const instance = await productionInstanceService.getProductionInstanceById(instanceId);
 
 		if (!instance) {
@@ -31,15 +43,53 @@ export const GET: RequestHandler = async ({ params }) => {
 			{ status: 500 }
 		);
 	}
-};
+});
 
-export const PATCH: RequestHandler = async ({ request, params }) => {
+export const PATCH: RequestHandler = requireSiteAccess('Contributor')(async ({
+	request,
+	params,
+	user
+}) => {
 	try {
 		const { instanceId } = params;
 		const data = await request.json();
 
+		if (!isValidUUID(instanceId)) {
+			return json(
+				{
+					success: false,
+					error: 'Invalid instance ID format'
+				},
+				{ status: 400 }
+			);
+		}
+
+		// Validate UUID fields if provided
+		if (data.recipeVersionId && !isValidUUID(data.recipeVersionId)) {
+			return json(
+				{
+					success: false,
+					error: 'Recipe version ID must be a valid UUID'
+				},
+				{ status: 400 }
+			);
+		}
+
+		if (data.buildingVersionId && !isValidUUID(data.buildingVersionId)) {
+			return json(
+				{
+					success: false,
+					error: 'Building version ID must be a valid UUID'
+				},
+				{ status: 400 }
+			);
+		}
+
 		// Validate numeric fields if provided
-		if (data.buildingCount !== undefined && parseFloat(data.buildingCount) <= 0) {
+		if (
+			data.buildingCount !== undefined &&
+			(isNaN(parseFloat(data.buildingCount)) || parseFloat(data.buildingCount) <= 0)
+		) {
 			return json(
 				{
 					success: false,
@@ -51,7 +101,7 @@ export const PATCH: RequestHandler = async ({ request, params }) => {
 
 		if (data.efficiencyRatio !== undefined) {
 			const ratio = parseFloat(data.efficiencyRatio);
-			if (ratio <= 0 || ratio > 2.5) {
+			if (isNaN(ratio) || ratio <= 0 || ratio > 2.5) {
 				return json(
 					{
 						success: false,
@@ -102,11 +152,22 @@ export const PATCH: RequestHandler = async ({ request, params }) => {
 			{ status: 500 }
 		);
 	}
-};
+});
 
-export const DELETE: RequestHandler = async ({ params }) => {
+export const DELETE: RequestHandler = requireSiteAccess('Contributor')(async ({ params, user }) => {
 	try {
 		const { instanceId } = params;
+
+		if (!isValidUUID(instanceId)) {
+			return json(
+				{
+					success: false,
+					error: 'Invalid instance ID format'
+				},
+				{ status: 400 }
+			);
+		}
+
 		const success = await productionInstanceService.deleteProductionInstance(instanceId);
 
 		if (!success) {
@@ -133,4 +194,4 @@ export const DELETE: RequestHandler = async ({ params }) => {
 			{ status: 500 }
 		);
 	}
-};
+});

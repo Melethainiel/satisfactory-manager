@@ -581,11 +581,7 @@
 			<div class="form-control">
 				<label class="label cursor-pointer">
 					<span class="label-text">Marquer comme construite</span>
-					<input
-						type="checkbox"
-						bind:checked={isBuilt}
-						class="checkbox checkbox-success"
-					/>
+					<input type="checkbox" bind:checked={isBuilt} class="checkbox checkbox-success" />
 				</label>
 			</div>
 

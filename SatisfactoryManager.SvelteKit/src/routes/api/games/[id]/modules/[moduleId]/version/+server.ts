@@ -26,9 +26,9 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 			return json({ error: 'Module not found in game or version update failed' }, { status: 404 });
 		}
 
-		return json({ 
+		return json({
 			success: result.success,
-			migrationResult: result.migrationResult 
+			migrationResult: result.migrationResult
 		});
 	} catch (error) {
 		console.error('Error setting module version:', error);

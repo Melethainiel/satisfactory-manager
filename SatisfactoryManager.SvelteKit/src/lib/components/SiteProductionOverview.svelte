@@ -47,7 +47,7 @@
 
 	// Search functionality for production instances
 	let searchTerm = $state('');
-	
+
 	// Filter by built status: 'all', 'built', 'not-built'
 	let builtStatusFilter = $state<'all' | 'built' | 'not-built'>('all');
 
@@ -460,16 +460,18 @@
 								class="btn btn-sm {builtStatusFilter === 'built' ? 'btn-success' : 'btn-outline'}"
 								onclick={() => (builtStatusFilter = 'built')}
 							>
-								Construit ({gameState.siteProductionInstances.filter(i => i.isBuilt).length})
+								Construit ({gameState.siteProductionInstances.filter((i) => i.isBuilt).length})
 							</button>
 							<button
-								class="btn btn-sm {builtStatusFilter === 'not-built' ? 'btn-warning' : 'btn-outline'}"
+								class="btn btn-sm {builtStatusFilter === 'not-built'
+									? 'btn-warning'
+									: 'btn-outline'}"
 								onclick={() => (builtStatusFilter = 'not-built')}
 							>
-								Non construit ({gameState.siteProductionInstances.filter(i => !i.isBuilt).length})
+								Non construit ({gameState.siteProductionInstances.filter((i) => !i.isBuilt).length})
 							</button>
 						</div>
-						
+
 						<!-- Search Bar -->
 						<div class="relative">
 							<Icon

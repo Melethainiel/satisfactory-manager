@@ -152,7 +152,7 @@
 		try {
 			// Use optimistic update method - no global loading
 			const success = await gameState.updateProductionInstanceBuiltStatus(
-				instance.id, 
+				instance.id,
 				!instance.isBuilt
 			);
 			if (!success) {
@@ -185,18 +185,16 @@
 				<!-- Built Status Indicator -->
 				<div class="mt-1 flex items-center gap-2">
 					{#if instance.isBuilt}
-						<span class="badge badge-success badge-sm gap-1">
+						<span class="badge gap-1 badge-sm badge-success">
 							<Icon src={CheckBadge} class="size-3" />
 							Construite
 						</span>
 					{:else}
-						<span class="badge badge-warning badge-sm">
-							Non construite
-						</span>
+						<span class="badge badge-sm badge-warning"> Non construite </span>
 					{/if}
 					{#if canEdit()}
 						<button
-							class="btn btn-xs btn-ghost"
+							class="btn btn-ghost btn-xs"
 							class:loading={isTogglingBuilt}
 							onclick={handleToggleBuiltStatus}
 							disabled={isTogglingBuilt}

@@ -128,6 +128,55 @@ export interface ProductionSummary {
 	metrics: ProductionMetrics;
 }
 
+// Dashboard interfaces
+export interface GameDashboardSiteData {
+	siteId: string;
+	siteName: string;
+	totalProduction: Array<{ itemId: string; itemName: string; rate: number }>;
+	totalConsumption: Array<{ itemId: string; itemName: string; rate: number }>;
+	powerConsumption: number;
+	powerProduction: number;
+	instanceCount: number;
+	buildingCount: number;
+	averageEfficiency: number;
+}
+
+export interface GameDashboardAggregatedData {
+	totalProduction: Array<{
+		itemId: string;
+		itemName: string;
+		rate: number;
+		sites: Array<{ siteId: string; siteName: string; rate: number }>;
+	}>;
+	totalConsumption: Array<{
+		itemId: string;
+		itemName: string;
+		rate: number;
+		sites: Array<{ siteId: string; siteName: string; rate: number }>;
+	}>;
+	netBalance: Array<{ itemId: string; itemName: string; balance: number }>;
+	totalPowerConsumption: number;
+	totalPowerProduction: number;
+	netPowerBalance: number;
+	totalInstances: number;
+	totalBuildings: number;
+	averageEfficiency: number;
+	uniqueItems: number;
+}
+
+export interface GameDashboardPerformanceData {
+	topProducingSites: Array<{ siteId: string; siteName: string; productionScore: number }>;
+	powerEfficiencyBySite: Array<{ siteId: string; siteName: string; efficiency: number }>;
+	bottlenecks: Array<{ itemId: string; itemName: string; deficit: number; sites: string[] }>;
+}
+
+export interface GameDashboardData {
+	sites: GameDashboardSiteData[];
+	aggregated: GameDashboardAggregatedData;
+	performance: GameDashboardPerformanceData;
+	lastUpdated: Date;
+}
+
 export interface GameState {
 	games: GameSummary[];
 	selectedGameId: string | null;
@@ -183,6 +232,13 @@ export interface GameState {
 	updateProductionInstanceBuiltStatus: (instanceId: string, isBuilt: boolean) => Promise<boolean>;
 	deleteProductionInstanceOptimistic: (instanceId: string) => Promise<boolean>;
 	deleteProductionInstance: (instanceId: string) => Promise<void>;
+	// Dashboard management
+	gameDashboard: GameDashboardData | null;
+	isDashboardLoading: boolean;
+	dashboardError: string | null;
+	loadGameDashboard: (gameId: string, forceRefresh?: boolean) => Promise<void>;
+	refreshGameDashboard: (gameId: string) => Promise<void>;
+	clearDashboardData: () => void;
 	// Backward compatibility getters
 	get siteProductionInstances(): ProductionInstanceData[];
 	get siteProductionOverview(): ProductionOverview | null;
@@ -240,6 +296,10 @@ class GameStateClass implements GameState {
 	selectedSiteId = $state<string | null>(null);
 	// Production state - consolidated
 	siteProductionSummary = $state<ProductionSummary | null>(null);
+	// Dashboard state
+	gameDashboard = $state<GameDashboardData | null>(null);
+	isDashboardLoading = $state<boolean>(false);
+	dashboardError = $state<string | null>(null);
 
 	// Backward compatibility getters
 	get siteProductionInstances(): ProductionInstanceData[] {
@@ -875,6 +935,45 @@ class GameStateClass implements GameState {
 		return currentUser
 			? ['Contributor', 'Administrator', 'Owner'].includes(currentUser.role)
 			: false;
+	}
+
+	// Dashboard management methods
+	async loadGameDashboard(gameId: string, forceRefresh: boolean = false) {
+		if (!gameId || !this.apiFetch) return;
+
+		this.isDashboardLoading = true;
+		this.dashboardError = null;
+
+		try {
+			const url = `/api/games/${gameId}/dashboard${forceRefresh ? '?fresh=true' : ''}`;
+			const response = await this.apiFetch(url);
+
+			if (!response.ok) {
+				throw new Error(`Failed to load dashboard data (${response.status})`);
+			}
+
+			const data = await response.json();
+
+			// Convert string dates to Date objects
+			const dashboardData = data as GameDashboardData;
+			dashboardData.lastUpdated = new Date(dashboardData.lastUpdated);
+
+			this.gameDashboard = dashboardData;
+		} catch (e: any) {
+			this.dashboardError = e?.message ?? 'Failed to load dashboard data';
+			notificationService.error(this.dashboardError || 'Failed to load dashboard data');
+		} finally {
+			this.isDashboardLoading = false;
+		}
+	}
+
+	async refreshGameDashboard(gameId: string) {
+		return await this.loadGameDashboard(gameId, true);
+	}
+
+	clearDashboardData() {
+		this.gameDashboard = null;
+		this.dashboardError = null;
 	}
 }
 

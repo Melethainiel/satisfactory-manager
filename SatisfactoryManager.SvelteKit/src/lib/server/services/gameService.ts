@@ -16,6 +16,7 @@ import {
 	productionInstanceMigrationService,
 	type MigrationResult
 } from './productionInstanceMigrationService';
+import { gameDashboardService } from './gameDashboardService';
 
 export interface IGameService {
 	getAll(): Promise<Game[]>;
@@ -293,6 +294,9 @@ class GameService implements IGameService {
 				moduleId,
 				versionId
 			);
+
+		// Invalidate game dashboard cache when module version changes
+		await gameDashboardService.onModuleVersionChanged(gameId);
 
 		return {
 			success: true,

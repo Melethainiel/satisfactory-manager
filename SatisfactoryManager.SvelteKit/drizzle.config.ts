@@ -86,7 +86,11 @@ export default defineConfig({
 	// Schema and migrations
 	schema: './src/lib/server/db/schema.ts',
 	out: './drizzle',
-
+	migrations: {
+		// Schema et nom de la table
+		table: 'drizzle_migrations',
+		schema: 'public'
+	},
 	// Development options
 	verbose: true,
 	strict: true

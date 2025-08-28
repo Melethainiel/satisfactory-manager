@@ -18,6 +18,7 @@ import {
 import { alias } from 'drizzle-orm/pg-core';
 import { eq, desc, and } from 'drizzle-orm';
 import { productionCalculationService } from './productionCalculationService';
+import { gameDashboardService } from './gameDashboardService';
 
 export interface ProductionInstanceWithDetails extends ProductionInstance {
 	site: {
@@ -294,6 +295,7 @@ class ProductionInstanceService implements IProductionInstanceService {
 		// Invalidate cache for the site
 		if (data.siteId) {
 			await productionCalculationService.onProductionInstanceChanged(data.siteId);
+			await gameDashboardService.onProductionInstanceChanged(data.siteId);
 		}
 
 		return result;
@@ -322,6 +324,7 @@ class ProductionInstanceService implements IProductionInstanceService {
 		// Invalidate cache for the site
 		if (currentInstance.length > 0) {
 			await productionCalculationService.onProductionInstanceChanged(currentInstance[0].siteId);
+			await gameDashboardService.onProductionInstanceChanged(currentInstance[0].siteId);
 		}
 
 		return result;
@@ -336,6 +339,7 @@ class ProductionInstanceService implements IProductionInstanceService {
 		// Invalidate cache for the site
 		if (result.length > 0) {
 			await productionCalculationService.onProductionInstanceChanged(result[0].siteId);
+			await gameDashboardService.onProductionInstanceChanged(result[0].siteId);
 		}
 
 		return result.length > 0;

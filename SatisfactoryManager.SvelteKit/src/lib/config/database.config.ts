@@ -306,7 +306,9 @@ export function parseDatabaseUrl(url?: string): DatabaseUrlComponents {
 	}
 
 	if (!databaseUrl) {
-		throw new Error('No database connection available. Either configure an Aspire connection string or set DATABASE_URL.');
+		throw new Error(
+			'No database connection available. Either configure an Aspire connection string or set DATABASE_URL.'
+		);
 	}
 
 	let parsedUrl: URL;

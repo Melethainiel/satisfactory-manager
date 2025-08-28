@@ -23,7 +23,7 @@
 
 	function handleGameSelect(gameId: string) {
 		gameState.selectGame(gameId);
-		goto(`/games/${gameId}`);
+		goto(`/games/${gameId}/dashboard`);
 	}
 
 	function canAccessSettingsForGame(game: GameSummary) {

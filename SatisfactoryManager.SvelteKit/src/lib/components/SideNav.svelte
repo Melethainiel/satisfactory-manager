@@ -1,7 +1,15 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { afterNavigate } from '$app/navigation';
-	import { Icon, Map, WrenchScrewdriver, Home, Cube, MapPin } from 'svelte-hero-icons';
+	import {
+		Icon,
+		Map,
+		WrenchScrewdriver,
+		Home,
+		Cube,
+		MapPin,
+		ChartBarSquare
+	} from 'svelte-hero-icons';
 	import { t } from '$lib/i18n';
 	import { getPermissionState } from '$lib/states/permissionState.svelte';
 	import { getGameState } from '$lib/states/gameState.svelte';
@@ -24,7 +32,14 @@
 		return currentPath === '/';
 	}
 	function isGameSitesActive() {
-		return currentPath.startsWith('/games');
+		return (
+			currentPath.startsWith('/games') &&
+			!currentPath.includes('/dashboard') &&
+			!currentPath.includes('/settings')
+		);
+	}
+	function isDashboardActive() {
+		return currentPath.includes('/dashboard');
 	}
 	function isSettingsActive() {
 		return currentPath.includes('/settings');
@@ -60,12 +75,21 @@
 				<!-- Game Section (only show when game is selected) -->
 				{#if hasSelectedGame}
 					<li>
-						<details open={isGameSitesActive() || isSettingsActive()}>
+						<details open={isGameSitesActive() || isDashboardActive() || isSettingsActive()}>
 							<summary class="font-medium text-base-content/80">
 								<Icon src={Map} class="inline-block size-5 stroke-1" />
 								{$t('nav.game')}
 							</summary>
 							<ul>
+								<li>
+									<a
+										href="/games/{currentGameId}/dashboard"
+										class={`rounded-lg transition-colors hover:text-primary ${isDashboardActive() ? 'font-semibold text-primary' : ''}`}
+									>
+										<Icon src={ChartBarSquare} class="inline-block size-4 stroke-1" />
+										{$t('nav.dashboard')}
+									</a>
+								</li>
 								<li>
 									<a
 										href="/games/{currentGameId}"
@@ -152,12 +176,22 @@
 					<!-- Game Section (only show when game is selected) -->
 					{#if hasSelectedGame}
 						<li>
-							<details open={isGameSitesActive() || isSettingsActive()}>
+							<details open={isGameSitesActive() || isDashboardActive() || isSettingsActive()}>
 								<summary class="font-medium text-base-content/80">
 									<Icon src={Map} class="inline-block size-4 stroke-1" />
 									{$t('nav.game')}
 								</summary>
 								<ul>
+									<li>
+										<a
+											href="/games/{currentGameId}/dashboard"
+											onclick={() => onClose?.()}
+											class={`rounded-lg transition-colors hover:text-primary ${isDashboardActive() ? 'font-semibold text-primary' : ''}`}
+										>
+											<Icon src={ChartBarSquare} class="inline-block size-4 stroke-1" />
+											{$t('nav.dashboard')}
+										</a>
+									</li>
 									<li>
 										<a
 											href="/games/{currentGameId}"

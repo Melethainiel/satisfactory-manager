@@ -130,7 +130,7 @@ export function getServerConfig(forceReload = false): ServerEnv {
 		}
 
 		// Cache validated configuration
-		serverConfig = result.data;
+		serverConfig = result.data as ServerEnv;
 
 		return serverConfig;
 	} catch (error) {

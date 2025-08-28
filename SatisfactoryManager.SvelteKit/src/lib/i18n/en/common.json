@@ -7,13 +7,15 @@
 		"home": "Home",
 		"game": "Game",
 		"sites": "Sites",
+		"dashboard": "Dashboard",
 		"settings": "Settings",
 		"modules": "Modules",
 		"menu": "Menu",
 		"navigation": "Navigation",
 		"toggle_nav": "Toggle navigation",
 		"close_nav": "Close navigation",
-		"back_to_home": "Back to Home"
+		"back_to_home": "Back to Home",
+		"back_to_game": "Back to Game"
 	},
 	"auth": {
 		"login": "Login",
@@ -369,5 +371,114 @@
 		"net_balance": "Net balance: {balance} MW {type}",
 		"MW": "MW",
 		"GW": "GW"
+	},
+	"dashboard": {
+		"title": "Dashboard",
+		"subtitle": "Production Analytics & Performance Overview",
+		"loading": "Loading dashboard...",
+		"refreshing": "Refreshing dashboard data...",
+		"refresh": "Refresh",
+		"refresh_now": "Refresh Now",
+		"retry": "Retry",
+		"load_error": "Failed to load dashboard",
+		"access_denied": "You don't have permission to view this dashboard",
+		"dismiss_alert": "Dismiss Alert",
+		"no_production_data": "No production data available",
+		"no_power_data": "No power data available",
+		"no_sites_data": "No sites data available",
+		"no_items_found": "No items match your search",
+		"search_items": "Search items...",
+		"total_production": "Total Production",
+		"power_balance": "Power Balance",
+		"efficiency": "Average Efficiency",
+		"factory_status": "Factory Status",
+		"unique_items": "unique items",
+		"sites": "sites",
+		"production_short": "prod.",
+		"consumption_short": "cons.",
+		"instances": "instances",
+		"buildings": "buildings",
+		"bottlenecks": "bottlenecks",
+		"no_bottlenecks": "No bottlenecks detected",
+		"bottlenecks_detected": "Production Bottlenecks Detected",
+		"bottlenecks_subtitle": "{count} items are experiencing shortages that could impact production",
+		"efficiency_status": {
+			"excellent": "Excellent",
+			"good": "Good",
+			"fair": "Fair",
+			"poor": "Poor"
+		},
+		"status": {
+			"optimal": "Optimal",
+			"minor_issues": "Minor Issues",
+			"attention_needed": "Needs Attention"
+		},
+		"production_breakdown": {
+			"title": "Production Breakdown by Item",
+			"subtitle": "Inverted matrix view showing which sites produce each item"
+		},
+		"energy_dashboard": {
+			"title": "Energy Dashboard",
+			"subtitle": "Power consumption and production analysis"
+		},
+		"site_performance": {
+			"title": "Site Performance Matrix",
+			"subtitle": "Compare efficiency and output across all sites"
+		},
+		"item_name": "Item Name",
+		"total_rate": "Total Rate",
+		"sites_count": "Sites",
+		"balance": "Balance",
+		"production_sites": "Production Sites",
+		"consumption_sites": "Consumption Sites",
+		"power_production": "Power Production",
+		"power_consumption": "Power Consumption",
+		"net_balance": "Net Balance",
+		"power_efficiency_by_site": "Power Efficiency by Site",
+		"top_power_consumers": "Top Power Consumers",
+		"top_power_producers": "Top Power Producers",
+		"rank": "Rank",
+		"site_name": "Site Name",
+		"production_score": "Production Score",
+		"items_produced": "Items Produced",
+		"is_top_performer": "is the top-performing site",
+		"average_efficiency": "Average efficiency across all sites",
+		"performance_insights": "Performance Insights",
+		"bottleneck": {
+			"critical": "Critical",
+			"high": "High",
+			"moderate": "Moderate"
+		},
+		"affected_sites": "Affected sites",
+		"recommended_actions": "Recommended Actions",
+		"dismiss_alert": "Dismiss alert",
+		"action": {
+			"increase_production": "Increase production capacity for deficit items",
+			"optimize_efficiency": "Optimize building efficiency ratios",
+			"balance_consumption": "Review and balance resource consumption",
+			"add_production_sites": "Consider adding production sites for bottleneck items"
+		},
+		"auto_refresh": {
+			"label": "Auto-refresh",
+			"enabled": "Auto-refresh enabled",
+			"1_minute": "1 minute",
+			"5_minutes": "5 minutes",
+			"10_minutes": "10 minutes",
+			"30_minutes": "30 minutes"
+		},
+		"last_updated": {
+			"just_now": "Just now",
+			"minutes_ago": "{minutes} minutes ago",
+			"hours_ago": "{hours} hours ago"
+		},
+		"search_items": "Search items...",
+		"no_items_found": "No items found",
+		"no_production_data": "No production data available",
+		"no_power_data": "No power data available",
+		"no_sites_data": "No sites data available",
+		"refresh_now": "Refresh now",
+		"refresh": "Refresh",
+		"refreshing": "Refreshing...",
+		"retry": "Retry"
 	}
 }

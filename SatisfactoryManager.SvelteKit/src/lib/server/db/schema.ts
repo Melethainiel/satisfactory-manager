@@ -41,7 +41,9 @@ export const sites = pgTable('sites', {
 		.references(() => games.id, { onDelete: 'cascade' }),
 	createdAt: timestamp('created_at').defaultNow().notNull(),
 	updatedAt: timestamp('updated_at').defaultNow().notNull()
-});
+}, (table) => ({
+	gameIdIdx: index('sites_game_id_idx').on(table.gameId)
+}));
 
 export type Site = typeof sites.$inferSelect;
 export type NewSite = typeof sites.$inferInsert;
@@ -102,7 +104,9 @@ export const buildingVersions = pgTable('building_versions', {
 	supplementalLoadAmount: numeric('supplemental_load_amount', { precision: 10, scale: 2 }),
 	output: numeric('output', { precision: 10, scale: 2 }),
 	createdAt: timestamp('created_at').defaultNow().notNull()
-});
+}, (table) => ({
+	buildingIdIdx: index('building_versions_building_id_idx').on(table.buildingId)
+}));
 
 export type BuildingVersion = typeof buildingVersions.$inferSelect;
 export type NewBuildingVersion = typeof buildingVersions.$inferInsert;
@@ -161,7 +165,9 @@ export const itemVersions = pgTable('item_versions', {
 		.references(() => moduleVersions.id, { onDelete: 'cascade' }),
 	energyValue: numeric('energy_value', { precision: 10, scale: 2 }).notNull().default('0'),
 	createdAt: timestamp('created_at').defaultNow().notNull()
-});
+}, (table) => ({
+	itemIdIdx: index('item_versions_item_id_idx').on(table.itemId)
+}));
 
 export type ItemVersion = typeof itemVersions.$inferSelect;
 export type NewItemVersion = typeof itemVersions.$inferInsert;
@@ -199,7 +205,9 @@ export const recipeVersions = pgTable('recipe_versions', {
 		.references(() => moduleVersions.id, { onDelete: 'cascade' }),
 	manufacturingDuration: numeric('manufacturing_duration', { precision: 10, scale: 2 }).notNull(),
 	createdAt: timestamp('created_at').defaultNow().notNull()
-});
+}, (table) => ({
+	recipeIdIdx: index('recipe_versions_recipe_id_idx').on(table.recipeId)
+}));
 
 export type RecipeVersion = typeof recipeVersions.$inferSelect;
 export type NewRecipeVersion = typeof recipeVersions.$inferInsert;
@@ -215,7 +223,9 @@ export const recipeIngredients = pgTable('recipe_ingredients', {
 		.references(() => items.id, { onDelete: 'cascade' }),
 	count: numeric('count', { precision: 10, scale: 2 }).notNull(),
 	createdAt: timestamp('created_at').defaultNow().notNull()
-});
+}, (table) => ({
+	recipeVersionIdIdx: index('recipe_ingredients_recipe_version_id_idx').on(table.recipeVersionId)
+}));
 
 export type RecipeIngredient = typeof recipeIngredients.$inferSelect;
 export type NewRecipeIngredient = typeof recipeIngredients.$inferInsert;
@@ -231,7 +241,9 @@ export const recipeProducts = pgTable('recipe_products', {
 		.references(() => items.id, { onDelete: 'cascade' }),
 	count: numeric('count', { precision: 10, scale: 2 }).notNull(),
 	createdAt: timestamp('created_at').defaultNow().notNull()
-});
+}, (table) => ({
+	recipeVersionIdIdx: index('recipe_products_recipe_version_id_idx').on(table.recipeVersionId)
+}));
 
 export type RecipeProduct = typeof recipeProducts.$inferSelect;
 export type NewRecipeProduct = typeof recipeProducts.$inferInsert;
@@ -359,7 +371,10 @@ export const moduleGames = pgTable(
 			onDelete: 'set null'
 		})
 	},
-	(t) => [primaryKey({ columns: [t.moduleId, t.gameId] })]
+	(t) => [
+		primaryKey({ columns: [t.moduleId, t.gameId] }),
+		index('module_games_game_id_idx').on(t.gameId, t.moduleId)
+	]
 );
 
 export const modulesRelation = relations(modules, ({ many }) => ({
@@ -515,7 +530,18 @@ export const productionInstances = pgTable('production_instances', {
 	notes: varchar('notes', { length: 1000 }),
 	createdAt: timestamp('created_at').defaultNow().notNull(),
 	updatedAt: timestamp('updated_at').defaultNow().notNull()
-});
+}, (table) => ({
+	siteIdCompositeIdx: index('production_instances_site_id_composite_idx').on(
+		table.siteId, 
+		table.buildingCount, 
+		table.efficiencyRatio, 
+		table.isBuilt
+	),
+	buildingRecipeIdx: index('production_instances_building_recipe_idx').on(
+		table.buildingVersionId, 
+		table.recipeVersionId
+	)
+}));
 
 export type ProductionInstance = typeof productionInstances.$inferSelect;
 export type NewProductionInstance = typeof productionInstances.$inferInsert;

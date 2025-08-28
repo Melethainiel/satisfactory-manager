@@ -23,8 +23,9 @@ export interface ServerAzureB2CConfig {
  * This function can ONLY be called in server context
  */
 export function getServerAzureB2CConfig(): ServerAzureB2CConfig {
-	const authoritiesValue = dynamicEnv.AZURE_B2C_KNOWN_AUTHORITIES || '["satisfactorymanager.b2clogin.com"]';
-	
+	const authoritiesValue =
+		dynamicEnv.AZURE_B2C_KNOWN_AUTHORITIES || '["satisfactorymanager.b2clogin.com"]';
+
 	let knownAuthorities: string[];
 	try {
 		// Try to parse as JSON array first

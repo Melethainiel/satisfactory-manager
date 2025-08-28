@@ -141,6 +141,13 @@
       "when": 1756238838293,
       "tag": "0019_add_is_built_to_production_instances",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1756387561732,
+      "tag": "0020_add_dashboard_performance_indexes",
+      "breakpoints": true
     }
   ]
 }

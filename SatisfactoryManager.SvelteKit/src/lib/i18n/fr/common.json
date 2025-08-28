@@ -7,13 +7,15 @@
 		"home": "Accueil",
 		"game": "Partie",
 		"sites": "Sites",
+		"dashboard": "Tableau de bord",
 		"settings": "Paramètres",
 		"modules": "Modules",
 		"menu": "Menu",
 		"navigation": "Navigation",
 		"toggle_nav": "Basculer la navigation",
 		"close_nav": "Fermer la navigation",
-		"back_to_home": "Retour à l'accueil"
+		"back_to_home": "Retour à l'accueil",
+		"back_to_game": "Retour à la partie"
 	},
 	"auth": {
 		"login": "Connexion",
@@ -369,5 +371,114 @@
 		"net_balance": "Solde net : {balance} MW {type}",
 		"MW": "MW",
 		"GW": "GW"
+	},
+	"dashboard": {
+		"title": "Tableau de bord",
+		"subtitle": "Analytics de production et vue d'ensemble des performances",
+		"loading": "Chargement du tableau de bord...",
+		"refreshing": "Actualisation des données du tableau de bord...",
+		"refresh": "Actualiser",
+		"refresh_now": "Actualiser maintenant",
+		"retry": "Réessayer",
+		"load_error": "Échec du chargement du tableau de bord",
+		"access_denied": "Vous n'avez pas la permission de voir ce tableau de bord",
+		"dismiss_alert": "Fermer l'alerte",
+		"no_production_data": "Aucune donnée de production disponible",
+		"no_power_data": "Aucune donnée énergétique disponible",
+		"no_sites_data": "Aucune donnée de site disponible",
+		"no_items_found": "Aucun objet ne correspond à votre recherche",
+		"search_items": "Rechercher des objets...",
+		"total_production": "Production totale",
+		"power_balance": "Balance énergétique",
+		"efficiency": "Efficacité moyenne",
+		"factory_status": "État de l'usine",
+		"unique_items": "objets uniques",
+		"sites": "sites",
+		"production_short": "prod.",
+		"consumption_short": "cons.",
+		"instances": "instances",
+		"buildings": "bâtiments",
+		"bottlenecks": "goulots d'étranglement",
+		"no_bottlenecks": "Aucun goulot d'étranglement détecté",
+		"bottlenecks_detected": "Goulots d'étranglement de production détectés",
+		"bottlenecks_subtitle": "{count} objets subissent des pénuries qui pourraient impacter la production",
+		"efficiency_status": {
+			"excellent": "Excellent",
+			"good": "Bien",
+			"fair": "Correct",
+			"poor": "Pauvre"
+		},
+		"status": {
+			"optimal": "Optimal",
+			"minor_issues": "Problèmes mineurs",
+			"attention_needed": "Attention requise"
+		},
+		"production_breakdown": {
+			"title": "Répartition de la production par objet",
+			"subtitle": "Vue matricielle inversée montrant quels sites produisent chaque objet"
+		},
+		"energy_dashboard": {
+			"title": "Tableau de bord énergétique",
+			"subtitle": "Analyse de la consommation et production énergétique"
+		},
+		"site_performance": {
+			"title": "Matrice de performance des sites",
+			"subtitle": "Comparez l'efficacité et la production entre tous les sites"
+		},
+		"item_name": "Nom de l'objet",
+		"total_rate": "Taux total",
+		"sites_count": "Sites",
+		"balance": "Balance",
+		"production_sites": "Sites de production",
+		"consumption_sites": "Sites de consommation",
+		"power_production": "Production énergétique",
+		"power_consumption": "Consommation énergétique",
+		"net_balance": "Balance nette",
+		"power_efficiency_by_site": "Efficacité énergétique par site",
+		"top_power_consumers": "Plus gros consommateurs d'énergie",
+		"top_power_producers": "Plus gros producteurs d'énergie",
+		"rank": "Rang",
+		"site_name": "Nom du site",
+		"production_score": "Score de production",
+		"items_produced": "Objets produits",
+		"is_top_performer": "est le site le plus performant",
+		"average_efficiency": "Efficacité moyenne de tous les sites",
+		"performance_insights": "Informations sur les performances",
+		"bottleneck": {
+			"critical": "Critique",
+			"high": "Élevé",
+			"moderate": "Modéré"
+		},
+		"affected_sites": "Sites affectés",
+		"recommended_actions": "Actions recommandées",
+		"dismiss_alert": "Ignorer l'alerte",
+		"action": {
+			"increase_production": "Augmenter la capacité de production pour les objets en déficit",
+			"optimize_efficiency": "Optimiser les ratios d'efficacité des bâtiments",
+			"balance_consumption": "Réviser et équilibrer la consommation de ressources",
+			"add_production_sites": "Considérer l'ajout de sites de production pour les objets en goulot"
+		},
+		"auto_refresh": {
+			"label": "Actualisation auto",
+			"enabled": "Actualisation automatique activée",
+			"1_minute": "1 minute",
+			"5_minutes": "5 minutes",
+			"10_minutes": "10 minutes",
+			"30_minutes": "30 minutes"
+		},
+		"last_updated": {
+			"just_now": "À l'instant",
+			"minutes_ago": "Il y a {minutes} minutes",
+			"hours_ago": "Il y a {hours} heures"
+		},
+		"search_items": "Rechercher des objets...",
+		"no_items_found": "Aucun objet trouvé",
+		"no_production_data": "Aucune donnée de production disponible",
+		"no_power_data": "Aucune donnée énergétique disponible",
+		"no_sites_data": "Aucune donnée de site disponible",
+		"refresh_now": "Actualiser maintenant",
+		"refresh": "Actualiser",
+		"refreshing": "Actualisation...",
+		"retry": "Réessayer"
 	}
 }

@@ -194,7 +194,7 @@ export function getKnownAuthorities(): string[] {
 	try {
 		const config = getPublicConfig();
 		const authoritiesValue = config.PUBLIC_AZURE_B2C_KNOWN_AUTHORITIES;
-		
+
 		try {
 			// Try to parse as JSON array first
 			const parsed = JSON.parse(authoritiesValue);

@@ -110,12 +110,10 @@ class ArchiveContentService implements IArchiveContentService {
 					}
 				};
 
-
-
 				const buildingsResult = await this.importBuildingsFromYaml(
 					archiveContent.extractedContent.buildingsYaml,
 					moduleVersionId
-				)
+				);
 				// Process buildings results
 				if (buildingsResult) {
 					result.buildings = {
@@ -128,7 +126,10 @@ class ArchiveContentService implements IArchiveContentService {
 					result.errors.push(...buildingsResult.importResults.errors);
 				}
 
-				const itemsResult = await this.importItemsFromYaml(archiveContent.extractedContent.itemsYaml, moduleVersionId);
+				const itemsResult = await this.importItemsFromYaml(
+					archiveContent.extractedContent.itemsYaml,
+					moduleVersionId
+				);
 
 				// Process items results
 				if (itemsResult) {
@@ -141,8 +142,6 @@ class ArchiveContentService implements IArchiveContentService {
 					};
 					result.errors.push(...itemsResult.importResults.errors);
 				}
-
-
 
 				// Import recipes after items and buildings (has dependencies)
 				const recipesResult = await this.importRecipesFromYaml(

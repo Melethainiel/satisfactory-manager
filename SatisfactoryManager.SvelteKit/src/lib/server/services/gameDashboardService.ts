@@ -1,0 +1,760 @@
+import { db } from '../db';
+import {
+	productionInstances,
+	sites,
+	games,
+	recipeVersions,
+	recipes,
+	buildings,
+	buildingVersions,
+	recipeProducts,
+	recipeIngredients,
+	items,
+	itemVersions,
+	moduleGames,
+	modules,
+	userGames,
+	users,
+	type GameUserRole
+} from '../db/schema';
+import { eq, and, inArray } from 'drizzle-orm';
+
+// Data structures for the game dashboard
+export interface GameDashboardData {
+	gameId: string;
+	sites: Array<{
+		siteId: string;
+		siteName: string;
+		totalProduction: Array<{ itemId: string; itemName: string; rate: number }>;
+		totalConsumption: Array<{ itemId: string; itemName: string; rate: number }>;
+		powerConsumption: number;
+		powerProduction: number;
+		instanceCount: number;
+		buildingCount: number;
+		averageEfficiency: number;
+	}>;
+	aggregated: {
+		totalProduction: Array<{
+			itemId: string;
+			itemName: string;
+			rate: number;
+			sites: Array<{ siteId: string; siteName: string; rate: number }>;
+		}>;
+		totalConsumption: Array<{
+			itemId: string;
+			itemName: string;
+			rate: number;
+			sites: Array<{ siteId: string; siteName: string; rate: number }>;
+		}>;
+		netBalance: Array<{ itemId: string; itemName: string; balance: number }>;
+		totalPowerConsumption: number;
+		totalPowerProduction: number;
+		netPowerBalance: number;
+		totalInstances: number;
+		totalBuildings: number;
+		averageEfficiency: number;
+		uniqueItems: number;
+	};
+	performance: {
+		topProducingSites: Array<{ siteId: string; siteName: string; productionScore: number }>;
+		powerEfficiencyBySite: Array<{ siteId: string; siteName: string; efficiency: number }>;
+		bottlenecks: Array<{ itemId: string; itemName: string; deficit: number; sites: string[] }>;
+	};
+	lastUpdated: Date;
+}
+
+interface CacheEntry {
+	data: GameDashboardData;
+	timestamp: Date;
+	ttl: number;
+}
+
+interface SiteProductionData {
+	siteId: string;
+	siteName: string;
+	instanceId: string;
+	buildingCount: number;
+	efficiencyRatio: number;
+	isBuilt: boolean;
+	powerConsumption: number;
+	powerProduction: number;
+	recipeVersionId: string | null;
+	extractedItemVersionId: string | null;
+	fuelItemVersionId: string | null;
+	extractorPurity: string | null;
+	buildingOutput: number;
+	manufacturingDuration: number;
+	supplementalLoadAmount: number;
+	fuelEnergyValue: number;
+	products: Array<{ itemId: string; itemName: string; count: number }>;
+	ingredients: Array<{ itemId: string; itemName: string; count: number }>;
+}
+
+// Purity multipliers for extractors
+function getPurityMultiplier(purity: string | null): number {
+	switch (purity) {
+		case 'Impure':
+			return 0.5;
+		case 'Pure':
+			return 2.0;
+		case 'Normal':
+		default:
+			return 1.0;
+	}
+}
+
+export class GameDashboardService {
+	private cache = new Map<string, CacheEntry>();
+	private readonly DEFAULT_TTL = 10 * 60 * 1000; // 10 minutes
+
+	private getCacheKey(gameId: string): string {
+		return `game-dashboard:${gameId}`;
+	}
+
+	private isCacheValid(entry: CacheEntry): boolean {
+		return Date.now() - entry.timestamp.getTime() < entry.ttl;
+	}
+
+	private setCache(gameId: string, data: GameDashboardData, ttl: number = this.DEFAULT_TTL): void {
+		this.cache.set(this.getCacheKey(gameId), {
+			data,
+			timestamp: new Date(),
+			ttl
+		});
+	}
+
+	private getCache(gameId: string): GameDashboardData | null {
+		const entry = this.cache.get(this.getCacheKey(gameId));
+		if (entry && this.isCacheValid(entry)) {
+			return entry.data;
+		}
+		// Remove expired entry
+		if (entry) {
+			this.cache.delete(this.getCacheKey(gameId));
+		}
+		return null;
+	}
+
+	public invalidateGameDashboardCache(gameId: string): void {
+		this.cache.delete(this.getCacheKey(gameId));
+	}
+
+	public clearAllCache(): void {
+		this.cache.clear();
+	}
+
+	// Check if user has read access to game
+	private async validateGameAccess(gameId: string, userEmail?: string): Promise<boolean> {
+		if (!userEmail) return false;
+
+		const userAccess = await db
+			.select({ role: userGames.role })
+			.from(userGames)
+			.innerJoin(games, eq(userGames.gameId, games.id))
+			.innerJoin(users, eq(userGames.userId, users.id))
+			.where(and(eq(games.id, gameId), eq(users.email, userEmail)))
+			.limit(1);
+
+		return userAccess.length > 0;
+	}
+
+	private async fetchGameProductionData(gameId: string): Promise<SiteProductionData[]> {
+		// Single optimized query to get all production data for the game
+		const productionQuery = await db
+			.select({
+				// Site data
+				siteId: sites.id,
+				siteName: sites.name,
+				// Production instance data
+				instanceId: productionInstances.id,
+				buildingCount: productionInstances.buildingCount,
+				efficiencyRatio: productionInstances.efficiencyRatio,
+				isBuilt: productionInstances.isBuilt,
+				recipeVersionId: productionInstances.recipeVersionId,
+				extractedItemVersionId: productionInstances.extractedItemVersionId,
+				fuelItemVersionId: productionInstances.fuelItemVersionId,
+				extractorPurity: productionInstances.extractorPurity,
+				// Building data
+				powerConsumption: buildingVersions.energyConsumption,
+				powerProduction: buildingVersions.energyProduction,
+				buildingOutput: buildingVersions.output,
+				supplementalLoadAmount: buildingVersions.supplementalLoadAmount,
+				// Recipe data
+				manufacturingDuration: recipeVersions.manufacturingDuration,
+				// Fuel item energy value
+				fuelEnergyValue: itemVersions.energyValue
+			})
+			.from(productionInstances)
+			.innerJoin(sites, eq(productionInstances.siteId, sites.id))
+			.innerJoin(buildingVersions, eq(productionInstances.buildingVersionId, buildingVersions.id))
+			.leftJoin(recipeVersions, eq(productionInstances.recipeVersionId, recipeVersions.id))
+			.leftJoin(itemVersions, eq(productionInstances.fuelItemVersionId, itemVersions.id))
+			.where(eq(sites.gameId, gameId));
+
+		// Get all recipe version IDs for batch fetching products/ingredients
+		const recipeVersionIds = productionQuery
+			.filter((p) => p.recipeVersionId)
+			.map((p) => p.recipeVersionId!);
+
+		const extractedItemVersionIds = productionQuery
+			.filter((p) => p.extractedItemVersionId)
+			.map((p) => p.extractedItemVersionId!);
+
+		const fuelItemVersionIds = productionQuery
+			.filter((p) => p.fuelItemVersionId)
+			.map((p) => p.fuelItemVersionId!);
+
+		// Check if any generator has supplemental load amount (water consumption)
+		const needsWaterItem = productionQuery.some(
+			(p) => p.fuelItemVersionId && parseFloat(p.supplementalLoadAmount?.toString() || '0') > 0
+		);
+
+		// Batch fetch products, ingredients, and item data
+		const [productsData, ingredientsData, extractedItemsData, waterItemData] = await Promise.all([
+			// Recipe products
+			recipeVersionIds.length > 0
+				? db
+						.select({
+							recipeVersionId: recipeProducts.recipeVersionId,
+							itemId: recipeProducts.itemId,
+							count: recipeProducts.count,
+							itemName: items.displayName
+						})
+						.from(recipeProducts)
+						.innerJoin(items, eq(recipeProducts.itemId, items.id))
+						.where(inArray(recipeProducts.recipeVersionId, recipeVersionIds))
+				: [],
+
+			// Recipe ingredients
+			recipeVersionIds.length > 0
+				? db
+						.select({
+							recipeVersionId: recipeIngredients.recipeVersionId,
+							itemId: recipeIngredients.itemId,
+							count: recipeIngredients.count,
+							itemName: items.displayName
+						})
+						.from(recipeIngredients)
+						.innerJoin(items, eq(recipeIngredients.itemId, items.id))
+						.where(inArray(recipeIngredients.recipeVersionId, recipeVersionIds))
+				: [],
+
+			// Extracted items
+			extractedItemVersionIds.length > 0
+				? db
+						.select({
+							id: itemVersions.id,
+							itemId: itemVersions.itemId,
+							itemName: items.displayName
+						})
+						.from(itemVersions)
+						.innerJoin(items, eq(itemVersions.itemId, items.id))
+						.where(inArray(itemVersions.id, extractedItemVersionIds))
+				: [],
+
+			// Water item for generators
+			needsWaterItem
+				? db
+						.select({
+							id: items.id,
+							itemName: items.displayName
+						})
+						.from(items)
+						.leftJoin(modules, eq(items.moduleId, modules.id))
+						.leftJoin(
+							moduleGames,
+							and(eq(moduleGames.moduleId, modules.id), eq(moduleGames.gameId, gameId))
+						)
+						.where(eq(items.className, 'Desc_Water_C'))
+						.limit(1)
+				: []
+		]);
+
+		// Create lookup maps
+		const productsByRecipeVersion = new Map<
+			string,
+			Array<{ itemId: string; itemName: string; count: number }>
+		>();
+		const ingredientsByRecipeVersion = new Map<
+			string,
+			Array<{ itemId: string; itemName: string; count: number }>
+		>();
+		const extractedItemsMap = new Map<string, { itemId: string; itemName: string }>();
+		const waterItem = waterItemData.length > 0 ? waterItemData[0] : null;
+
+		productsData.forEach((p) => {
+			if (!productsByRecipeVersion.has(p.recipeVersionId)) {
+				productsByRecipeVersion.set(p.recipeVersionId, []);
+			}
+			productsByRecipeVersion.get(p.recipeVersionId)!.push({
+				itemId: p.itemId,
+				itemName: p.itemName,
+				count: parseFloat(p.count.toString())
+			});
+		});
+
+		ingredientsData.forEach((i) => {
+			if (!ingredientsByRecipeVersion.has(i.recipeVersionId)) {
+				ingredientsByRecipeVersion.set(i.recipeVersionId, []);
+			}
+			ingredientsByRecipeVersion.get(i.recipeVersionId)!.push({
+				itemId: i.itemId,
+				itemName: i.itemName,
+				count: parseFloat(i.count.toString())
+			});
+		});
+
+		extractedItemsData.forEach((item) => {
+			extractedItemsMap.set(item.id, {
+				itemId: item.itemId,
+				itemName: item.itemName
+			});
+		});
+
+		// Transform the data into SiteProductionData
+		return productionQuery.map((row) => {
+			let products: Array<{ itemId: string; itemName: string; count: number }> = [];
+			let ingredients: Array<{ itemId: string; itemName: string; count: number }> = [];
+
+			if (row.recipeVersionId) {
+				// Recipe-based production
+				products = productsByRecipeVersion.get(row.recipeVersionId) || [];
+				ingredients = ingredientsByRecipeVersion.get(row.recipeVersionId) || [];
+			} else if (row.extractedItemVersionId) {
+				// Extraction-based production
+				const extractedItem = extractedItemsMap.get(row.extractedItemVersionId);
+				if (extractedItem) {
+					products = [
+						{
+							itemId: extractedItem.itemId,
+							itemName: extractedItem.itemName,
+							count: 1
+						}
+					];
+				}
+			} else if (row.fuelItemVersionId) {
+				// Generator-based production - fuel as ingredient
+				const fuelEnergyValueMJ = parseFloat(row.fuelEnergyValue?.toString() || '0') * 1000; // Convert GJ to MJ
+				const buildingEnergyProductionMW = parseFloat(row.powerProduction?.toString() || '0');
+
+				if (fuelEnergyValueMJ > 0 && buildingEnergyProductionMW > 0) {
+					// Calculate fuel consumption rate
+					const fuelConsumptionPerBuilding = 60 / (fuelEnergyValueMJ / buildingEnergyProductionMW);
+					ingredients.push({
+						itemId: row.fuelItemVersionId,
+						itemName: 'Fuel', // Will be updated with actual name if needed
+						count: fuelConsumptionPerBuilding
+					});
+				}
+
+				// Add water consumption if generator has supplemental load
+				const supplementalLoadAmount = parseFloat(row.supplementalLoadAmount?.toString() || '0');
+				if (supplementalLoadAmount > 0 && waterItem) {
+					ingredients.push({
+						itemId: waterItem.id,
+						itemName: waterItem.itemName,
+						count: supplementalLoadAmount
+					});
+				}
+			}
+
+			return {
+				siteId: row.siteId,
+				siteName: row.siteName,
+				instanceId: row.instanceId,
+				buildingCount: parseFloat(row.buildingCount.toString()),
+				efficiencyRatio: parseFloat(row.efficiencyRatio.toString()),
+				isBuilt: row.isBuilt,
+				powerConsumption: parseFloat(row.powerConsumption?.toString() || '0'),
+				powerProduction: parseFloat(row.powerProduction?.toString() || '0'),
+				recipeVersionId: row.recipeVersionId,
+				extractedItemVersionId: row.extractedItemVersionId,
+				fuelItemVersionId: row.fuelItemVersionId,
+				extractorPurity: row.extractorPurity,
+				buildingOutput: parseFloat(row.buildingOutput?.toString() || '0'),
+				manufacturingDuration: parseFloat(row.manufacturingDuration?.toString() || '1'),
+				supplementalLoadAmount: parseFloat(row.supplementalLoadAmount?.toString() || '0'),
+				fuelEnergyValue: parseFloat(row.fuelEnergyValue?.toString() || '0'),
+				products,
+				ingredients
+			};
+		});
+	}
+
+	private calculateInstanceRates(instance: SiteProductionData): {
+		production: Array<{ itemId: string; itemName: string; rate: number }>;
+		consumption: Array<{ itemId: string; itemName: string; rate: number }>;
+		powerConsumption: number;
+		powerProduction: number;
+	} {
+		const { buildingCount, efficiencyRatio } = instance;
+
+		let production: Array<{ itemId: string; itemName: string; rate: number }> = [];
+		let consumption: Array<{ itemId: string; itemName: string; rate: number }> = [];
+
+		if (instance.recipeVersionId) {
+			// Recipe-based production
+			const { manufacturingDuration } = instance;
+			const rate = (buildingCount * efficiencyRatio) / manufacturingDuration;
+
+			production = instance.products.map((p) => ({
+				itemId: p.itemId,
+				itemName: p.itemName,
+				rate: p.count * rate
+			}));
+
+			consumption = instance.ingredients.map((i) => ({
+				itemId: i.itemId,
+				itemName: i.itemName,
+				rate: i.count * rate
+			}));
+		} else if (instance.extractedItemVersionId) {
+			// Extraction-based production
+			const purityMultiplier = getPurityMultiplier(instance.extractorPurity);
+			const rate = instance.buildingOutput * buildingCount * efficiencyRatio * purityMultiplier;
+
+			production = instance.products.map((p) => ({
+				itemId: p.itemId,
+				itemName: p.itemName,
+				rate
+			}));
+		} else if (instance.fuelItemVersionId) {
+			// Generator-based production
+			consumption = instance.ingredients.map((i) => ({
+				itemId: i.itemId,
+				itemName: i.itemName,
+				rate: i.count * buildingCount * efficiencyRatio
+			}));
+		}
+
+		return {
+			production,
+			consumption,
+			powerConsumption: instance.powerConsumption * buildingCount * efficiencyRatio,
+			powerProduction: instance.powerProduction * buildingCount * efficiencyRatio
+		};
+	}
+
+	private aggregateSiteData(gameData: SiteProductionData[]): GameDashboardData['sites'] {
+		const siteMap = new Map<
+			string,
+			{
+				siteId: string;
+				siteName: string;
+				productionMap: Map<string, { itemName: string; rate: number }>;
+				consumptionMap: Map<string, { itemName: string; rate: number }>;
+				powerConsumption: number;
+				powerProduction: number;
+				instanceCount: number;
+				totalBuildings: number;
+				totalEfficiency: number;
+			}
+		>();
+
+		for (const instance of gameData) {
+			const rates = this.calculateInstanceRates(instance);
+
+			if (!siteMap.has(instance.siteId)) {
+				siteMap.set(instance.siteId, {
+					siteId: instance.siteId,
+					siteName: instance.siteName,
+					productionMap: new Map(),
+					consumptionMap: new Map(),
+					powerConsumption: 0,
+					powerProduction: 0,
+					instanceCount: 0,
+					totalBuildings: 0,
+					totalEfficiency: 0
+				});
+			}
+
+			const siteData = siteMap.get(instance.siteId)!;
+
+			// Aggregate production
+			for (const product of rates.production) {
+				const existing = siteData.productionMap.get(product.itemId);
+				siteData.productionMap.set(product.itemId, {
+					itemName: product.itemName,
+					rate: (existing?.rate || 0) + product.rate
+				});
+			}
+
+			// Aggregate consumption
+			for (const ingredient of rates.consumption) {
+				const existing = siteData.consumptionMap.get(ingredient.itemId);
+				siteData.consumptionMap.set(ingredient.itemId, {
+					itemName: ingredient.itemName,
+					rate: (existing?.rate || 0) + ingredient.rate
+				});
+			}
+
+			// Aggregate power and metrics
+			siteData.powerConsumption += rates.powerConsumption;
+			siteData.powerProduction += rates.powerProduction;
+			siteData.instanceCount += 1;
+			siteData.totalBuildings += instance.buildingCount;
+			siteData.totalEfficiency += instance.efficiencyRatio;
+		}
+
+		// Convert to final format
+		return Array.from(siteMap.values()).map((siteData) => ({
+			siteId: siteData.siteId,
+			siteName: siteData.siteName,
+			totalProduction: Array.from(siteData.productionMap.entries()).map(([itemId, data]) => ({
+				itemId,
+				itemName: data.itemName,
+				rate: data.rate
+			})),
+			totalConsumption: Array.from(siteData.consumptionMap.entries()).map(([itemId, data]) => ({
+				itemId,
+				itemName: data.itemName,
+				rate: data.rate
+			})),
+			powerConsumption: siteData.powerConsumption,
+			powerProduction: siteData.powerProduction,
+			instanceCount: siteData.instanceCount,
+			buildingCount: siteData.totalBuildings,
+			averageEfficiency:
+				siteData.instanceCount > 0 ? siteData.totalEfficiency / siteData.instanceCount : 0
+		}));
+	}
+
+	private aggregateGameData(sites: GameDashboardData['sites']): GameDashboardData['aggregated'] {
+		const gameProductionMap = new Map<
+			string,
+			{
+				itemName: string;
+				rate: number;
+				sites: Array<{ siteId: string; siteName: string; rate: number }>;
+			}
+		>();
+		const gameConsumptionMap = new Map<
+			string,
+			{
+				itemName: string;
+				rate: number;
+				sites: Array<{ siteId: string; siteName: string; rate: number }>;
+			}
+		>();
+
+		let totalPowerConsumption = 0;
+		let totalPowerProduction = 0;
+		let totalInstances = 0;
+		let totalBuildings = 0;
+		let totalEfficiencySum = 0;
+
+		for (const site of sites) {
+			// Aggregate production
+			for (const product of site.totalProduction) {
+				if (!gameProductionMap.has(product.itemId)) {
+					gameProductionMap.set(product.itemId, {
+						itemName: product.itemName,
+						rate: 0,
+						sites: []
+					});
+				}
+				const gameItem = gameProductionMap.get(product.itemId)!;
+				gameItem.rate += product.rate;
+				gameItem.sites.push({
+					siteId: site.siteId,
+					siteName: site.siteName,
+					rate: product.rate
+				});
+			}
+
+			// Aggregate consumption
+			for (const ingredient of site.totalConsumption) {
+				if (!gameConsumptionMap.has(ingredient.itemId)) {
+					gameConsumptionMap.set(ingredient.itemId, {
+						itemName: ingredient.itemName,
+						rate: 0,
+						sites: []
+					});
+				}
+				const gameItem = gameConsumptionMap.get(ingredient.itemId)!;
+				gameItem.rate += ingredient.rate;
+				gameItem.sites.push({
+					siteId: site.siteId,
+					siteName: site.siteName,
+					rate: ingredient.rate
+				});
+			}
+
+			totalPowerConsumption += site.powerConsumption;
+			totalPowerProduction += site.powerProduction;
+			totalInstances += site.instanceCount;
+			totalBuildings += site.buildingCount;
+			totalEfficiencySum += site.averageEfficiency * site.instanceCount;
+		}
+
+		// Convert to arrays
+		const totalProduction = Array.from(gameProductionMap.entries()).map(([itemId, data]) => ({
+			itemId,
+			itemName: data.itemName,
+			rate: data.rate,
+			sites: data.sites
+		}));
+
+		const totalConsumption = Array.from(gameConsumptionMap.entries()).map(([itemId, data]) => ({
+			itemId,
+			itemName: data.itemName,
+			rate: data.rate,
+			sites: data.sites
+		}));
+
+		// Calculate net balance
+		const allItemIds = new Set([
+			...Array.from(gameProductionMap.keys()),
+			...Array.from(gameConsumptionMap.keys())
+		]);
+		const netBalance = Array.from(allItemIds)
+			.map((itemId) => {
+				const production = gameProductionMap.get(itemId)?.rate || 0;
+				const consumption = gameConsumptionMap.get(itemId)?.rate || 0;
+				const itemName =
+					gameProductionMap.get(itemId)?.itemName || gameConsumptionMap.get(itemId)?.itemName || '';
+
+				return {
+					itemId,
+					itemName,
+					balance: production - consumption
+				};
+			})
+			.filter((item) => Math.abs(item.balance) > 0.001);
+
+		return {
+			totalProduction,
+			totalConsumption,
+			netBalance,
+			totalPowerConsumption,
+			totalPowerProduction,
+			netPowerBalance: totalPowerProduction - totalPowerConsumption,
+			totalInstances,
+			totalBuildings,
+			averageEfficiency: totalInstances > 0 ? totalEfficiencySum / totalInstances : 0,
+			uniqueItems: allItemIds.size
+		};
+	}
+
+	private calculatePerformanceMetrics(
+		sites: GameDashboardData['sites'],
+		aggregated: GameDashboardData['aggregated']
+	): GameDashboardData['performance'] {
+		// Top producing sites by total production rate
+		const topProducingSites = sites
+			.map((site) => ({
+				siteId: site.siteId,
+				siteName: site.siteName,
+				productionScore: site.totalProduction.reduce((sum, p) => sum + p.rate, 0)
+			}))
+			.sort((a, b) => b.productionScore - a.productionScore)
+			.slice(0, 10);
+
+		// Power efficiency by site (production per power consumption)
+		const powerEfficiencyBySite = sites
+			.map((site) => ({
+				siteId: site.siteId,
+				siteName: site.siteName,
+				efficiency: site.powerConsumption > 0 ? site.powerProduction / site.powerConsumption : 0
+			}))
+			.sort((a, b) => b.efficiency - a.efficiency);
+
+		// Bottlenecks - items with negative balance
+		const bottlenecks = aggregated.netBalance
+			.filter((item) => item.balance < 0)
+			.map((item) => {
+				const consumingSites =
+					aggregated.totalConsumption
+						.find((c) => c.itemId === item.itemId)
+						?.sites.map((s) => s.siteName) || [];
+
+				return {
+					itemId: item.itemId,
+					itemName: item.itemName,
+					deficit: Math.abs(item.balance),
+					sites: consumingSites
+				};
+			})
+			.sort((a, b) => b.deficit - a.deficit)
+			.slice(0, 10);
+
+		return {
+			topProducingSites,
+			powerEfficiencyBySite,
+			bottlenecks
+		};
+	}
+
+	// Main public methods
+	async getGameDashboard(
+		gameId: string,
+		userEmail?: string,
+		useCache: boolean = true
+	): Promise<GameDashboardData | null> {
+		// Validate user access
+		if (userEmail && !(await this.validateGameAccess(gameId, userEmail))) {
+			return null;
+		}
+
+		// Check cache first
+		if (useCache) {
+			const cached = this.getCache(gameId);
+			if (cached) {
+				return cached;
+			}
+		}
+
+		// Fetch and calculate
+		const gameData = await this.fetchGameProductionData(gameId);
+		const sites = this.aggregateSiteData(gameData);
+		const aggregated = this.aggregateGameData(sites);
+		const performance = this.calculatePerformanceMetrics(sites, aggregated);
+
+		const dashboardData: GameDashboardData = {
+			gameId,
+			sites,
+			aggregated,
+			performance,
+			lastUpdated: new Date()
+		};
+
+		// Cache the result
+		this.setCache(gameId, dashboardData);
+
+		return dashboardData;
+	}
+
+	async refreshGameDashboard(
+		gameId: string,
+		userEmail?: string
+	): Promise<GameDashboardData | null> {
+		// Invalidate cache first
+		this.invalidateGameDashboardCache(gameId);
+		// Fetch fresh data
+		return this.getGameDashboard(gameId, userEmail, false);
+	}
+
+	// Methods to invalidate cache when related data changes
+	async onProductionInstanceChanged(siteId: string): Promise<void> {
+		// Get game ID for this site to invalidate cache
+		const siteData = await db
+			.select({ gameId: sites.gameId })
+			.from(sites)
+			.where(eq(sites.id, siteId))
+			.limit(1);
+
+		if (siteData.length > 0) {
+			this.invalidateGameDashboardCache(siteData[0].gameId);
+		}
+	}
+
+	async onSiteChanged(gameId: string): Promise<void> {
+		this.invalidateGameDashboardCache(gameId);
+	}
+
+	async onModuleVersionChanged(gameId: string): Promise<void> {
+		this.invalidateGameDashboardCache(gameId);
+	}
+}
+
+export const gameDashboardService = new GameDashboardService();

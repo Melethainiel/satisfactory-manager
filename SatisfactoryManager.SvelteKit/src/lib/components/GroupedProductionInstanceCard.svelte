@@ -69,52 +69,56 @@
 		return power < 100 ? power.toFixed(1) : power.toFixed(0);
 	}
 
-	// Generate tooltip for production output (net balance)
-	function getProductionTooltip(): Array<{ name: string; balance: string }> {
-		const items: Array<{ name: string; balance: string }> = [];
+	// Helper function to get net balance for a specific item with visual indicators
+	function getNetBalance(itemName: string): { balance: number; balanceText: string; cssClass: string; symbol: string } {
 		const overview = gameState.siteProductionOverview;
-
-		if (group.primaryProduct) {
-			const netBalanceItem = overview?.netBalance.find(
-				(item) => item.itemName === group.primaryProduct!.item.displayName
-			);
-
-			if (netBalanceItem) {
-				const netBalance = netBalanceItem.balance;
-				const sign = netBalance >= 0 ? '+' : '';
-				const balanceText = `${sign}${formatRate(netBalance)}${$t('resourceBalance.per_minute')}`;
-				items.push({ name: group.primaryProduct.item.displayName, balance: balanceText });
+		const netBalanceItem = overview?.netBalance.find((item) => item.itemName === itemName);
+		
+		if (netBalanceItem) {
+			const balance = netBalanceItem.balance;
+			const sign = balance >= 0 ? '+' : '';
+			const balanceText = `${sign}${formatRate(balance)}${$t('resourceBalance.per_minute')}`;
+			
+			// Determine CSS class and symbol based on balance
+			let cssClass: string;
+			let symbol: string;
+			
+			if (balance > 0) {
+				cssClass = 'text-success font-semibold';
+				symbol = '▲';
+			} else if (balance < 0) {
+				cssClass = 'text-error font-semibold';
+				symbol = '▼';
 			} else {
-				const balanceText = `0${$t('resourceBalance.per_minute')}`;
-				items.push({ name: group.primaryProduct.item.displayName, balance: balanceText });
+				cssClass = 'text-warning font-semibold';
+				symbol = '●';
 			}
+			
+			return { balance, balanceText, cssClass, symbol };
+		} else {
+			const balanceText = `0${$t('resourceBalance.per_minute')}`;
+			return { balance: 0, balanceText, cssClass: 'text-warning font-semibold', symbol: '●' };
 		}
-
-		return items;
 	}
 
-	// Generate tooltip for consumption (net balance)
-	function getConsumptionTooltip(): Array<{ name: string; balance: string }> {
-		const items: Array<{ name: string; balance: string }> = [];
-		const overview = gameState.siteProductionOverview;
+	// Get inline display text for production with net balance
+	function getProductionDisplayText(): string {
+		if (!group.primaryProduct) return '';
+		
+		const itemName = group.primaryProduct.item.displayName;
+		const productionRate = `${formatRate(group.primaryProduct.actualRate)}/${$t('common.minute')}`;
+		const netBalance = getNetBalance(itemName);
+		
+		return `${itemName} ${productionRate} <span class="${netBalance.cssClass}">${netBalance.symbol}${netBalance.balanceText}</span>`;
+	}
 
-		group.totalIngredients.forEach((ingredient) => {
-			const netBalanceItem = overview?.netBalance.find(
-				(item) => item.itemName === ingredient.item.displayName
-			);
-
-			if (netBalanceItem) {
-				const netBalance = netBalanceItem.balance;
-				const sign = netBalance >= 0 ? '+' : '';
-				const balanceText = `${sign}${formatRate(netBalance)}${$t('resourceBalance.per_minute')}`;
-				items.push({ name: ingredient.item.displayName, balance: balanceText });
-			} else {
-				const balanceText = `0${$t('resourceBalance.per_minute')}`;
-				items.push({ name: ingredient.item.displayName, balance: balanceText });
-			}
-		});
-
-		return items;
+	// Get inline display text for ingredients with net balance
+	function getIngredientDisplayText(ingredient: { item: { displayName: string }; actualRate: number }): string {
+		const itemName = ingredient.item.displayName;
+		const consumptionRate = `${formatRate(ingredient.actualRate)}/${$t('common.minute')}`;
+		const netBalance = getNetBalance(itemName);
+		
+		return `${itemName} ${consumptionRate} <span class="${netBalance.cssClass}">${netBalance.symbol}${netBalance.balanceText}</span>`;
 	}
 
 	function toggleExpansion() {
@@ -171,66 +175,31 @@
 				{#if group.primaryProduct}
 					<div class="mt-3 grid grid-cols-1 gap-3">
 						<!-- Primary Production (Aggregated) -->
-						<div class="tooltip tooltip-top">
-							{#if getProductionTooltip().length > 0}
-								<div class="tooltip-content">
-									{#if getProductionTooltip().length === 1}
-										Solde net: {getProductionTooltip()[0].balance}
-									{:else}
-										<div class="mb-1 text-xs font-medium">Solde net:</div>
-										<ul class="list-outside list-disc space-y-1 pl-4">
-											{#each getProductionTooltip() as item}
-												<li class="text-xs">{item.name}: {item.balance}</li>
-											{/each}
-										</ul>
-									{/if}
-								</div>
-							{/if}
-							<div class="rounded bg-base-200 p-3">
-								<div class="mb-1 text-xs font-medium opacity-70">
-									{$t('productionInstances.production_rate')} (Total)
-								</div>
-								<div class="font-mono text-sm">
-									<span class="font-semibold">{formatRate(group.primaryProduct.actualRate)}</span>
-									<span class="opacity-70">/{$t('common.minute')}</span>
-								</div>
-								<div class="mt-1 text-xs opacity-60">
-									{group.primaryProduct.item.displayName}
-								</div>
+						<div class="rounded bg-base-200 p-3">
+							<div class="mb-1 text-xs font-medium opacity-70">
+								{$t('productionInstances.production_rate')} (Total)
+							</div>
+							<div class="font-mono text-sm">
+								<span class="font-semibold">{formatRate(group.primaryProduct.actualRate)}</span>
+								<span class="opacity-70">/{$t('common.minute')}</span>
+							</div>
+							<div class="mt-1 text-xs opacity-60">
+								{@html getProductionDisplayText()}
 							</div>
 						</div>
 
 						<!-- Total Ingredients -->
 						{#if group.totalIngredients && group.totalIngredients.length > 0}
-							<div class="tooltip tooltip-top">
-								{#if getConsumptionTooltip().length > 0}
-									<div class="tooltip-content">
-										{#if getConsumptionTooltip().length === 1}
-											Solde net: {getConsumptionTooltip()[0].balance}
-										{:else}
-											<div class="mb-1 text-xs font-medium">Solde net:</div>
-											<ul class="list-outside list-disc space-y-1 pl-4">
-												{#each getConsumptionTooltip() as item}
-													<li class="text-xs">{item.name}: {item.balance}</li>
-												{/each}
-											</ul>
-										{/if}
-									</div>
-								{/if}
-								<div class="rounded bg-base-200 p-3">
-									<div class="mb-1 text-xs font-medium opacity-70">
-										{$t('productionInstances.total_ingredients')}
-									</div>
-									<div class="flex flex-col gap-1">
-										{#each group.totalIngredients as ingredient (ingredient.item.displayName)}
-											<div class="flex justify-between text-xs">
-												<span>{ingredient.item.displayName}</span>
-												<span class="font-mono font-semibold">
-													{formatRate(ingredient.actualRate)}/{$t('common.minute')}
-												</span>
-											</div>
-										{/each}
-									</div>
+							<div class="rounded bg-base-200 p-3">
+								<div class="mb-1 text-xs font-medium opacity-70">
+									{$t('productionInstances.total_ingredients')}
+								</div>
+								<div class="flex flex-col gap-1">
+									{#each group.totalIngredients as ingredient (ingredient.item.displayName)}
+										<div class="text-xs">
+											{@html getIngredientDisplayText(ingredient)}
+										</div>
+									{/each}
 								</div>
 							</div>
 						{/if}
@@ -253,32 +222,16 @@
 				{#if group.primaryProduct}
 					<div class="mt-3 grid grid-cols-1 gap-3">
 						<!-- Extraction Rate (Aggregated) -->
-						<div class="tooltip tooltip-top">
-							{#if getProductionTooltip().length > 0}
-								<div class="tooltip-content">
-									{#if getProductionTooltip().length === 1}
-										Solde net: {getProductionTooltip()[0].balance}
-									{:else}
-										<div class="mb-1 text-xs font-medium">Solde net:</div>
-										<ul class="list-outside list-disc space-y-1 pl-4">
-											{#each getProductionTooltip() as item}
-												<li class="text-xs">{item.name}: {item.balance}</li>
-											{/each}
-										</ul>
-									{/if}
-								</div>
-							{/if}
-							<div class="rounded bg-base-200 p-3">
-								<div class="mb-1 text-xs font-medium opacity-70">
-									⛏️ {$t('productionInstances.extraction_rate')} (Total)
-								</div>
-								<div class="font-mono text-sm">
-									<span class="font-semibold">{formatRate(group.primaryProduct.actualRate)}</span>
-									<span class="opacity-70">/{$t('common.minute')}</span>
-								</div>
-								<div class="mt-1 text-xs opacity-60">
-									{group.primaryProduct.item.displayName}
-								</div>
+						<div class="rounded bg-base-200 p-3">
+							<div class="mb-1 text-xs font-medium opacity-70">
+								⛏️ {$t('productionInstances.extraction_rate')} (Total)
+							</div>
+							<div class="font-mono text-sm">
+								<span class="font-semibold">{formatRate(group.primaryProduct.actualRate)}</span>
+								<span class="opacity-70">/{$t('common.minute')}</span>
+							</div>
+							<div class="mt-1 text-xs opacity-60">
+								{@html getProductionDisplayText()}
 							</div>
 						</div>
 
@@ -312,35 +265,16 @@
 
 					<!-- Fuel Consumption -->
 					{#if group.totalIngredients && group.totalIngredients.length > 0}
-						<div class="tooltip tooltip-top">
-							{#if getConsumptionTooltip().length > 0}
-								<div class="tooltip-content">
-									{#if getConsumptionTooltip().length === 1}
-										Solde net: {getConsumptionTooltip()[0].balance}
-									{:else}
-										<div class="mb-1 text-xs font-medium">Solde net:</div>
-										<ul class="list-outside list-disc space-y-1 pl-4">
-											{#each getConsumptionTooltip() as item}
-												<li class="text-xs">{item.name}: {item.balance}</li>
-											{/each}
-										</ul>
-									{/if}
-								</div>
-							{/if}
-							<div class="rounded bg-base-200 p-3">
-								<div class="mb-1 text-xs font-medium opacity-70">
-									🔥 {$t('productionInstances.fuel_consumption')} (Total)
-								</div>
-								<div class="flex flex-col gap-1">
-									{#each group.totalIngredients as ingredient (ingredient.item.displayName)}
-										<div class="flex justify-between text-xs">
-											<span>{ingredient.item.displayName}</span>
-											<span class="font-mono font-semibold">
-												{formatRate(ingredient.actualRate)}/{$t('common.minute')}
-											</span>
-										</div>
-									{/each}
-								</div>
+						<div class="rounded bg-base-200 p-3">
+							<div class="mb-1 text-xs font-medium opacity-70">
+								🔥 {$t('productionInstances.fuel_consumption')} (Total)
+							</div>
+							<div class="flex flex-col gap-1">
+								{#each group.totalIngredients as ingredient (ingredient.item.displayName)}
+									<div class="text-xs">
+										{@html getIngredientDisplayText(ingredient)}
+									</div>
+								{/each}
 							</div>
 						</div>
 					{/if}

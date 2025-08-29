@@ -10,15 +10,15 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
 			console.log('❌ SSE endpoint - no authenticated user in locals');
 			return json({ error: 'Authentication required' }, { status: 401 });
 		}
-		
-		console.log('✅ SSE endpoint - authenticated user:', { 
-			sub: locals.user.sub, 
-			email: locals.user.email 
+
+		console.log('✅ SSE endpoint - authenticated user:', {
+			sub: locals.user.sub,
+			email: locals.user.email
 		});
 
 		const gameId = url.searchParams.get('gameId');
 		const connectionId = crypto.randomUUID();
-		
+
 		console.log(`🔗 New SSE connection for user ${locals.user.sub}, game: ${gameId || 'none'}`);
 
 		// Create Server-Sent Events stream
@@ -39,12 +39,20 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
 						email: locals.user!.email || 'Unknown'
 					}
 				})}\n\n`;
-				
+
 				controller.enqueue(encoder.encode(welcomeMessage));
 
 				// Send periodic heartbeat to keep connection alive
 				const heartbeatInterval = setInterval(() => {
 					try {
+						// Check if controller is still open before enqueuing
+						if (controller.desiredSize === null) {
+							// Controller is closed, stop the heartbeat
+							clearInterval(heartbeatInterval);
+							removeConnection(connectionId);
+							return;
+						}
+
 						const heartbeat = `data: ${JSON.stringify({
 							type: 'heartbeat',
 							timestamp: new Date().toISOString()
@@ -67,7 +75,7 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
 					try {
 						controller.close();
 					} catch (error) {
-						console.log('🔌 Controller already closed:', error.message);
+						console.log('🔌 Controller already closed:', (error as Error).message);
 					}
 				});
 			}
@@ -77,12 +85,11 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
 			headers: {
 				'Content-Type': 'text/event-stream',
 				'Cache-Control': 'no-cache',
-				'Connection': 'keep-alive',
+				Connection: 'keep-alive',
 				'Access-Control-Allow-Origin': '*',
-				'Access-Control-Allow-Headers': 'Authorization',
-			},
+				'Access-Control-Allow-Headers': 'Authorization'
+			}
 		});
-
 	} catch (error) {
 		console.error('❌ SSE connection error:', error);
 		return json({ error: 'Internal server error' }, { status: 500 });

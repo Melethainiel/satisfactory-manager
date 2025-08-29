@@ -1,20 +1,27 @@
 // Server-side SSE connection management and broadcasting
 
 // Store active SSE connections
-const connections = new Map<string, { 
-	controller: ReadableStreamDefaultController<Uint8Array>;
-	userId: string;
-	gameId?: string;
-	lastHeartbeat: number;
-}>();
+const connections = new Map<
+	string,
+	{
+		controller: ReadableStreamDefaultController<Uint8Array>;
+		userId: string;
+		gameId?: string;
+		lastHeartbeat: number;
+	}
+>();
 
 // Cleanup inactive connections every 30 seconds
 setInterval(() => {
 	const now = Date.now();
 	for (const [id, conn] of connections.entries()) {
-		if (now - conn.lastHeartbeat > 60000) { // 1 minute timeout
+		if (now - conn.lastHeartbeat > 60000) {
+			// 1 minute timeout
 			try {
-				conn.controller.close();
+				// Check if controller is still open before closing
+				if (conn.controller.desiredSize !== null) {
+					conn.controller.close();
+				}
 			} catch (error) {
 				console.error('Error closing SSE connection:', error);
 			}
@@ -24,7 +31,12 @@ setInterval(() => {
 	}
 }, 30000);
 
-export function addConnection(connectionId: string, controller: ReadableStreamDefaultController<Uint8Array>, userId: string, gameId?: string) {
+export function addConnection(
+	connectionId: string,
+	controller: ReadableStreamDefaultController<Uint8Array>,
+	userId: string,
+	gameId?: string
+) {
 	connections.set(connectionId, {
 		controller,
 		userId,
@@ -56,6 +68,12 @@ export function broadcastToGame(gameId: string, message: any) {
 	for (const [id, conn] of connections.entries()) {
 		if (conn.gameId === gameId) {
 			try {
+				// Check if controller is still open before enqueuing
+				if (conn.controller.desiredSize === null) {
+					// Controller is closed, remove connection
+					connections.delete(id);
+					continue;
+				}
 				conn.controller.enqueue(encoder.encode(data));
 				broadcastCount++;
 			} catch (error) {
@@ -81,6 +99,12 @@ export function broadcastToUser(userId: string, message: any) {
 	for (const [id, conn] of connections.entries()) {
 		if (conn.userId === userId) {
 			try {
+				// Check if controller is still open before enqueuing
+				if (conn.controller.desiredSize === null) {
+					// Controller is closed, remove connection
+					connections.delete(id);
+					continue;
+				}
 				conn.controller.enqueue(encoder.encode(data));
 				console.log(`📡 Broadcasted message to user ${userId}`);
 			} catch (error) {

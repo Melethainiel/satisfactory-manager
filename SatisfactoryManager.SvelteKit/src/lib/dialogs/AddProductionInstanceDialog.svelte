@@ -46,6 +46,18 @@
 		}
 	});
 
+	// Auto-select recipe when only one is available
+	$effect(() => {
+		if (
+			itemState.selectedProductionType === 'craft' &&
+			itemState.productionOptions?.recipes.length === 1 &&
+			!itemState.selectedRecipe &&
+			!itemState.isLoadingProductionOptions
+		) {
+			selectRecipe(itemState.productionOptions.recipes[0]);
+		}
+	});
+
 	// Search functionality using itemState
 	async function searchItems(query: string) {
 		if (!query.trim() || !gameState.selectedGameId) {
@@ -689,7 +701,7 @@
 						bind:value={efficiencyRatio}
 						min="0.1"
 						max="2.5"
-						step="0.01"
+						step="0.001"
 						placeholder="1.00"
 					/>
 					<div class="label">

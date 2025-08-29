@@ -89,7 +89,7 @@
 
 		<!-- Language selector -->
 		<div class="dropdown dropdown-end">
-			<button class="btn btn-ghost btn-sm" tabindex="0" aria-label="Change language">
+			<button class="btn btn-ghost btn-sm" tabindex="0" aria-label={$t('ui.change_language')}>
 				<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path
 						stroke-linecap="round"
@@ -134,7 +134,7 @@
 					style={`anchor-name:${anchorName}`}
 					aria-haspopup="menu"
 					aria-controls={popoverId}
-					aria-label="User menu"
+					aria-label={$t('ui.user_menu')}
 				>
 					<div class="flex items-center gap-x-2">
 						<img
@@ -142,8 +142,8 @@
 								? 'ring-success'
 								: 'ring-error'}"
 							src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=facearea&facepad=3&w=256&h=256&q=80"
-							alt="User avatar"
-							title={isConnected() ? 'Connected' : 'Offline'}
+							alt={$t('ui.user_avatar')}
+							title={isConnected() ? $t('ui.connected') : $t('ui.offline')}
 						/>
 						<div class="hidden text-left md:block">
 							<h1 class="text-lg font-semibold text-gray-700 capitalize dark:text-white">

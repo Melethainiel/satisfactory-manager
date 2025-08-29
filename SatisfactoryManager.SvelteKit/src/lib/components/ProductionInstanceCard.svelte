@@ -198,10 +198,10 @@
 					{#if instance.isBuilt}
 						<span class="badge gap-1 badge-sm badge-success">
 							<Icon src={CheckBadge} class="size-3" />
-							Construite
+							{$t('ui.built')}
 						</span>
 					{:else}
-						<span class="badge badge-sm badge-warning"> Non construite </span>
+						<span class="badge badge-sm badge-warning">{$t('ui.not_built')}</span>
 					{/if}
 					{#if canEdit()}
 						<button
@@ -209,7 +209,7 @@
 							class:loading={isTogglingBuilt}
 							onclick={handleToggleBuiltStatus}
 							disabled={isTogglingBuilt}
-							title={instance.isBuilt ? 'Marquer comme non construite' : 'Marquer comme construite'}
+							title={instance.isBuilt ? $t('ui.mark_as_not_built') : $t('ui.mark_as_built')}
 						>
 							{#if isTogglingBuilt}
 								<span class="loading loading-xs loading-spinner"></span>

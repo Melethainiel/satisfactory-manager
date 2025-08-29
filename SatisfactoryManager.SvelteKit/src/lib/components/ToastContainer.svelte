@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { notificationService, type Notification } from '$lib/services/notificationService.svelte';
 	import { fly } from 'svelte/transition';
+	import { t } from '$lib/i18n';
 
 	// Get notifications from the service
 	let { notifications } = $derived({ notifications: notificationService.notifications });
@@ -99,7 +100,7 @@
 			<button
 				class="btn btn-circle btn-ghost btn-sm"
 				onclick={() => handleDismiss(notification.id)}
-				aria-label="Close notification"
+				aria-label={$t('ui.close_notification')}
 			>
 				<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path

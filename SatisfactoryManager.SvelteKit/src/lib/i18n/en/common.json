@@ -480,5 +480,10 @@
 		"refresh": "Refresh",
 		"refreshing": "Refreshing...",
 		"retry": "Retry"
+	},
+	"buildingTypes": {
+		"Constructor": "Constructors",
+		"Generator": "Generators",
+		"Miner": "Miners"
 	}
 }

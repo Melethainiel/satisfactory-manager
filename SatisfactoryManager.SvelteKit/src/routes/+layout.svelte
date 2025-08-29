@@ -5,6 +5,7 @@
 	import { getClientAzureB2CConfig, CLIENT_AUTH_SCOPES } from '$lib/config/auth.config.client';
 	import { setGameState } from '$lib/states/gameState.svelte';
 	import { setPermissionState } from '$lib/states/permissionState.svelte';
+	import { getRealtimeService } from '$lib/services/realtimeService.svelte';
 	import Header from '$lib/components/Header.svelte';
 	import SideNav from '$lib/components/SideNav.svelte';
 	import ToastContainer from '$lib/components/ToastContainer.svelte';
@@ -20,6 +21,7 @@
 	const authState = setAuthState();
 	const gameState = setGameState();
 	const permissionState = setPermissionState(authState, gameState);
+	const realtimeService = getRealtimeService();
 
 	// Initialize MSAL when the app starts
 	onMount(async () => {
@@ -35,6 +37,9 @@
 			await authState.initializeMsal(configWithScopes);
 			// Provide authenticated fetch helper to game state once auth is ready
 			gameState.attachAuth(authState.apiFetch);
+			// Initialize real-time service
+			gameState.attachRealtime(realtimeService);
+			realtimeService.initialize(authState, gameState);
 			// Poll until user loaded then fetch games once
 			const tryLoad = () => {
 				if (authState.isAuthenticated && authState.user?.email) {
@@ -47,6 +52,21 @@
 		} catch (error) {
 			console.error('Failed to initialize authentication:', error);
 		}
+	});
+
+	// Watch for auth state changes and handle real-time connections
+	$effect(() => {
+		realtimeService.handleAuthStateChange(authState.isAuthenticated);
+	});
+
+	// Watch for game selection changes
+	$effect(() => {
+		realtimeService.handleGameChange(gameState.selectedGameId);
+	});
+
+	// Watch for site selection changes
+	$effect(() => {
+		realtimeService.handleSiteChange(gameState.selectedGameId, gameState.selectedSiteId);
 	});
 </script>
 

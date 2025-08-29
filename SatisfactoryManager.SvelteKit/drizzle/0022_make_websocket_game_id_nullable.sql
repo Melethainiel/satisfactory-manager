@@ -1,0 +1,1 @@
+ALTER TABLE "websocket_connections" ALTER COLUMN "game_id" DROP NOT NULL;

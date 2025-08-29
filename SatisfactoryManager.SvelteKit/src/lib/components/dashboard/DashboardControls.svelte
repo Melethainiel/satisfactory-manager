@@ -22,17 +22,19 @@
 	// Format last updated timestamp
 	function formatLastUpdated(): string {
 		if (!lastUpdated) return '';
-		
+
 		try {
 			const now = new Date();
 			const diffMs = now.getTime() - lastUpdated.getTime();
 			const diffMinutes = Math.floor(diffMs / 60000);
 
 			if (diffMinutes < 1) return $t('dashboard.last_updated.just_now');
-			if (diffMinutes < 60) return $t('dashboard.last_updated.minutes_ago', { values: { minutes: diffMinutes } });
+			if (diffMinutes < 60)
+				return $t('dashboard.last_updated.minutes_ago', { values: { minutes: diffMinutes } });
 
 			const diffHours = Math.floor(diffMinutes / 60);
-			if (diffHours < 24) return $t('dashboard.last_updated.hours_ago', { values: { hours: diffHours } });
+			if (diffHours < 24)
+				return $t('dashboard.last_updated.hours_ago', { values: { hours: diffHours } });
 
 			return lastUpdated.toLocaleDateString();
 		} catch (error) {

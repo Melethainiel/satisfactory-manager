@@ -33,17 +33,21 @@ export type Game = typeof games.$inferSelect;
 export type NewGame = typeof games.$inferInsert;
 
 // Sites table
-export const sites = pgTable('sites', {
-	id: uuid('id').defaultRandom().primaryKey(),
-	name: varchar('name', { length: 200 }).notNull(),
-	gameId: uuid('game_id')
-		.notNull()
-		.references(() => games.id, { onDelete: 'cascade' }),
-	createdAt: timestamp('created_at').defaultNow().notNull(),
-	updatedAt: timestamp('updated_at').defaultNow().notNull()
-}, (table) => ({
-	gameIdIdx: index('sites_game_id_idx').on(table.gameId)
-}));
+export const sites = pgTable(
+	'sites',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		name: varchar('name', { length: 200 }).notNull(),
+		gameId: uuid('game_id')
+			.notNull()
+			.references(() => games.id, { onDelete: 'cascade' }),
+		createdAt: timestamp('created_at').defaultNow().notNull(),
+		updatedAt: timestamp('updated_at').defaultNow().notNull()
+	},
+	(table) => ({
+		gameIdIdx: index('sites_game_id_idx').on(table.gameId)
+	})
+);
 
 export type Site = typeof sites.$inferSelect;
 export type NewSite = typeof sites.$inferInsert;
@@ -91,22 +95,26 @@ export type ModuleVersion = typeof moduleVersions.$inferSelect;
 export type NewModuleVersion = typeof moduleVersions.$inferInsert;
 
 // Building versions table - version-specific building stats
-export const buildingVersions = pgTable('building_versions', {
-	id: uuid('id').defaultRandom().primaryKey(),
-	buildingId: uuid('building_id')
-		.notNull()
-		.references(() => buildings.id, { onDelete: 'cascade' }),
-	moduleVersionId: uuid('module_version_id')
-		.notNull()
-		.references(() => moduleVersions.id, { onDelete: 'cascade' }),
-	energyConsumption: numeric('energy_consumption', { precision: 10, scale: 2 }),
-	energyProduction: numeric('energy_production', { precision: 10, scale: 2 }),
-	supplementalLoadAmount: numeric('supplemental_load_amount', { precision: 10, scale: 2 }),
-	output: numeric('output', { precision: 10, scale: 2 }),
-	createdAt: timestamp('created_at').defaultNow().notNull()
-}, (table) => ({
-	buildingIdIdx: index('building_versions_building_id_idx').on(table.buildingId)
-}));
+export const buildingVersions = pgTable(
+	'building_versions',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		buildingId: uuid('building_id')
+			.notNull()
+			.references(() => buildings.id, { onDelete: 'cascade' }),
+		moduleVersionId: uuid('module_version_id')
+			.notNull()
+			.references(() => moduleVersions.id, { onDelete: 'cascade' }),
+		energyConsumption: numeric('energy_consumption', { precision: 10, scale: 2 }),
+		energyProduction: numeric('energy_production', { precision: 10, scale: 2 }),
+		supplementalLoadAmount: numeric('supplemental_load_amount', { precision: 10, scale: 2 }),
+		output: numeric('output', { precision: 10, scale: 2 }),
+		createdAt: timestamp('created_at').defaultNow().notNull()
+	},
+	(table) => ({
+		buildingIdIdx: index('building_versions_building_id_idx').on(table.buildingId)
+	})
+);
 
 export type BuildingVersion = typeof buildingVersions.$inferSelect;
 export type NewBuildingVersion = typeof buildingVersions.$inferInsert;
@@ -155,19 +163,23 @@ export type ItemForm = (typeof itemFormEnum.enumValues)[number];
 export type ExtractorPurity = (typeof extractorPurityEnum.enumValues)[number];
 
 // Item versions table - version-specific item data
-export const itemVersions = pgTable('item_versions', {
-	id: uuid('id').defaultRandom().primaryKey(),
-	itemId: uuid('item_id')
-		.notNull()
-		.references(() => items.id, { onDelete: 'cascade' }),
-	moduleVersionId: uuid('module_version_id')
-		.notNull()
-		.references(() => moduleVersions.id, { onDelete: 'cascade' }),
-	energyValue: numeric('energy_value', { precision: 10, scale: 2 }).notNull().default('0'),
-	createdAt: timestamp('created_at').defaultNow().notNull()
-}, (table) => ({
-	itemIdIdx: index('item_versions_item_id_idx').on(table.itemId)
-}));
+export const itemVersions = pgTable(
+	'item_versions',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		itemId: uuid('item_id')
+			.notNull()
+			.references(() => items.id, { onDelete: 'cascade' }),
+		moduleVersionId: uuid('module_version_id')
+			.notNull()
+			.references(() => moduleVersions.id, { onDelete: 'cascade' }),
+		energyValue: numeric('energy_value', { precision: 10, scale: 2 }).notNull().default('0'),
+		createdAt: timestamp('created_at').defaultNow().notNull()
+	},
+	(table) => ({
+		itemIdIdx: index('item_versions_item_id_idx').on(table.itemId)
+	})
+);
 
 export type ItemVersion = typeof itemVersions.$inferSelect;
 export type NewItemVersion = typeof itemVersions.$inferInsert;
@@ -195,55 +207,67 @@ export type Recipe = typeof recipes.$inferSelect;
 export type NewRecipe = typeof recipes.$inferInsert;
 
 // Recipe versions table - version-specific recipe data
-export const recipeVersions = pgTable('recipe_versions', {
-	id: uuid('id').defaultRandom().primaryKey(),
-	recipeId: uuid('recipe_id')
-		.notNull()
-		.references(() => recipes.id, { onDelete: 'cascade' }),
-	moduleVersionId: uuid('module_version_id')
-		.notNull()
-		.references(() => moduleVersions.id, { onDelete: 'cascade' }),
-	manufacturingDuration: numeric('manufacturing_duration', { precision: 10, scale: 2 }).notNull(),
-	createdAt: timestamp('created_at').defaultNow().notNull()
-}, (table) => ({
-	recipeIdIdx: index('recipe_versions_recipe_id_idx').on(table.recipeId)
-}));
+export const recipeVersions = pgTable(
+	'recipe_versions',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		recipeId: uuid('recipe_id')
+			.notNull()
+			.references(() => recipes.id, { onDelete: 'cascade' }),
+		moduleVersionId: uuid('module_version_id')
+			.notNull()
+			.references(() => moduleVersions.id, { onDelete: 'cascade' }),
+		manufacturingDuration: numeric('manufacturing_duration', { precision: 10, scale: 2 }).notNull(),
+		createdAt: timestamp('created_at').defaultNow().notNull()
+	},
+	(table) => ({
+		recipeIdIdx: index('recipe_versions_recipe_id_idx').on(table.recipeId)
+	})
+);
 
 export type RecipeVersion = typeof recipeVersions.$inferSelect;
 export type NewRecipeVersion = typeof recipeVersions.$inferInsert;
 
 // Recipe ingredients table - ingredients for each recipe version
-export const recipeIngredients = pgTable('recipe_ingredients', {
-	id: uuid('id').defaultRandom().primaryKey(),
-	recipeVersionId: uuid('recipe_version_id')
-		.notNull()
-		.references(() => recipeVersions.id, { onDelete: 'cascade' }),
-	itemId: uuid('item_id')
-		.notNull()
-		.references(() => items.id, { onDelete: 'cascade' }),
-	count: numeric('count', { precision: 10, scale: 2 }).notNull(),
-	createdAt: timestamp('created_at').defaultNow().notNull()
-}, (table) => ({
-	recipeVersionIdIdx: index('recipe_ingredients_recipe_version_id_idx').on(table.recipeVersionId)
-}));
+export const recipeIngredients = pgTable(
+	'recipe_ingredients',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		recipeVersionId: uuid('recipe_version_id')
+			.notNull()
+			.references(() => recipeVersions.id, { onDelete: 'cascade' }),
+		itemId: uuid('item_id')
+			.notNull()
+			.references(() => items.id, { onDelete: 'cascade' }),
+		count: numeric('count', { precision: 10, scale: 2 }).notNull(),
+		createdAt: timestamp('created_at').defaultNow().notNull()
+	},
+	(table) => ({
+		recipeVersionIdIdx: index('recipe_ingredients_recipe_version_id_idx').on(table.recipeVersionId)
+	})
+);
 
 export type RecipeIngredient = typeof recipeIngredients.$inferSelect;
 export type NewRecipeIngredient = typeof recipeIngredients.$inferInsert;
 
 // Recipe products table - products for each recipe version
-export const recipeProducts = pgTable('recipe_products', {
-	id: uuid('id').defaultRandom().primaryKey(),
-	recipeVersionId: uuid('recipe_version_id')
-		.notNull()
-		.references(() => recipeVersions.id, { onDelete: 'cascade' }),
-	itemId: uuid('item_id')
-		.notNull()
-		.references(() => items.id, { onDelete: 'cascade' }),
-	count: numeric('count', { precision: 10, scale: 2 }).notNull(),
-	createdAt: timestamp('created_at').defaultNow().notNull()
-}, (table) => ({
-	recipeVersionIdIdx: index('recipe_products_recipe_version_id_idx').on(table.recipeVersionId)
-}));
+export const recipeProducts = pgTable(
+	'recipe_products',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		recipeVersionId: uuid('recipe_version_id')
+			.notNull()
+			.references(() => recipeVersions.id, { onDelete: 'cascade' }),
+		itemId: uuid('item_id')
+			.notNull()
+			.references(() => items.id, { onDelete: 'cascade' }),
+		count: numeric('count', { precision: 10, scale: 2 }).notNull(),
+		createdAt: timestamp('created_at').defaultNow().notNull()
+	},
+	(table) => ({
+		recipeVersionIdIdx: index('recipe_products_recipe_version_id_idx').on(table.recipeVersionId)
+	})
+);
 
 export type RecipeProduct = typeof recipeProducts.$inferSelect;
 export type NewRecipeProduct = typeof recipeProducts.$inferInsert;
@@ -504,44 +528,48 @@ export const moduleGamesRelations = relations(moduleGames, ({ one }) => ({
 }));
 
 // Production instances table - concrete implementations of recipes or extraction in specific sites
-export const productionInstances = pgTable('production_instances', {
-	id: uuid('id').defaultRandom().primaryKey(),
-	siteId: uuid('site_id')
-		.notNull()
-		.references(() => sites.id, { onDelete: 'cascade' }),
-	recipeVersionId: uuid('recipe_version_id').references(() => recipeVersions.id, {
-		onDelete: 'cascade'
-	}),
-	buildingVersionId: uuid('building_version_id')
-		.notNull()
-		.references(() => buildingVersions.id, { onDelete: 'cascade' }),
-	extractedItemVersionId: uuid('extracted_item_version_id').references(() => itemVersions.id, {
-		onDelete: 'cascade'
-	}),
-	fuelItemVersionId: uuid('fuel_item_version_id').references(() => itemVersions.id, {
-		onDelete: 'cascade'
-	}),
-	extractorPurity: extractorPurityEnum('extractor_purity').default('Normal'),
-	buildingCount: numeric('building_count', { precision: 10, scale: 2 }).notNull(),
-	efficiencyRatio: numeric('efficiency_ratio', { precision: 10, scale: 3 })
-		.notNull()
-		.default('1.000'),
-	isBuilt: boolean('is_built').notNull().default(false),
-	notes: varchar('notes', { length: 1000 }),
-	createdAt: timestamp('created_at').defaultNow().notNull(),
-	updatedAt: timestamp('updated_at').defaultNow().notNull()
-}, (table) => ({
-	siteIdCompositeIdx: index('production_instances_site_id_composite_idx').on(
-		table.siteId, 
-		table.buildingCount, 
-		table.efficiencyRatio, 
-		table.isBuilt
-	),
-	buildingRecipeIdx: index('production_instances_building_recipe_idx').on(
-		table.buildingVersionId, 
-		table.recipeVersionId
-	)
-}));
+export const productionInstances = pgTable(
+	'production_instances',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		siteId: uuid('site_id')
+			.notNull()
+			.references(() => sites.id, { onDelete: 'cascade' }),
+		recipeVersionId: uuid('recipe_version_id').references(() => recipeVersions.id, {
+			onDelete: 'cascade'
+		}),
+		buildingVersionId: uuid('building_version_id')
+			.notNull()
+			.references(() => buildingVersions.id, { onDelete: 'cascade' }),
+		extractedItemVersionId: uuid('extracted_item_version_id').references(() => itemVersions.id, {
+			onDelete: 'cascade'
+		}),
+		fuelItemVersionId: uuid('fuel_item_version_id').references(() => itemVersions.id, {
+			onDelete: 'cascade'
+		}),
+		extractorPurity: extractorPurityEnum('extractor_purity').default('Normal'),
+		buildingCount: numeric('building_count', { precision: 10, scale: 2 }).notNull(),
+		efficiencyRatio: numeric('efficiency_ratio', { precision: 10, scale: 3 })
+			.notNull()
+			.default('1.000'),
+		isBuilt: boolean('is_built').notNull().default(false),
+		notes: varchar('notes', { length: 1000 }),
+		createdAt: timestamp('created_at').defaultNow().notNull(),
+		updatedAt: timestamp('updated_at').defaultNow().notNull()
+	},
+	(table) => ({
+		siteIdCompositeIdx: index('production_instances_site_id_composite_idx').on(
+			table.siteId,
+			table.buildingCount,
+			table.efficiencyRatio,
+			table.isBuilt
+		),
+		buildingRecipeIdx: index('production_instances_building_recipe_idx').on(
+			table.buildingVersionId,
+			table.recipeVersionId
+		)
+	})
+);
 
 export type ProductionInstance = typeof productionInstances.$inferSelect;
 export type NewProductionInstance = typeof productionInstances.$inferInsert;
@@ -575,4 +603,136 @@ export const sitesRelations = relations(sites, ({ one, many }) => ({
 		references: [games.id]
 	}),
 	productionInstances: many(productionInstances)
+}));
+
+// WebSocket connection tracking table
+export const websocketConnections = pgTable(
+	'websocket_connections',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		userId: uuid('user_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
+		gameId: uuid('game_id').references(() => games.id, { onDelete: 'cascade' }),
+		connectionId: varchar('connection_id', { length: 100 }).notNull().unique(),
+		connectedAt: timestamp('connected_at').defaultNow().notNull(),
+		lastPingAt: timestamp('last_ping_at').defaultNow().notNull(),
+		userAgent: varchar('user_agent', { length: 500 }),
+		ipAddress: varchar('ip_address', { length: 45 })
+	},
+	(table) => ({
+		userGameIdx: index('websocket_connections_user_game_idx').on(table.userId, table.gameId),
+		connectionIdIdx: index('websocket_connections_connection_id_idx').on(table.connectionId),
+		gameIdIdx: index('websocket_connections_game_id_idx').on(table.gameId)
+	})
+);
+
+export type WebsocketConnection = typeof websocketConnections.$inferSelect;
+export type NewWebsocketConnection = typeof websocketConnections.$inferInsert;
+
+// User presence tracking per game
+export const userPresence = pgTable(
+	'user_presence',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		userId: uuid('user_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
+		gameId: uuid('game_id')
+			.notNull()
+			.references(() => games.id, { onDelete: 'cascade' }),
+		isOnline: boolean('is_online').notNull().default(false),
+		lastSeenAt: timestamp('last_seen_at').defaultNow().notNull(),
+		currentSiteId: uuid('current_site_id').references(() => sites.id, { onDelete: 'set null' }),
+		activity: varchar('activity', { length: 100 }) // e.g., 'viewing_dashboard', 'editing_production'
+	},
+	(table) => ({
+		userGameUniqueIdx: unique().on(table.userId, table.gameId),
+		gameOnlineIdx: index('user_presence_game_online_idx').on(table.gameId, table.isOnline),
+		lastSeenIdx: index('user_presence_last_seen_idx').on(table.lastSeenAt)
+	})
+);
+
+export type UserPresence = typeof userPresence.$inferSelect;
+export type NewUserPresence = typeof userPresence.$inferInsert;
+
+// Activity log for real-time synchronization
+export const gameActivityEnum = pgEnum('game_activity_type', [
+	'production_instance_created',
+	'production_instance_updated',
+	'production_instance_deleted',
+	'site_created',
+	'site_updated',
+	'site_deleted',
+	'user_joined',
+	'user_left',
+	'module_version_changed',
+	'game_settings_updated'
+]);
+
+export const gameActivityLogs = pgTable(
+	'game_activity_logs',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		gameId: uuid('game_id')
+			.notNull()
+			.references(() => games.id, { onDelete: 'cascade' }),
+		userId: uuid('user_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
+		activityType: gameActivityEnum('activity_type').notNull(),
+		entityType: varchar('entity_type', { length: 50 }), // e.g., 'production_instance', 'site'
+		entityId: uuid('entity_id'), // ID of the affected entity
+		entityName: varchar('entity_name', { length: 200 }), // Name/description of affected entity
+		changeDescription: varchar('change_description', { length: 500 }), // Human-readable change description
+		changeData: varchar('change_data', { length: 2000 }), // JSON string of change details for sync
+		createdAt: timestamp('created_at').defaultNow().notNull()
+	},
+	(table) => ({
+		gameCreatedIdx: index('game_activity_logs_game_created_idx').on(table.gameId, table.createdAt),
+		entityIdx: index('game_activity_logs_entity_idx').on(table.entityType, table.entityId),
+		userIdx: index('game_activity_logs_user_idx').on(table.userId)
+	})
+);
+
+export type GameActivityLog = typeof gameActivityLogs.$inferSelect;
+export type NewGameActivityLog = typeof gameActivityLogs.$inferInsert;
+export type GameActivityType = (typeof gameActivityEnum.enumValues)[number];
+
+// Relations for WebSocket tables
+export const websocketConnectionsRelations = relations(websocketConnections, ({ one }) => ({
+	user: one(users, {
+		fields: [websocketConnections.userId],
+		references: [users.id]
+	}),
+	game: one(games, {
+		fields: [websocketConnections.gameId],
+		references: [games.id]
+	})
+}));
+
+export const userPresenceRelations = relations(userPresence, ({ one }) => ({
+	user: one(users, {
+		fields: [userPresence.userId],
+		references: [users.id]
+	}),
+	game: one(games, {
+		fields: [userPresence.gameId],
+		references: [games.id]
+	}),
+	currentSite: one(sites, {
+		fields: [userPresence.currentSiteId],
+		references: [sites.id]
+	})
+}));
+
+export const gameActivityLogsRelations = relations(gameActivityLogs, ({ one }) => ({
+	user: one(users, {
+		fields: [gameActivityLogs.userId],
+		references: [users.id]
+	}),
+	game: one(games, {
+		fields: [gameActivityLogs.gameId],
+		references: [games.id]
+	})
 }));

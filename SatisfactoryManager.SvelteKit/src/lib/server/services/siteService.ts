@@ -2,6 +2,7 @@ import { db } from '../db';
 import { sites, type Site, type NewSite } from '../db/schema';
 import { eq, and, asc } from 'drizzle-orm';
 import { gameDashboardService } from './gameDashboardService';
+import { websocketService } from '../websocket/websocketService';
 
 export interface ISiteService {
 	getAllForGame(gameId: string): Promise<Site[]>;
@@ -26,6 +27,19 @@ class SiteService implements ISiteService {
 
 		// Invalidate game dashboard cache when new site is created
 		await gameDashboardService.onSiteChanged(data.gameId);
+
+		// Broadcast real-time creation via WebSocket
+		if (row) {
+			console.log('📡 Broadcasting site_created to game:', data.gameId);
+			const message = websocketService.createMessage('site_created', {
+				gameId: data.gameId,
+				siteId: row.id,
+				siteName: row.name,
+				userId: 'system',
+				userName: 'System'
+			});
+			websocketService.broadcastToGameRoom(data.gameId, message);
+		}
 
 		return row;
 	}
@@ -53,6 +67,19 @@ class SiteService implements ISiteService {
 		// Invalidate game dashboard cache when site is updated
 		if (currentSite.length > 0) {
 			await gameDashboardService.onSiteChanged(currentSite[0].gameId);
+
+			// Broadcast real-time update via WebSocket
+			if (row) {
+				console.log('📡 Broadcasting site_updated to game:', currentSite[0].gameId);
+				const message = websocketService.createMessage('site_updated', {
+					gameId: currentSite[0].gameId,
+					siteId: row.id,
+					siteName: row.name,
+					userId: 'system',
+					userName: 'System'
+				});
+				websocketService.broadcastToGameRoom(currentSite[0].gameId, message);
+			}
 		}
 
 		return row;
@@ -71,6 +98,16 @@ class SiteService implements ISiteService {
 		// Invalidate game dashboard cache when site is deleted
 		if (res.length > 0 && currentSite.length > 0) {
 			await gameDashboardService.onSiteChanged(currentSite[0].gameId);
+
+			// Broadcast real-time deletion via WebSocket
+			console.log('📡 Broadcasting site_deleted to game:', currentSite[0].gameId);
+			const message = websocketService.createMessage('site_deleted', {
+				gameId: currentSite[0].gameId,
+				siteId: res[0].id,
+				userId: 'system',
+				userName: 'System'
+			});
+			websocketService.broadcastToGameRoom(currentSite[0].gameId, message);
 		}
 
 		return res.length > 0;

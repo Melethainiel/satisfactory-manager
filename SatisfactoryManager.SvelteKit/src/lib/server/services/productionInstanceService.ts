@@ -1,4 +1,5 @@
 import { db } from '../db';
+import { websocketService } from '../websocket/websocketService';
 import {
 	productionInstances,
 	sites,
@@ -292,10 +293,33 @@ class ProductionInstanceService implements IProductionInstanceService {
 			})
 			.returning();
 
-		// Invalidate cache for the site
+		// Invalidate cache for the site and broadcast creation
 		if (data.siteId) {
 			await productionCalculationService.onProductionInstanceChanged(data.siteId);
 			await gameDashboardService.onProductionInstanceChanged(data.siteId);
+
+			// Get gameId for WebSocket broadcast
+			const siteData = await db
+				.select({ gameId: sites.gameId })
+				.from(sites)
+				.where(eq(sites.id, data.siteId))
+				.limit(1);
+
+			// Broadcast real-time creation via WebSocket
+			if (siteData.length > 0 && siteData[0].gameId && result) {
+				console.log('📡 Broadcasting production_instance_created to game:', siteData[0].gameId);
+				const message = websocketService.createMessage('production_instance_created', {
+					gameId: siteData[0].gameId,
+					siteId: result.siteId,
+					instanceId: result.id,
+					instanceData: result,
+					userId: 'system',
+					userName: 'System'
+				});
+				websocketService.broadcastToGameRoom(siteData[0].gameId, message);
+			} else {
+				console.log('📡 Not broadcasting - gameId:', siteData[0]?.gameId, 'result:', !!result);
+			}
 		}
 
 		return result;
@@ -305,10 +329,14 @@ class ProductionInstanceService implements IProductionInstanceService {
 		id: string,
 		data: Partial<Omit<NewProductionInstance, 'id' | 'createdAt' | 'updatedAt'>>
 	): Promise<ProductionInstance | undefined> {
-		// Get the current instance to know which site to invalidate cache for
+		// Get the current instance to know which site to invalidate cache for and get gameId for WebSocket broadcast
 		const currentInstance = await db
-			.select({ siteId: productionInstances.siteId })
+			.select({
+				siteId: productionInstances.siteId,
+				gameId: sites.gameId
+			})
 			.from(productionInstances)
+			.leftJoin(sites, eq(productionInstances.siteId, sites.id))
 			.where(eq(productionInstances.id, id))
 			.limit(1);
 
@@ -325,21 +353,70 @@ class ProductionInstanceService implements IProductionInstanceService {
 		if (currentInstance.length > 0) {
 			await productionCalculationService.onProductionInstanceChanged(currentInstance[0].siteId);
 			await gameDashboardService.onProductionInstanceChanged(currentInstance[0].siteId);
+
+			// Broadcast real-time update via WebSocket
+			if (currentInstance[0].gameId && result) {
+				console.log(
+					'📡 Broadcasting production_instance_updated to game:',
+					currentInstance[0].gameId
+				);
+				const message = websocketService.createMessage('production_instance_updated', {
+					gameId: currentInstance[0].gameId,
+					siteId: result.siteId,
+					instanceId: result.id,
+					changes: data,
+					instanceData: result,
+					userId: 'system',
+					userName: 'System'
+				});
+				websocketService.broadcastToGameRoom(currentInstance[0].gameId, message);
+			} else {
+				console.log(
+					'📡 Not broadcasting - gameId:',
+					currentInstance[0]?.gameId,
+					'result:',
+					!!result
+				);
+			}
 		}
 
 		return result;
 	}
 
 	async deleteProductionInstance(id: string): Promise<boolean> {
+		// First get gameId before deletion
+		const instanceData = await db
+			.select({
+				gameId: sites.gameId,
+				siteId: productionInstances.siteId
+			})
+			.from(productionInstances)
+			.leftJoin(sites, eq(productionInstances.siteId, sites.id))
+			.where(eq(productionInstances.id, id))
+			.limit(1);
+
 		const result = await db
 			.delete(productionInstances)
 			.where(eq(productionInstances.id, id))
 			.returning({ id: productionInstances.id, siteId: productionInstances.siteId });
 
-		// Invalidate cache for the site
-		if (result.length > 0) {
+		// Invalidate cache for the site and broadcast deletion
+		if (result.length > 0 && instanceData.length > 0) {
 			await productionCalculationService.onProductionInstanceChanged(result[0].siteId);
 			await gameDashboardService.onProductionInstanceChanged(result[0].siteId);
+
+			// Broadcast real-time deletion via WebSocket
+			if (instanceData[0].gameId) {
+				console.log('📡 Broadcasting production_instance_deleted to game:', instanceData[0].gameId);
+				const message = websocketService.createMessage('production_instance_deleted', {
+					gameId: instanceData[0].gameId,
+					siteId: result[0].siteId,
+					instanceId: result[0].id,
+					userId: 'system',
+					userName: 'System'
+				});
+				websocketService.broadcastToGameRoom(instanceData[0].gameId, message);
+			}
 		}
 
 		return result.length > 0;

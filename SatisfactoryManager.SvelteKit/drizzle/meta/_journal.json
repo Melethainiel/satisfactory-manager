@@ -148,6 +148,20 @@
       "when": 1756387561732,
       "tag": "0020_add_dashboard_performance_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1756414152215,
+      "tag": "0021_add_websocket_realtime_system",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1756420623457,
+      "tag": "0022_make_websocket_game_id_nullable",
+      "breakpoints": true
     }
   ]
 }

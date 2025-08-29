@@ -60,16 +60,21 @@ export function getDatabaseInitialization(): Promise<void> {
 getDatabaseInitialization().catch((error) => {
 	// Check if this is a migration-related error that might be recoverable
 	const errorMessage = error instanceof Error ? error.message : String(error);
-	const isMigrationError = errorMessage.includes('Database initialization failed') && 
+	const isMigrationError =
+		errorMessage.includes('Database initialization failed') &&
 		(errorMessage.includes('already exists') || errorMessage.includes('relation'));
-	
+
 	if (isMigrationError) {
-		console.warn('⚠️ Database initialization encountered migration conflicts, but may still be functional');
-		console.warn('💡 This often happens when migrations were run manually. The application may still work.');
+		console.warn(
+			'⚠️ Database initialization encountered migration conflicts, but may still be functional'
+		);
+		console.warn(
+			'💡 This often happens when migrations were run manually. The application may still work.'
+		);
 	} else {
 		console.error('💥 Critical: Database initialization failed during startup:', error);
 	}
-	
+
 	// Allow the application to continue, but log the error
 	// The error will be propagated to any code that awaits getDatabaseInitialization()
 });

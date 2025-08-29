@@ -17,6 +17,7 @@ import {
 	type MigrationResult
 } from './productionInstanceMigrationService';
 import { gameDashboardService } from './gameDashboardService';
+import { websocketService } from '../websocket/websocketService';
 
 export interface IGameService {
 	getAll(): Promise<Game[]>;
@@ -276,6 +277,20 @@ class GameService implements IGameService {
 		success: boolean;
 		migrationResult?: MigrationResult;
 	}> {
+		// Get module info for broadcast
+		const moduleInfo = await db
+			.select({ name: modules.name })
+			.from(modules)
+			.where(eq(modules.id, moduleId))
+			.limit(1);
+
+		// Get version info for broadcast
+		const versionInfo = await db
+			.select({ version: moduleVersions.version })
+			.from(moduleVersions)
+			.where(eq(moduleVersions.id, versionId))
+			.limit(1);
+
 		// Update the module version
 		const result = await db
 			.update(moduleGames)
@@ -297,6 +312,20 @@ class GameService implements IGameService {
 
 		// Invalidate game dashboard cache when module version changes
 		await gameDashboardService.onModuleVersionChanged(gameId);
+
+		// Broadcast real-time module version change via WebSocket
+		if (moduleInfo.length > 0 && versionInfo.length > 0) {
+			console.log('📡 Broadcasting module_version_changed to game:', gameId);
+			const message = websocketService.createMessage('module_version_changed', {
+				gameId: gameId,
+				moduleId: moduleId,
+				moduleName: moduleInfo[0].name,
+				newVersion: versionInfo[0].version,
+				userId: 'system',
+				userName: 'System'
+			});
+			websocketService.broadcastToGameRoom(gameId, message);
+		}
 
 		return {
 			success: true,

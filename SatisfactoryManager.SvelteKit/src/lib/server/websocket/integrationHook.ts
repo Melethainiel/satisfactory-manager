@@ -1,5 +1,4 @@
 import { initializeWebSocketServer } from './websocketInit.js';
-import { dev } from '$app/environment';
 
 /**
  * Integration hook for SvelteKit Node.js adapter
@@ -13,7 +12,9 @@ import { dev } from '$app/environment';
  * @param httpServer - The HTTP server instance from SvelteKit
  */
 export function initializeWebSocketIntegration(httpServer: any): void {
-	if (!dev && httpServer) {
+	const isDev = process.env.NODE_ENV !== 'production';
+	
+	if (!isDev && httpServer) {
 		console.log('🔗 Initializing WebSocket integration with SvelteKit HTTP server');
 
 		// Add upgrade handler for WebSocket connections
@@ -33,64 +34,37 @@ export function initializeWebSocketIntegration(httpServer: any): void {
 		initializeWebSocketServer(httpServer);
 
 		console.log('✅ WebSocket integration with SvelteKit completed');
-	} else if (dev) {
-		console.log('🔗 Development mode: WebSocket integration skipped (using separate server)');
+	} else if (isDev) {
+		console.log('🔗 Development mode: WebSocket integration skipped (using Vite plugin)');
 	} else {
 		console.log('🔗 No HTTP server provided for WebSocket integration');
 	}
 }
 
 /**
- * Auto-detect SvelteKit HTTP server and initialize WebSocket integration
- * This is a helper function that tries to hook into the server creation process
+ * Initialize WebSocket integration - simplified and safe approach
+ * Development: Handled by Vite plugin on same port as HTTP
+ * Production: Handled by custom server wrapper on same port as HTTP
  */
 export function autoInitializeWebSocketIntegration(): void {
-	if (dev) {
-		// In development, use the regular WebSocket initialization
+	const isDev = process.env.NODE_ENV !== 'production';
+	
+	if (isDev) {
+		// Development mode: WebSocket integration handled by Vite plugin
+		console.log('🔗 Development mode: WebSocket handled by Vite plugin');
 		initializeWebSocketServer();
 		return;
 	}
 
-	// In production, check if we should use integrated or standalone WebSocket server
-	const useIntegratedWebSocket = process.env.USE_INTEGRATED_WEBSOCKET === 'true' || 
-									process.env.NODE_ENV === 'production';
+	// Production mode: WebSocket integration should be handled by custom server wrapper
+	// This function is only called as fallback if custom server is not used
+	console.log('⚠️  Production fallback: WebSocket should be handled by custom server wrapper');
+	console.log('🔗 Using fallback standalone WebSocket server (this should not happen in normal deployment)...');
 	
-	if (useIntegratedWebSocket) {
-		console.log('🔗 Production mode: attempting to integrate WebSocket with HTTP server...');
-		
-		// Try to hook into the HTTP server creation process
-		// This is a hack to access the SvelteKit Node.js adapter server
-		const originalCreateServer = require('http').createServer;
-		require('http').createServer = function(...args: any[]) {
-			const server = originalCreateServer.apply(this, args);
-			
-			// Initialize WebSocket on this HTTP server after a short delay
-			setTimeout(() => {
-				console.log('🔌 HTTP server detected, initializing integrated WebSocket...');
-				try {
-					initializeWebSocketServer(server);
-					console.log('✅ WebSocket server integrated with HTTP server');
-				} catch (error) {
-					console.error('❌ Failed to integrate WebSocket, falling back to standalone:', error);
-					initializeWebSocketServer(); // Fallback to standalone
-				}
-			}, 2000);
-			
-			return server;
-		};
-		
-		console.log('🔗 HTTP server hook installed, waiting for server creation...');
-	} else {
-		// Fallback to standalone WebSocket server
-		console.log('🔗 Initializing standalone WebSocket server for production...');
-		try {
-			const wsPort = process.env.WEBSOCKET_PORT ? parseInt(process.env.WEBSOCKET_PORT) : 8080;
-			console.log(`🔌 Starting production WebSocket server on port ${wsPort}...`);
-			
-			initializeWebSocketServer();
-			console.log('✅ Production WebSocket server initialized successfully');
-		} catch (error: any) {
-			console.error('❌ Failed to initialize production WebSocket server:', error);
-		}
+	try {
+		initializeWebSocketServer();
+		console.log('✅ Fallback WebSocket server initialized successfully');
+	} catch (error: any) {
+		console.error('❌ Failed to initialize fallback WebSocket server:', error);
 	}
 }

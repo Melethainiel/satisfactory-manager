@@ -56,17 +56,23 @@
 
 	// Watch for auth state changes and handle real-time connections
 	$effect(() => {
-		realtimeService.handleAuthStateChange(authState.isAuthenticated);
+		if (authState && realtimeService) {
+			realtimeService.handleAuthStateChange(authState.isAuthenticated);
+		}
 	});
 
 	// Watch for game selection changes
 	$effect(() => {
-		realtimeService.handleGameChange(gameState.selectedGameId);
+		if (gameState && realtimeService) {
+			realtimeService.handleGameChange(gameState.selectedGameId);
+		}
 	});
 
 	// Watch for site selection changes
 	$effect(() => {
-		realtimeService.handleSiteChange(gameState.selectedGameId, gameState.selectedSiteId);
+		if (gameState && realtimeService) {
+			realtimeService.handleSiteChange(gameState.selectedGameId, gameState.selectedSiteId);
+		}
 	});
 </script>
 

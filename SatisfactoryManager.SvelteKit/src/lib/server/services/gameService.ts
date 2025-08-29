@@ -17,7 +17,7 @@ import {
 	type MigrationResult
 } from './productionInstanceMigrationService';
 import { gameDashboardService } from './gameDashboardService';
-import { websocketService } from '../websocket/websocketService';
+import { broadcastToGame } from './sseService.js';
 
 export interface IGameService {
 	getAll(): Promise<Game[]>;
@@ -313,18 +313,20 @@ class GameService implements IGameService {
 		// Invalidate game dashboard cache when module version changes
 		await gameDashboardService.onModuleVersionChanged(gameId);
 
-		// Broadcast real-time module version change via WebSocket
+		// Broadcast real-time module version change via SSE
 		if (moduleInfo.length > 0 && versionInfo.length > 0) {
 			console.log('📡 Broadcasting module_version_changed to game:', gameId);
-			const message = websocketService.createMessage('module_version_changed', {
-				gameId: gameId,
-				moduleId: moduleId,
-				moduleName: moduleInfo[0].name,
-				newVersion: versionInfo[0].version,
-				userId: 'system',
-				userName: 'System'
+			broadcastToGame(gameId, {
+				type: 'module_version_changed',
+				data: {
+					gameId: gameId,
+					moduleId: moduleId,
+					moduleName: moduleInfo[0].name,
+					newVersion: versionInfo[0].version,
+					userId: 'system',
+					userName: 'System'
+				}
 			});
-			websocketService.broadcastToGameRoom(gameId, message);
 		}
 
 		return {

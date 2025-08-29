@@ -13,8 +13,8 @@ WORKDIR /app
 COPY --from=builder /app/build build/
 COPY --from=builder /app/node_modules node_modules/
 COPY --from=builder /app/drizzle drizzle/
+COPY --from=builder /app/server.js server.js
 COPY package.json .
 EXPOSE 3000
 ENV NODE_ENV=production
-ENV USE_INTEGRATED_WEBSOCKET=true
-CMD [ "node", "build" ]
+CMD [ "node", "server.js" ]

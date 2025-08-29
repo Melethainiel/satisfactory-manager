@@ -1,5 +1,5 @@
 import { db } from '../db';
-import { websocketService } from '../websocket/websocketService';
+import { broadcastToGame } from './sseService.js';
 import {
 	productionInstances,
 	sites,
@@ -305,18 +305,20 @@ class ProductionInstanceService implements IProductionInstanceService {
 				.where(eq(sites.id, data.siteId))
 				.limit(1);
 
-			// Broadcast real-time creation via WebSocket
+			// Broadcast real-time creation via SSE
 			if (siteData.length > 0 && siteData[0].gameId && result) {
 				console.log('📡 Broadcasting production_instance_created to game:', siteData[0].gameId);
-				const message = websocketService.createMessage('production_instance_created', {
-					gameId: siteData[0].gameId,
-					siteId: result.siteId,
-					instanceId: result.id,
-					instanceData: result,
-					userId: 'system',
-					userName: 'System'
+				broadcastToGame(siteData[0].gameId, {
+					type: 'production_instance_created',
+					data: {
+						gameId: siteData[0].gameId,
+						siteId: result.siteId,
+						instanceId: result.id,
+						instanceData: result,
+						userId: 'system',
+						userName: 'System'
+					}
 				});
-				websocketService.broadcastToGameRoom(siteData[0].gameId, message);
 			} else {
 				console.log('📡 Not broadcasting - gameId:', siteData[0]?.gameId, 'result:', !!result);
 			}
@@ -360,16 +362,18 @@ class ProductionInstanceService implements IProductionInstanceService {
 					'📡 Broadcasting production_instance_updated to game:',
 					currentInstance[0].gameId
 				);
-				const message = websocketService.createMessage('production_instance_updated', {
-					gameId: currentInstance[0].gameId,
-					siteId: result.siteId,
-					instanceId: result.id,
-					changes: data,
-					instanceData: result,
-					userId: 'system',
-					userName: 'System'
+				broadcastToGame(currentInstance[0].gameId, {
+					type: 'production_instance_updated',
+					data: {
+						gameId: currentInstance[0].gameId,
+						siteId: result.siteId,
+						instanceId: result.id,
+						changes: data,
+						instanceData: result,
+						userId: 'system',
+						userName: 'System'
+					}
 				});
-				websocketService.broadcastToGameRoom(currentInstance[0].gameId, message);
 			} else {
 				console.log(
 					'📡 Not broadcasting - gameId:',
@@ -408,14 +412,16 @@ class ProductionInstanceService implements IProductionInstanceService {
 			// Broadcast real-time deletion via WebSocket
 			if (instanceData[0].gameId) {
 				console.log('📡 Broadcasting production_instance_deleted to game:', instanceData[0].gameId);
-				const message = websocketService.createMessage('production_instance_deleted', {
-					gameId: instanceData[0].gameId,
-					siteId: result[0].siteId,
-					instanceId: result[0].id,
-					userId: 'system',
-					userName: 'System'
+				broadcastToGame(instanceData[0].gameId, {
+					type: 'production_instance_deleted',
+					data: {
+						gameId: instanceData[0].gameId,
+						siteId: result[0].siteId,
+						instanceId: result[0].id,
+						userId: 'system',
+						userName: 'System'
+					}
 				});
-				websocketService.broadcastToGameRoom(instanceData[0].gameId, message);
 			}
 		}
 

@@ -116,8 +116,16 @@ export const handle: Handle = async ({ event, resolve }) => {
 	}
 
 	// Handle authentication
-	const authHeader =
+	let authHeader =
 		event.request.headers.get('authorization') || event.request.headers.get('Authorization');
+	
+	// For SSE endpoints, also check token in URL parameters (since EventSource cannot send custom headers)
+	if (!authHeader && event.url.pathname === '/api/events') {
+		const tokenParam = event.url.searchParams.get('token');
+		if (tokenParam) {
+			authHeader = `Bearer ${tokenParam}`;
+		}
+	}
 
 	if (authHeader?.startsWith('Bearer ')) {
 		const token = authHeader.substring('Bearer '.length).trim();

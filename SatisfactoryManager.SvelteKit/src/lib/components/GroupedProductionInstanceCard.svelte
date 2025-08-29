@@ -158,7 +158,7 @@
 					<Icon src={Cog6Tooth} class="size-4 flex-shrink-0" />
 					<span class="truncate">
 						{group.instances.length}
-						{group.instances.length === 1 ? 'instance' : 'instances'}
+						{group.instances.length === 1 ? $t('ui.instance') : $t('ui.instances')}
 					</span>
 				</div>
 				<!-- Built Status Indicator -->
@@ -166,13 +166,13 @@
 					{#if builtStats().built === builtStats().total}
 						<span class="badge gap-1 badge-sm badge-success">
 							<Icon src={CheckBadge} class="size-3" />
-							Toutes construites
+							{$t('ui.all_built')}
 						</span>
 					{:else if builtStats().built === 0}
-						<span class="badge badge-sm badge-warning">Aucune construite</span>
+						<span class="badge badge-sm badge-warning">{$t('ui.none_built')}</span>
 					{:else}
 						<span class="badge badge-sm badge-info">
-							{builtStats().built}/{builtStats().total} construites
+							{$t('ui.built_count', { values: { built: builtStats().built, total: builtStats().total } })}
 						</span>
 					{/if}
 				</div>
@@ -182,7 +182,7 @@
 			<button
 				class="btn btn-square btn-ghost btn-xs"
 				onclick={toggleExpansion}
-				title={isExpanded ? 'Réduire' : 'Développer les instances'}
+				title={isExpanded ? $t('ui.collapse') : $t('ui.expand_instances')}
 			>
 				<Icon src={isExpanded ? ChevronDown : ChevronRight} class="size-4" />
 			</button>
@@ -327,7 +327,7 @@
 	{#if isExpanded}
 		<div class="border-t border-base-300" transition:slide={{ duration: 300 }}>
 			<div class="p-4">
-				<h5 class="mb-3 text-sm font-medium opacity-70">Instances individuelles:</h5>
+				<h5 class="mb-3 text-sm font-medium opacity-70">{$t('ui.individual_instances')}</h5>
 				<div class="space-y-3">
 					{#each group.instances as instance (instance.id)}
 						<div class="bg-base-50 rounded border border-base-300 p-3">
@@ -337,15 +337,15 @@
 										{#if instance.recipe?.displayName}
 											{instance.recipe.displayName}
 										{:else}
-											{instance.building?.name || 'Unknown'}
+											{instance.building?.name || $t('ui.unknown')}
 										{/if}
 									</div>
 									<div class="mt-1 text-xs opacity-70">
-										{parseFloat(instance.buildingCount)} bâtiments •
-										{Math.round(parseFloat(instance.efficiencyRatio) * 100)}% efficacité
+										{parseFloat(instance.buildingCount)} {$t('ui.buildings')} •
+										{Math.round(parseFloat(instance.efficiencyRatio) * 100)}% {$t('ui.efficiency')}
 									</div>
 									{#if instance.isBuilt}
-										<span class="mt-1 badge badge-xs badge-success">Construite</span>
+										<span class="mt-1 badge badge-xs badge-success">{$t('ui.built')}</span>
 									{:else}
 										<span class="mt-1 badge badge-xs badge-warning">Non construite</span>
 									{/if}

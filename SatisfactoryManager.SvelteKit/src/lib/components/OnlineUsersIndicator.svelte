@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { getRealtimeService } from '$lib/services/realtimeService.svelte';
+	import { t } from '$lib/i18n';
 
 	interface Props {
 		siteId?: string;
@@ -75,7 +76,7 @@
 
 		<!-- Online count text -->
 		<span class="text-sm text-base-content/70">
-			{onlineUsers().length + additionalCount()} online
+			{onlineUsers().length + additionalCount()} {$t('ui.online')}
 		</span>
 	</div>
 {/if}

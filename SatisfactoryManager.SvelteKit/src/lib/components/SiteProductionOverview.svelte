@@ -110,7 +110,7 @@
 		}
 
 		// Fallback
-		return instance.recipe?.displayName || instance.building?.name || 'Unknown';
+		return instance.recipe?.displayName || instance.building?.name || $t('ui.unknown');
 	}
 
 	// Interface for grouped instances
@@ -275,7 +275,7 @@
 
 				return {
 					itemId,
-					itemName: production?.itemName || consumption?.itemName || balance?.itemName || 'Unknown',
+					itemName: production?.itemName || consumption?.itemName || balance?.itemName || $t('ui.unknown'),
 					productionRate,
 					consumptionRate,
 					netBalance,
@@ -331,7 +331,7 @@
 		confirmDialogRef?.open({
 			title: $t('productionInstances.delete_instance'),
 			message: $t('productionInstances.delete_instance_confirm', {
-				values: { name: instance.recipe?.displayName || 'Unknown Recipe' }
+				values: { name: instance.recipe?.displayName || $t('ui.unknown_recipe') }
 			}),
 			confirmText: $t('productionInstances.delete_instance'),
 			type: 'danger',
@@ -585,13 +585,13 @@
 								class="btn btn-sm {builtStatusFilter === 'all' ? 'btn-primary' : 'btn-outline'}"
 								onclick={() => (builtStatusFilter = 'all')}
 							>
-								Tout ({gameState.siteProductionInstances.length})
+								{$t('ui.all_filter', { values: { count: gameState.siteProductionInstances.length } })}
 							</button>
 							<button
 								class="btn btn-sm {builtStatusFilter === 'built' ? 'btn-success' : 'btn-outline'}"
 								onclick={() => (builtStatusFilter = 'built')}
 							>
-								Construit ({gameState.siteProductionInstances.filter((i) => i.isBuilt).length})
+								{$t('ui.built_filter', { values: { count: gameState.siteProductionInstances.filter((i) => i.isBuilt).length } })}
 							</button>
 							<button
 								class="btn btn-sm {builtStatusFilter === 'not-built'
@@ -599,7 +599,7 @@
 									: 'btn-outline'}"
 								onclick={() => (builtStatusFilter = 'not-built')}
 							>
-								Non construit ({gameState.siteProductionInstances.filter((i) => !i.isBuilt).length})
+								{$t('ui.not_built_filter', { values: { count: gameState.siteProductionInstances.filter((i) => !i.isBuilt).length } })}
 							</button>
 						</div>
 
@@ -637,11 +637,11 @@
 							{#if searchTerm}
 								{$t('productionInstances.no_instances_found')}
 							{:else}
-								Aucune instance {builtStatusFilter === 'built' ? 'construite' : 'non construite'} trouvée
+								{$t('ui.no_instances_with_filter', { values: { filter: builtStatusFilter === 'built' ? $t('ui.built').toLowerCase() : $t('ui.not_built').toLowerCase() } })}
 							{/if}
 						</p>
 						<button class="btn mt-2 btn-ghost btn-sm" onclick={clearAllFilters}>
-							Effacer les filtres
+							{$t('ui.clear_filters')}
 						</button>
 					</div>
 				{:else}
@@ -651,7 +651,7 @@
 								{$t(`buildingTypes.${section.type}`)}
 								<span class="badge badge-sm badge-neutral">
 									{section.groups.length}
-									{section.groups.length === 1 ? 'groupe' : 'groupes'}
+									{section.groups.length === 1 ? $t('ui.group') : $t('ui.groups')}
 								</span>
 							</h4>
 							<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">

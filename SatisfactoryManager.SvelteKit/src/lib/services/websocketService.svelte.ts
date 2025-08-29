@@ -572,12 +572,23 @@ export function getWebSocketService(): WebSocketService {
 			const isSecure = location.protocol === 'https:';
 			const wsProtocol = isSecure ? 'wss:' : 'ws:';
 			
+			// Check if we're in a containerized environment (Docker, ACA)
+			const isContainerized = !isDev && (
+				location.hostname !== 'localhost' && 
+				!location.hostname.startsWith('192.168') &&
+				!location.hostname.startsWith('10.') &&
+				!location.hostname.startsWith('172.')
+			);
+			
 			if (isDev) {
 				// Development: separate WebSocket server on port 8080
 				wsUrl = `${wsProtocol}//${location.hostname}:8080/ws`;
+			} else if (isContainerized) {
+				// Production (Docker/ACA): try same port as HTTP first
+				const port = location.port ? `:${location.port}` : '';
+				wsUrl = `${wsProtocol}//${location.hostname}${port}/ws`;
 			} else {
-				// Production: separate WebSocket server on port 8080 (same as development)
-				// Since SvelteKit doesn't support WebSocket upgrades directly, we use a separate server
+				// Local production: separate WebSocket server on port 8080
 				wsUrl = `${wsProtocol}//${location.hostname}:8080/ws`;
 			}
 		} else {

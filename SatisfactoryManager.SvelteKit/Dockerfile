@@ -16,4 +16,5 @@ COPY --from=builder /app/drizzle drizzle/
 COPY package.json .
 EXPOSE 3000
 ENV NODE_ENV=production
+ENV USE_INTEGRATED_WEBSOCKET=true
 CMD [ "node", "build" ]

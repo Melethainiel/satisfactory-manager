@@ -361,7 +361,7 @@
 							bind:value={efficiencyRatio}
 							min="0.1"
 							max="2.5"
-							step="0.01"
+							step="0.001"
 							placeholder="1.00"
 						/>
 						<div class="label">

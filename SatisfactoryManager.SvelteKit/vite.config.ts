@@ -15,5 +15,23 @@ export default defineConfig({
 		host: true,
 		port: parseInt(process.env.PORT ?? '5173'),
 		allowedHosts: ['5173.code.melenet.ovh']
+	},
+
+	build: {
+		rollupOptions: {
+			external: (id) => {
+				// Don't externalize server-side WebSocket service - it should be bundled
+				if (id.includes('websocketService')) {
+					return false;
+				}
+				// Keep default behavior for other modules
+				return false;
+			}
+		}
+	},
+
+	ssr: {
+		// Ensure WebSocket-related modules can be bundled for SSR
+		noExternal: ['ws', 'uuid']
 	}
 });

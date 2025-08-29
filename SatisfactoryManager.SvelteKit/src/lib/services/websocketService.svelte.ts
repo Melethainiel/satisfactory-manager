@@ -67,6 +67,12 @@ export class WebSocketService {
 	public async connect(authToken: string): Promise<boolean> {
 		if (!browser) return false;
 
+		// Prevent multiple connection attempts
+		if (this._state.isConnecting) {
+			console.log('🔄 Connection already in progress, skipping new attempt');
+			return false;
+		}
+
 		console.log('🔌 Attempting basic WebSocket connection:', this.config.url);
 		this.authToken = authToken;
 		this._state.isConnecting = true;
@@ -79,9 +85,8 @@ export class WebSocketService {
 			}
 
 			// Create WebSocket connection
-			const wsUrl = this.config.url.replace('http', 'ws');
-			console.log('🔌 Creating WebSocket connection to:', wsUrl);
-			this.ws = new WebSocket(wsUrl);
+			console.log('🔌 Creating WebSocket connection to:', this.config.url);
+			this.ws = new WebSocket(this.config.url);
 
 			// Set up event handlers
 			this.ws.onopen = this.handleOpen.bind(this);
@@ -91,6 +96,7 @@ export class WebSocketService {
 
 			return new Promise((resolve, reject) => {
 				const timeout = setTimeout(() => {
+					this._state.isConnecting = false;
 					reject(new Error('Basic connection timeout - check server'));
 				}, 8000); // Reduced timeout for basic connection
 
@@ -101,6 +107,7 @@ export class WebSocketService {
 						console.log('✅ Basic WebSocket connection established successfully');
 						resolve(true);
 					} else {
+						this._state.isConnecting = false;
 						reject(new Error('Basic connection or authentication failed'));
 					}
 				};
@@ -119,6 +126,8 @@ export class WebSocketService {
 	 * Disconnect from WebSocket server
 	 */
 	public disconnect(): void {
+		console.log('🔌 Disconnecting WebSocket service...');
+		
 		this.clearReconnectTimer();
 		this.clearPingTimer();
 
@@ -129,16 +138,24 @@ export class WebSocketService {
 			this.ws.onclose = null;
 			this.ws.onerror = null;
 
-			if (this.ws.readyState === WebSocket.OPEN) {
-				this.ws.close();
+			if (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING) {
+				this.ws.close(1000, 'Client disconnecting');
 			}
 			this.ws = null;
 		}
 
+		// Reset all state
 		this.updateConnectionState(false, false);
 		this._state.isConnecting = false;
+		this._state.reconnectCount = 0;
 		this._state.currentGameId = null;
 		this._state.currentSiteId = null;
+		this._state.lastError = null;
+		
+		// Clear pending messages
+		this.pendingMessages = [];
+		
+		console.log('✅ WebSocket service disconnected');
 	}
 
 	/**
@@ -432,9 +449,28 @@ export class WebSocketService {
 		this.updateConnectionState(false, false);
 		this._state.isConnecting = false;
 
-		// Attempt to reconnect if not manually disconnected
-		if (event.code !== 1000 && this._state.reconnectCount < this.config.maxReconnectAttempts!) {
+		// Only attempt to reconnect if:
+		// 1. Not manually disconnected (code 1000)
+		// 2. Not already at max attempts
+		// 3. Have a valid auth token
+		// 4. Not due to auth issues (codes 4401, 4403)
+		const isManualDisconnect = event.code === 1000;
+		const isAuthError = event.code === 4401 || event.code === 4403;
+		const shouldReconnect = !isManualDisconnect && 
+								!isAuthError && 
+								this.authToken && 
+								this._state.reconnectCount < this.config.maxReconnectAttempts!;
+
+		if (shouldReconnect) {
+			console.log(`🔄 Will attempt reconnect (attempt ${this._state.reconnectCount + 1}/${this.config.maxReconnectAttempts})`);
 			this.scheduleReconnect();
+		} else {
+			console.log('🚫 Not reconnecting:', {
+				manual: isManualDisconnect,
+				authError: isAuthError,
+				hasToken: !!this.authToken,
+				maxAttempts: this._state.reconnectCount >= this.config.maxReconnectAttempts!
+			});
 		}
 	}
 
@@ -459,12 +495,22 @@ export class WebSocketService {
 			30000 // Max 30 seconds
 		);
 
-		console.log(`🔄 Scheduling reconnect attempt ${this._state.reconnectCount} in ${delay}ms`);
+		console.log(`🔄 Scheduling reconnect attempt ${this._state.reconnectCount}/${this.config.maxReconnectAttempts} in ${delay}ms`);
 
-		this.reconnectTimer = setTimeout(() => {
+		this.reconnectTimer = setTimeout(async () => {
 			this.reconnectTimer = null;
-			if (this.authToken) {
-				this.connect(this.authToken);
+			
+			// Check if we should still reconnect (conditions might have changed)
+			if (!this.authToken || this._state.reconnectCount >= this.config.maxReconnectAttempts!) {
+				console.log('🚫 Stopping reconnection attempts - no auth token or max attempts reached');
+				return;
+			}
+
+			try {
+				await this.connect(this.authToken);
+			} catch (error) {
+				console.error('❌ Reconnection attempt failed:', error);
+				// Error handling is done in connect method
 			}
 		}, delay);
 	}
@@ -562,28 +608,18 @@ export class WebSocketService {
 let websocketService: WebSocketService | null = null;
 
 export function getWebSocketService(): WebSocketService {
+	if (!browser) {
+		throw new Error('WebSocket service should only be initialized on the client side');
+	}
+	
 	if (!websocketService) {
-		// Determine WebSocket URL based on environment
-		let wsUrl: string;
-
-		if (browser) {
-			// Client-side: check if we're in development or production
-			const isDev = location.port === '5173'; // Vite dev server port
-			const isSecure = location.protocol === 'https:';
-			const wsProtocol = isSecure ? 'wss:' : 'ws:';
-			
-			if (isDev) {
-				// Development: separate WebSocket server on port 8080
-				wsUrl = `${wsProtocol}//${location.hostname}:8080/ws`;
-			} else {
-				// Production: unified server on same port as HTTP
-				const port = location.port ? `:${location.port}` : '';
-				wsUrl = `${wsProtocol}//${location.hostname}${port}/ws`;
-			}
-		} else {
-			// Server-side fallback (shouldn't be used but kept for safety)
-			wsUrl = 'ws://localhost:8080/ws';
-		}
+		// Unified approach: WebSocket always on same port as HTTP
+		const isSecure = location.protocol === 'https:';
+		const wsProtocol = isSecure ? 'wss:' : 'ws:';
+		
+		// Use same port as HTTP (default ports handled automatically)
+		const port = location.port ? `:${location.port}` : '';
+		const wsUrl = `${wsProtocol}//${location.hostname}${port}/ws`;
 
 		console.log('🔌 WebSocket service configured with URL:', wsUrl);
 

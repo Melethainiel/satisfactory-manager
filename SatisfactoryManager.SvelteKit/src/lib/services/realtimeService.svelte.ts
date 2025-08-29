@@ -1,5 +1,5 @@
 import { browser } from '$app/environment';
-import { getWebSocketService } from './websocketService.svelte.js';
+import { getSSEService } from './sseService.svelte.js';
 import { notificationService } from './notificationService.svelte.js';
 import type {
 	WebSocketMessage,
@@ -34,13 +34,14 @@ export interface RealtimeState {
 }
 
 /**
- * Real-time service that integrates WebSocket with game state management
+ * Real-time service that integrates SSE with game state management
  */
 export class RealtimeService {
-	private wsService = getWebSocketService();
+	private sseService: ReturnType<typeof getSSEService> | null = null;
 	private authState: AuthState | null = null;
 	private gameState: GameState | null = null;
 	private isInitialized = false;
+	private handlersSetup = false;
 
 	// Reactive state
 	private _state = $state<RealtimeState>({
@@ -52,9 +53,28 @@ export class RealtimeService {
 	});
 
 	constructor() {
-		if (browser) {
-			this.setupWebSocketHandlers();
+		// Don't initialize SSE service here - defer to when it's needed
+	}
+
+	/**
+	 * Get SSE service, initializing it if needed (client-side only)
+	 */
+	private getSSEService() {
+		if (!browser) {
+			throw new Error('SSE service is only available on the client side');
 		}
+		
+		if (!this.sseService) {
+			this.sseService = getSSEService();
+			
+			// Setup handlers on first access
+			if (!this.handlersSetup) {
+				this.setupSSEHandlers();
+				this.handlersSetup = true;
+			}
+		}
+		
+		return this.sseService;
 	}
 
 	/**
@@ -72,7 +92,7 @@ export class RealtimeService {
 		this.gameState = gameState;
 		this.isInitialized = true;
 
-		// Connect to WebSocket if authenticated
+		// Connect to SSE if authenticated
 		if (authState.isAuthenticated) {
 			this.connect();
 		}
@@ -84,11 +104,18 @@ export class RealtimeService {
 	 * Handle authentication state changes (called from component context)
 	 */
 	public handleAuthStateChange(isAuthenticated: boolean): void {
+		console.log('🔄 Auth state changed:', { isAuthenticated, currentlyConnected: this._state.isConnected, currentlyConnecting: this._state.isConnecting });
+		
 		if (isAuthenticated) {
+			// Only connect if we're not already connected or connecting
 			if (!this._state.isConnected && !this._state.isConnecting) {
+				console.log('🔌 Starting connection due to auth state change');
 				this.connect();
+			} else {
+				console.log('📋 Skipping connection - already connected or connecting');
 			}
 		} else {
+			console.log('🔌 Disconnecting due to auth state change');
 			this.disconnect();
 		}
 	}
@@ -124,14 +151,21 @@ export class RealtimeService {
 	}
 
 	/**
-	 * Connect to WebSocket
+	 * Connect to SSE
 	 */
 	private async connect(): Promise<void> {
-		if (!this.authState || this._state.isConnecting) {
-			console.log('🔄 Cannot connect: no auth state or already connecting', {
-				hasAuthState: !!this.authState,
-				isConnecting: this._state.isConnecting
-			});
+		if (!this.authState) {
+			console.log('🚫 Cannot connect: no auth state available');
+			return;
+		}
+
+		if (this._state.isConnecting) {
+			console.log('🔄 Connection already in progress, skipping new attempt');
+			return;
+		}
+
+		if (this._state.isConnected) {
+			console.log('📋 Already connected, skipping connection attempt');
 			return;
 		}
 
@@ -146,18 +180,17 @@ export class RealtimeService {
 				throw new Error('Failed to obtain access token');
 			}
 
-			console.log('🔑 Got access token for WebSocket authentication');
-			const connected = await this.wsService.connect(accessToken);
+			console.log('🔑 Got access token for SSE authentication');
+			const gameId = this.gameState?.selectedGameId;
+			const connected = await this.getSSEService().connect(accessToken, gameId);
 			if (connected) {
 				this._state.isConnected = true;
 				this._state.isConnecting = false;
+				this._state.currentGameId = gameId || null;
 				console.log('✅ Real-time service connected and authenticated');
-
-				// Auto-join game room if we have a selected game
-				if (this.gameState?.selectedGameId) {
-					console.log('🎮 Auto-joining game room after connection:', this.gameState.selectedGameId);
-					await this.joinGame(this.gameState.selectedGameId);
-				}
+			} else {
+				this._state.isConnecting = false;
+				throw new Error('Connection failed - check server availability');
 			}
 		} catch (error) {
 			this._state.isConnecting = false;
@@ -167,10 +200,12 @@ export class RealtimeService {
 	}
 
 	/**
-	 * Disconnect from WebSocket
+	 * Disconnect from SSE
 	 */
 	public disconnect(): void {
-		this.wsService.disconnect();
+		if (this.sseService) {
+			this.sseService.disconnect();
+		}
 		this._state.isConnected = false;
 		this._state.isConnecting = false;
 		this._state.onlineUsers = [];
@@ -179,17 +214,16 @@ export class RealtimeService {
 	}
 
 	/**
-	 * Join a game room (mainly used for debugging, server handles joining automatically)
+	 * Join a game room (reconnect SSE with game ID)
 	 */
 	public async joinGame(gameId: string): Promise<boolean> {
 		if (!this._state.isConnected) {
-			console.warn('⚠️ Cannot join game: not connected to WebSocket');
+			console.warn('⚠️ Cannot join game: not connected to SSE');
 			return false;
 		}
 
 		try {
-			const siteId = this.gameState?.selectedSiteId || undefined;
-			const joined = await this.wsService.joinGame(gameId, siteId);
+			const joined = await this.getSSEService().joinGame(gameId);
 
 			if (joined) {
 				this._state.currentGameId = gameId;
@@ -198,7 +232,6 @@ export class RealtimeService {
 			}
 		} catch (error) {
 			console.error('❌ Failed to join game:', error);
-			// No user notification since server handles joining automatically
 		}
 
 		return false;
@@ -213,7 +246,7 @@ export class RealtimeService {
 		}
 
 		try {
-			const left = await this.wsService.leaveGame();
+			const left = await this.getSSEService().leaveGame();
 			if (left) {
 				this._state.currentGameId = null;
 				this._state.onlineUsers = [];
@@ -228,20 +261,22 @@ export class RealtimeService {
 	}
 
 	/**
-	 * Update user presence
+	 * Update user presence (note: SSE is receive-only, presence updates handled via API)
 	 */
 	public updatePresence(siteId?: string, activity?: string): void {
 		if (!this._state.isConnected) return;
 
-		this.wsService.updatePresence(siteId, activity);
+		// For SSE, presence updates would be sent via regular API calls
+		// This is a placeholder for future implementation
+		console.log('📍 Presence update (SSE):', { siteId, activity });
 	}
 
 	/**
-	 * Setup WebSocket message handlers
+	 * Setup SSE message handlers
 	 */
-	private setupWebSocketHandlers(): void {
+	private setupSSEHandlers(): void {
 		// Connection state handlers
-		this.wsService.addConnectionHandler((connected) => {
+		this.sseService!.addConnectionHandler((connected) => {
 			this._state.isConnected = connected;
 			if (!connected) {
 				this._state.onlineUsers = [];
@@ -249,48 +284,48 @@ export class RealtimeService {
 			}
 		});
 
-		this.wsService.addErrorHandler((error) => {
+		this.sseService!.addErrorHandler((error) => {
 			this._state.connectionError = error;
 		});
 
 		// Production instance handlers
-		this.wsService.addMessageHandler('production_instance_created', (message) => {
-			this.handleProductionInstanceCreated(message);
+		this.sseService!.addMessageHandler('production_instance_created', (message) => {
+			this.handleProductionInstanceCreated(message as any);
 		});
 
-		this.wsService.addMessageHandler('production_instance_updated', (message) => {
-			this.handleProductionInstanceUpdated(message);
+		this.sseService!.addMessageHandler('production_instance_updated', (message) => {
+			this.handleProductionInstanceUpdated(message as any);
 		});
 
-		this.wsService.addMessageHandler('production_instance_deleted', (message) => {
-			this.handleProductionInstanceDeleted(message);
+		this.sseService!.addMessageHandler('production_instance_deleted', (message) => {
+			this.handleProductionInstanceDeleted(message as any);
 		});
 
 		// Site handlers
-		this.wsService.addMessageHandler('site_created', (message) => {
-			this.handleSiteCreated(message);
+		this.sseService!.addMessageHandler('site_created', (message) => {
+			this.handleSiteCreated(message as any);
 		});
 
-		this.wsService.addMessageHandler('site_updated', (message) => {
-			this.handleSiteUpdated(message);
+		this.sseService!.addMessageHandler('site_updated', (message) => {
+			this.handleSiteUpdated(message as any);
 		});
 
-		this.wsService.addMessageHandler('site_deleted', (message) => {
-			this.handleSiteDeleted(message);
+		this.sseService!.addMessageHandler('site_deleted', (message) => {
+			this.handleSiteDeleted(message as any);
 		});
 
 		// User presence handlers
-		this.wsService.addMessageHandler('user_joined', (message) => {
-			this.handleUserJoined(message);
+		this.sseService!.addMessageHandler('user_joined', (message) => {
+			this.handleUserJoined(message as any);
 		});
 
-		this.wsService.addMessageHandler('user_left', (message) => {
-			this.handleUserLeft(message);
+		this.sseService!.addMessageHandler('user_left', (message) => {
+			this.handleUserLeft(message as any);
 		});
 
 		// Module version change handler
-		this.wsService.addMessageHandler('module_version_changed', (message) => {
-			this.handleModuleVersionChanged(message);
+		this.sseService!.addMessageHandler('module_version_changed', (message) => {
+			this.handleModuleVersionChanged(message as any);
 		});
 	}
 

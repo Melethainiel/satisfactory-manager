@@ -107,7 +107,7 @@
 						class:btn-active={$locale === 'en'}
 						onclick={() => setLocale('en')}
 					>
-						🇺🇸 EN
+						{$t('ui.language_en')}
 					</button>
 				</li>
 				<li>
@@ -116,7 +116,7 @@
 						class:btn-active={$locale === 'fr'}
 						onclick={() => setLocale('fr')}
 					>
-						🇫🇷 FR
+						{$t('ui.language_fr')}
 					</button>
 				</li>
 			</ul>

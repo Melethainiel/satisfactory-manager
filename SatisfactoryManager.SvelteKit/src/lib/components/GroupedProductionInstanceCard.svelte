@@ -327,7 +327,7 @@
 	{#if isExpanded}
 		<div class="border-t border-base-300" transition:slide={{ duration: 300 }}>
 			<div class="p-4">
-				<h5 class="mb-3 text-sm font-medium opacity-70">Instances individuelles:</h5>
+				<h5 class="mb-3 text-sm font-medium opacity-70">{$t('ui.individual_instances')}</h5>
 				<div class="space-y-3">
 					{#each group.instances as instance (instance.id)}
 						<div class="bg-base-50 rounded border border-base-300 p-3">
@@ -337,7 +337,7 @@
 										{#if instance.recipe?.displayName}
 											{instance.recipe.displayName}
 										{:else}
-											{instance.building?.name || 'Unknown'}
+											{instance.building?.name || $t('ui.unknown')}
 										{/if}
 									</div>
 									<div class="mt-1 text-xs opacity-70">

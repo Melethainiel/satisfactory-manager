@@ -110,7 +110,7 @@
 		}
 
 		// Fallback
-		return instance.recipe?.displayName || instance.building?.name || 'Unknown';
+		return instance.recipe?.displayName || instance.building?.name || $t('ui.unknown');
 	}
 
 	// Interface for grouped instances
@@ -275,7 +275,7 @@
 
 				return {
 					itemId,
-					itemName: production?.itemName || consumption?.itemName || balance?.itemName || 'Unknown',
+					itemName: production?.itemName || consumption?.itemName || balance?.itemName || $t('ui.unknown'),
 					productionRate,
 					consumptionRate,
 					netBalance,
@@ -331,7 +331,7 @@
 		confirmDialogRef?.open({
 			title: $t('productionInstances.delete_instance'),
 			message: $t('productionInstances.delete_instance_confirm', {
-				values: { name: instance.recipe?.displayName || 'Unknown Recipe' }
+				values: { name: instance.recipe?.displayName || $t('ui.unknown_recipe') }
 			}),
 			confirmText: $t('productionInstances.delete_instance'),
 			type: 'danger',

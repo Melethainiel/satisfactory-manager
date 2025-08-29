@@ -507,7 +507,13 @@
 		"instance": "instance",
 		"instances": "instances",
 		"group": "group",
-		"groups": "groups"
+		"groups": "groups",
+		"language_en": "🇺🇸 EN",
+		"language_fr": "🇫🇷 FR",
+		"unknown": "Unknown",
+		"unknown_production": "Unknown Production",
+		"unknown_building": "Unknown Building",
+		"unknown_recipe": "Unknown Recipe"
 	},
 	"auth_component": {
 		"initializing": "Initializing authentication...",

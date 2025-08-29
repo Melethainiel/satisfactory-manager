@@ -517,7 +517,13 @@
 		"instance": "instance",
 		"instances": "instances",
 		"group": "groupe",
-		"groups": "groupes"
+		"groups": "groupes",
+		"language_en": "🇺🇸 EN",
+		"language_fr": "🇫🇷 FR",
+		"unknown": "Inconnu",
+		"unknown_production": "Production inconnue",
+		"unknown_building": "Bâtiment inconnu",
+		"unknown_recipe": "Recette inconnue"
 	},
 	"auth_component": {
 		"initializing": "Initialisation de l'authentification...",

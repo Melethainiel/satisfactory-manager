@@ -72,7 +72,7 @@
 		}
 
 		// Fallback: show recipe name or building name
-		return instance.recipe?.displayName || instance.building?.name || 'Unknown Production';
+		return instance.recipe?.displayName || instance.building?.name || $t('ui.unknown_production');
 	});
 
 	function formatRate(rate: number): string {
@@ -190,7 +190,7 @@
 				<div class="flex items-center gap-2 text-sm opacity-70">
 					<Icon src={Cog6Tooth} class="size-4 flex-shrink-0" />
 					<span class="truncate">
-						{instance.building?.name || 'Unknown Building'}
+						{instance.building?.name || $t('ui.unknown_building')}
 					</span>
 				</div>
 				<!-- Built Status Indicator -->

@@ -569,12 +569,15 @@ export function getWebSocketService(): WebSocketService {
 		if (browser) {
 			// Client-side: check if we're in development or production
 			const isDev = location.port === '5173'; // Vite dev server port
+			const isSecure = location.protocol === 'https:';
+			const wsProtocol = isSecure ? 'wss:' : 'ws:';
+			
 			if (isDev) {
 				// Development: separate WebSocket server on port 8080
-				wsUrl = `ws://${location.hostname}:8080/ws`;
+				wsUrl = `${wsProtocol}//${location.hostname}:8080/ws`;
 			} else {
 				// Production: unified server on same port as HTTP
-				wsUrl = `ws://${location.hostname}:${location.port}/ws`;
+				wsUrl = `${wsProtocol}//${location.hostname}:${location.port}/ws`;
 			}
 		} else {
 			// Server-side fallback (shouldn't be used but kept for safety)

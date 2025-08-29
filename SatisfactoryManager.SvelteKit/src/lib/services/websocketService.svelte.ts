@@ -577,7 +577,8 @@ export function getWebSocketService(): WebSocketService {
 				wsUrl = `${wsProtocol}//${location.hostname}:8080/ws`;
 			} else {
 				// Production: unified server on same port as HTTP
-				wsUrl = `${wsProtocol}//${location.hostname}:${location.port}/ws`;
+				const port = location.port ? `:${location.port}` : '';
+				wsUrl = `${wsProtocol}//${location.hostname}${port}/ws`;
 			}
 		} else {
 			// Server-side fallback (shouldn't be used but kept for safety)

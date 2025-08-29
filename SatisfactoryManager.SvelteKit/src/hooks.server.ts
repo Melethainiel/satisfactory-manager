@@ -3,6 +3,7 @@ import { createRemoteJWKSet, jwtVerify, type JWTPayload } from 'jose';
 import { locale } from 'svelte-i18n';
 import { getAzureB2CConfig } from '$lib/config/auth.config.js';
 import { getServerEnvVar } from '$lib/config/env.server.js';
+import { autoInitializeWebSocketIntegration } from '$lib/server/websocket/integrationHook.js';
 
 // Initialize authentication configuration asynchronously
 let authConfigPromise: Promise<{
@@ -92,8 +93,17 @@ async function verifyBearer(token: string): Promise<AuthUserLocals | null> {
 	}
 }
 
+// Initialize WebSocket server once
+let wsInitialized = false;
+
 export const handle: Handle = async ({ event, resolve }) => {
 	const urlPath = event.url.pathname;
+
+	// Initialize WebSocket server once per process
+	if (!wsInitialized) {
+		autoInitializeWebSocketIntegration();
+		wsInitialized = true;
+	}
 
 	// Handle i18n locale detection
 	const lang = event.request.headers.get('accept-language')?.split(',')[0];

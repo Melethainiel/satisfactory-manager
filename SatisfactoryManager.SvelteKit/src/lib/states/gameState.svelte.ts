@@ -247,6 +247,8 @@ export interface GameState {
 	getUserRole: (userEmail: string) => string | null;
 	canManageSettings: (userEmail: string) => boolean;
 	canManageSites: (userEmail: string) => boolean;
+	// Real-time integration
+	attachRealtime: (realtimeService: any) => void;
 }
 
 // Narrow helper type so we don't import full AuthState here.
@@ -258,6 +260,8 @@ type AuthFetchFn = <T = any>(
 class GameStateClass implements GameState {
 	// Function injected from auth state to fetch API token
 	private apiFetch: AuthFetchFn | null = null;
+	// Real-time service for WebSocket integration
+	private realtimeService: any = null;
 
 	attachAuth(apiFetch: AuthFetchFn) {
 		this.apiFetch = apiFetch;
@@ -265,6 +269,10 @@ class GameStateClass implements GameState {
 
 	getApiFetch(): AuthFetchFn | null {
 		return this.apiFetch;
+	}
+
+	attachRealtime(realtimeService: any) {
+		this.realtimeService = realtimeService;
 	}
 	async deleteGame(id: string) {
 		if (!id) {
@@ -579,6 +587,7 @@ class GameStateClass implements GameState {
 			const created = (await res.json()) as GameSite;
 			this.gameSites = [...this.gameSites, created].sort((a, b) => a.name.localeCompare(b.name));
 			this.selectedSiteId = created.id;
+
 			notificationService.success(`Site "${name}" created successfully`);
 		} catch (e: any) {
 			notificationService.error(e?.message ?? 'Failed to create site');
@@ -598,6 +607,7 @@ class GameStateClass implements GameState {
 			this.gameSites = this.gameSites
 				.map((s) => (s.id === siteId ? updated : s))
 				.sort((a, b) => a.name.localeCompare(b.name));
+
 			notificationService.success(`Site renamed to "${name}"`);
 		} catch (e: any) {
 			notificationService.error(e?.message ?? 'Failed to update site');
@@ -616,6 +626,7 @@ class GameStateClass implements GameState {
 			if (this.selectedSiteId === siteId) {
 				this.selectedSiteId = this.gameSites.length > 0 ? this.gameSites[0].id : null;
 			}
+
 			notificationService.success('Site deleted successfully');
 		} catch (e: any) {
 			notificationService.error(e?.message ?? 'Failed to delete site');
@@ -681,6 +692,7 @@ class GameStateClass implements GameState {
 			if (result.success) {
 				// Reload production summary to get updated data
 				await this.loadSiteProductionSummary(siteId, true);
+
 				notificationService.success('Production instance created successfully');
 			}
 		} catch (e: any) {
@@ -730,6 +742,7 @@ class GameStateClass implements GameState {
 			if (result.success) {
 				// Reload production summary to get updated data
 				await this.loadSiteProductionSummary(instance.siteId, true);
+
 				notificationService.success('Production instance updated successfully');
 			}
 		} catch (e: any) {

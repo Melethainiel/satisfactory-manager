@@ -84,19 +84,24 @@
 	}
 
 	// Helper function to get net balance for a specific item with visual indicators
-	function getNetBalance(itemName: string): { balance: number; balanceText: string; cssClass: string; symbol: string } {
+	function getNetBalance(itemName: string): {
+		balance: number;
+		balanceText: string;
+		cssClass: string;
+		symbol: string;
+	} {
 		const overview = gameState.siteProductionOverview;
 		const netBalanceItem = overview?.netBalance.find((item) => item.itemName === itemName);
-		
+
 		if (netBalanceItem) {
 			const balance = netBalanceItem.balance;
 			const sign = balance >= 0 ? '+' : '';
 			const balanceText = `${sign}${formatRate(balance)}${$t('resourceBalance.per_minute')}`;
-			
+
 			// Determine CSS class and symbol based on balance
 			let cssClass: string;
 			let symbol: string;
-			
+
 			if (balance > 0) {
 				cssClass = 'text-success font-semibold';
 				symbol = '▲';
@@ -107,7 +112,7 @@
 				cssClass = 'text-warning font-semibold';
 				symbol = '●';
 			}
-			
+
 			return { balance, balanceText, cssClass, symbol };
 		} else {
 			const balanceText = `0${$t('resourceBalance.per_minute')}`;
@@ -116,20 +121,26 @@
 	}
 
 	// Get inline display text for products with net balance
-	function getProductDisplayText(product: { item: { displayName: string }; actualRate: number }): string {
+	function getProductDisplayText(product: {
+		item: { displayName: string };
+		actualRate: number;
+	}): string {
 		const itemName = product.item.displayName;
 		const productionRate = `${formatRate(product.actualRate)}/${$t('common.minute')}`;
 		const netBalance = getNetBalance(itemName);
-		
+
 		return `${itemName} ${productionRate} <span class="${netBalance.cssClass}">${netBalance.symbol}${netBalance.balanceText}</span>`;
 	}
 
 	// Get inline display text for ingredients with net balance
-	function getIngredientDisplayText(ingredient: { item: { displayName: string }; actualRate: number }): string {
+	function getIngredientDisplayText(ingredient: {
+		item: { displayName: string };
+		actualRate: number;
+	}): string {
 		const itemName = ingredient.item.displayName;
 		const consumptionRate = `${formatRate(ingredient.actualRate)}/${$t('common.minute')}`;
 		const netBalance = getNetBalance(itemName);
-		
+
 		return `${itemName} ${consumptionRate} <span class="${netBalance.cssClass}">${netBalance.symbol}${netBalance.balanceText}</span>`;
 	}
 
@@ -247,7 +258,10 @@
 							</div>
 							<div class="mt-1 text-xs opacity-60">
 								{#if productionInfo()}
-									{@html getProductDisplayText({ item: productionInfo()!.item, actualRate: productionInfo()!.actualRate })}
+									{@html getProductDisplayText({
+										item: productionInfo()!.item,
+										actualRate: productionInfo()!.actualRate
+									})}
 								{/if}
 							</div>
 						</div>
@@ -332,7 +346,10 @@
 							</div>
 							<div class="mt-1 text-xs opacity-60">
 								{#if productionInfo()}
-									{@html getProductDisplayText({ item: productionInfo()!.item, actualRate: productionInfo()!.actualRate })}
+									{@html getProductDisplayText({
+										item: productionInfo()!.item,
+										actualRate: productionInfo()!.actualRate
+									})}
 								{/if}
 								{#if instance.extractorPurity}
 									<span

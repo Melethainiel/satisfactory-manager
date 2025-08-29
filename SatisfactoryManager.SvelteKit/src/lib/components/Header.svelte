@@ -2,7 +2,9 @@
 	import { getAuthState } from '$lib/states/authState.svelte';
 	import { getGameState } from '$lib/states/gameState.svelte';
 	import { getPermissionState } from '$lib/states/permissionState.svelte';
+	import { getRealtimeService } from '$lib/services/realtimeService.svelte';
 	import { t, locale, setLocale } from '$lib/i18n';
+	import OnlineUsersIndicator from './OnlineUsersIndicator.svelte';
 	// New Svelte 5 pattern: accept a callback prop instead of dispatching an event
 	let { toggleNav } = $props<{ toggleNav?: () => void }>();
 
@@ -10,6 +12,10 @@
 	const authState = getAuthState();
 	const gameState = getGameState();
 	const permissionState = getPermissionState();
+	const realtimeService = getRealtimeService();
+
+	// Connection status for avatar border
+	const isConnected = $derived(() => realtimeService.state.isConnected);
 
 	// Popover helpers
 	const popoverId = 'user-menu-popover';
@@ -72,8 +78,15 @@
 		</a>
 	</div>
 
-	<!-- Right side: Language selector and Authentication -->
-	<div class="navbar-end gap-2">
+	<!-- Right side: Online users, Language selector and Authentication -->
+	<div class="navbar-end gap-4">
+		<!-- Online users indicator (only show if authenticated and in a game) -->
+		{#if authState.isAuthenticated && gameState.selectedGameId}
+			<div class="hidden lg:block">
+				<OnlineUsersIndicator />
+			</div>
+		{/if}
+
 		<!-- Language selector -->
 		<div class="dropdown dropdown-end">
 			<button class="btn btn-ghost btn-sm" tabindex="0" aria-label="Change language">
@@ -125,9 +138,12 @@
 				>
 					<div class="flex items-center gap-x-2">
 						<img
-							class="h-10 w-10 rounded-full object-cover"
+							class="h-10 w-10 rounded-full object-cover ring-2 {isConnected()
+								? 'ring-success'
+								: 'ring-error'}"
 							src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=facearea&facepad=3&w=256&h=256&q=80"
 							alt="User avatar"
+							title={isConnected() ? 'Connected' : 'Offline'}
 						/>
 						<div class="hidden text-left md:block">
 							<h1 class="text-lg font-semibold text-gray-700 capitalize dark:text-white">

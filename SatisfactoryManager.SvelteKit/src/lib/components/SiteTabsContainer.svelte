@@ -12,6 +12,7 @@
 	import ConfirmDialog from '$lib/dialogs/ConfirmDialog.svelte';
 	import type { ConfirmDialogHandle } from '$lib/dialogs/ConfirmDialogHandle';
 	import SiteProductionOverview from './SiteProductionOverview.svelte';
+	import OnlineUsersIndicator from './OnlineUsersIndicator.svelte';
 
 	const gameState = getGameState();
 	const authState = getAuthState();
@@ -134,6 +135,12 @@
 
 							<!-- Site Content -->
 							<div in:fade={{ duration: 250, delay: 200 }}>
+								<!-- Site title and online users -->
+								<div class="mb-4 flex items-center justify-between">
+									<h2 class="text-xl font-semibold">{selectedSite.name}</h2>
+									<OnlineUsersIndicator siteId={selectedSite.id} showActivity={true} />
+								</div>
+
 								<SiteProductionOverview siteId={selectedSite.id} siteName={selectedSite.name} />
 							</div>
 						</div>

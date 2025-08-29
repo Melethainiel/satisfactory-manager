@@ -33,9 +33,9 @@ export async function runMigrations(): Promise<void> {
 	} catch (error) {
 		// Check if the error is about already existing relations/constraints
 		const errorMessage = error instanceof Error ? error.message : String(error);
-		const isAlreadyExistsError = 
+		const isAlreadyExistsError =
 			errorMessage.includes('already exists') ||
-			errorMessage.includes('relation') && errorMessage.includes('already exists');
+			(errorMessage.includes('relation') && errorMessage.includes('already exists'));
 
 		if (isAlreadyExistsError) {
 			console.log('⚠️ Some database objects already exist - this is likely harmless');
@@ -77,7 +77,7 @@ export async function checkMigrationsNeeded(): Promise<boolean> {
 		// Count migrations in the filesystem
 		const migrationsDir = join(process.cwd(), 'drizzle');
 		const migrationFiles = await readdir(migrationsDir);
-		const sqlFiles = migrationFiles.filter(file => file.endsWith('.sql')).sort();
+		const sqlFiles = migrationFiles.filter((file) => file.endsWith('.sql')).sort();
 		const filesystemCount = sqlFiles.length;
 
 		// Count applied migrations in database
@@ -86,12 +86,16 @@ export async function checkMigrationsNeeded(): Promise<boolean> {
 		`;
 
 		const appliedCount = parseInt(appliedMigrations[0]?.count || '0');
-		
-		console.log(`📊 Found ${filesystemCount} migration files and ${appliedCount} applied migrations`);
+
+		console.log(
+			`📊 Found ${filesystemCount} migration files and ${appliedCount} applied migrations`
+		);
 
 		// If filesystem has more migrations than applied, we need to migrate
 		if (filesystemCount > appliedCount) {
-			console.log(`📋 ${filesystemCount - appliedCount} pending migrations found - migrations needed`);
+			console.log(
+				`📋 ${filesystemCount - appliedCount} pending migrations found - migrations needed`
+			);
 			return true;
 		}
 
@@ -119,21 +123,21 @@ export async function initializeDatabase(): Promise<void> {
 		} else {
 			console.log('✅ Database is up to date, no migrations needed');
 		}
-		
+
 		console.log('🎉 Database initialization completed successfully');
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 		console.error('💥 Database initialization failed:', error);
-		
+
 		// Provide more context for common errors
 		if (errorMessage.includes('already exists') && errorMessage.includes('relation')) {
 			throw new Error(
 				`Database initialization failed: ${errorMessage}. ` +
-				`This usually means migrations were already applied manually via 'npm run db:migrate'. ` +
-				`The database may still be functional.`
+					`This usually means migrations were already applied manually via 'npm run db:migrate'. ` +
+					`The database may still be functional.`
 			);
 		}
-		
+
 		throw new Error(`Database initialization failed: ${errorMessage}`);
 	}
 }

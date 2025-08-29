@@ -32,8 +32,7 @@ function convertAspireConnectionStringToUrl(connectionString: string): string {
 		}
 	});
 
-	// Extract required components
-	const host = params['Host'] || 'localhost';
+	// Extracdd	const host = params['Host'] || 'localhost';
 	const port = params['Port'] || '5432';
 	const username = params['Username'] || params['User Id'] || 'postgres';
 	const password = params['Password'] || '';

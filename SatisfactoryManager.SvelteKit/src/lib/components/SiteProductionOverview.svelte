@@ -97,7 +97,7 @@
 	// Helper function to get grouping key based on building type
 	function getGroupingKey(instance: ProductionInstanceData): string {
 		const buildingType = instance.building?.type;
-		
+
 		if (buildingType === 'Constructor' && instance.recipe?.displayName) {
 			// For constructors: group by recipe name
 			return instance.recipe.displayName;
@@ -108,7 +108,7 @@
 			// For generators: group by generator type (building name)
 			return instance.building.name;
 		}
-		
+
 		// Fallback
 		return instance.recipe?.displayName || instance.building?.name || 'Unknown';
 	}
@@ -129,15 +129,15 @@
 	// Group and aggregate instances
 	let groupedAndSortedInstances = $derived((): GroupedProductionInstance[] => {
 		const filtered = filteredInstances();
-		
+
 		// Group by building type and recipe/item
 		const grouped: { [key: string]: GroupedProductionInstance } = {};
-		
+
 		filtered.forEach((instance) => {
 			const buildingType = instance.building?.type as 'Constructor' | 'Generator' | 'Miner';
 			const groupKey = getGroupingKey(instance);
 			const key = `${buildingType}-${groupKey}`;
-			
+
 			if (!grouped[key]) {
 				grouped[key] = {
 					groupKey,
@@ -150,36 +150,41 @@
 					totalIngredients: []
 				};
 			}
-			
+
 			const group = grouped[key];
 			group.instances.push(instance);
 			group.totalBuildingCount += parseFloat(instance.buildingCount);
 			group.totalPowerConsumption += instance.production?.powerConsumption || 0;
 			group.totalPowerProduction += instance.production?.powerProduction || 0;
 		});
-		
+
 		// Calculate averages and aggregated data
 		Object.values(grouped).forEach((group) => {
 			// Average efficiency
 			const totalEfficiency = group.instances.reduce(
-				(sum, instance) => sum + parseFloat(instance.efficiencyRatio), 0
+				(sum, instance) => sum + parseFloat(instance.efficiencyRatio),
+				0
 			);
 			group.averageEfficiency = totalEfficiency / group.instances.length;
-			
+
 			// Primary product (first instance's primary product with total rate)
 			const firstInstance = group.instances[0];
 			if (firstInstance.products?.[0]) {
 				const totalRate = group.instances.reduce(
-					(sum, instance) => sum + (instance.products?.[0]?.actualRate || 0), 0
+					(sum, instance) => sum + (instance.products?.[0]?.actualRate || 0),
+					0
 				);
 				group.primaryProduct = {
 					item: firstInstance.products[0].item,
 					actualRate: totalRate
 				};
 			}
-			
+
 			// Aggregate ingredients
-			const ingredientMap = new Map<string, { item: { displayName: string }; actualRate: number }>();
+			const ingredientMap = new Map<
+				string,
+				{ item: { displayName: string }; actualRate: number }
+			>();
 			group.instances.forEach((instance) => {
 				instance.ingredients?.forEach((ingredient) => {
 					const key = ingredient.item.displayName;
@@ -195,10 +200,10 @@
 			});
 			group.totalIngredients = Array.from(ingredientMap.values());
 		});
-		
+
 		// Sort by building type priority, then by group name
-		const buildingTypeOrder = { 'Constructor': 0, 'Generator': 1, 'Miner': 2 };
-		
+		const buildingTypeOrder = { Constructor: 0, Generator: 1, Miner: 2 };
+
 		return Object.values(grouped).sort((a, b) => {
 			const typeComparison = buildingTypeOrder[a.buildingType] - buildingTypeOrder[b.buildingType];
 			if (typeComparison !== 0) return typeComparison;
@@ -208,16 +213,23 @@
 
 	// Create building type sections
 	let buildingTypeSections = $derived(() => {
-		const sections: Array<{ type: 'Constructor' | 'Generator' | 'Miner'; groups: GroupedProductionInstance[] }> = [];
-		const typeOrder: Array<'Constructor' | 'Generator' | 'Miner'> = ['Constructor', 'Generator', 'Miner'];
-		
+		const sections: Array<{
+			type: 'Constructor' | 'Generator' | 'Miner';
+			groups: GroupedProductionInstance[];
+		}> = [];
+		const typeOrder: Array<'Constructor' | 'Generator' | 'Miner'> = [
+			'Constructor',
+			'Generator',
+			'Miner'
+		];
+
 		typeOrder.forEach((type) => {
-			const groups = groupedAndSortedInstances().filter(g => g.buildingType === type);
+			const groups = groupedAndSortedInstances().filter((g) => g.buildingType === type);
 			if (groups.length > 0) {
 				sections.push({ type, groups });
 			}
 		});
-		
+
 		return sections;
 	});
 
@@ -635,7 +647,7 @@
 				{:else}
 					{#each buildingTypeSections() as section, sectionIndex (section.type)}
 						<div class="mb-8" in:fly={{ y: 20, duration: 400, delay: 900 + sectionIndex * 200 }}>
-							<h4 class="text-lg font-semibold mb-4 flex items-center gap-2">
+							<h4 class="mb-4 flex items-center gap-2 text-lg font-semibold">
 								{$t(`buildingTypes.${section.type}`)}
 								<span class="badge badge-sm badge-neutral">
 									{section.groups.length}

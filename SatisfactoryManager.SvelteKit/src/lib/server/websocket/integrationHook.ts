@@ -51,7 +51,17 @@ export function autoInitializeWebSocketIntegration(): void {
 		return;
 	}
 
-	// In production, we need to wait for the HTTP server to be created
-	// This will be called from the application startup
-	console.log('🔗 Auto-initialization for WebSocket integration ready');
+	// In production, initialize WebSocket server on separate port since SvelteKit
+	// doesn't provide direct access to the HTTP server for WebSocket upgrades
+	console.log('🔗 Initializing WebSocket server for production...');
+	try {
+		// Use a different port for production WebSocket server
+		const wsPort = process.env.WEBSOCKET_PORT ? parseInt(process.env.WEBSOCKET_PORT) : 8080;
+		console.log(`🔌 Starting production WebSocket server on port ${wsPort}...`);
+		
+		initializeWebSocketServer();
+		console.log('✅ Production WebSocket server initialized successfully');
+	} catch (error: any) {
+		console.error('❌ Failed to initialize production WebSocket server:', error);
+	}
 }

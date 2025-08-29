@@ -576,9 +576,9 @@ export function getWebSocketService(): WebSocketService {
 				// Development: separate WebSocket server on port 8080
 				wsUrl = `${wsProtocol}//${location.hostname}:8080/ws`;
 			} else {
-				// Production: unified server on same port as HTTP
-				const port = location.port ? `:${location.port}` : '';
-				wsUrl = `${wsProtocol}//${location.hostname}${port}/ws`;
+				// Production: separate WebSocket server on port 8080 (same as development)
+				// Since SvelteKit doesn't support WebSocket upgrades directly, we use a separate server
+				wsUrl = `${wsProtocol}//${location.hostname}:8080/ws`;
 			}
 		} else {
 			// Server-side fallback (shouldn't be used but kept for safety)

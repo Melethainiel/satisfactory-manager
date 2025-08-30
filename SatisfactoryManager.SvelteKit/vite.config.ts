@@ -5,8 +5,8 @@ import devtoolsJson from 'vite-plugin-devtools-json';
 
 export default defineConfig({
 	plugins: [
-		tailwindcss(), 
-		sveltekit(), 
+		tailwindcss(),
+		sveltekit(),
 		devtoolsJson()
 		// Removed WebSocket plugin - causes HMR conflicts and architectural issues
 	],
@@ -33,5 +33,12 @@ export default defineConfig({
 	ssr: {
 		// Ensure WebSocket-related modules can be bundled for SSR
 		noExternal: ['ws', 'uuid']
+	},
+
+	optimizeDeps: {
+		// Include ws in pre-bundling to resolve CommonJS/ESM issues
+		include: ['ws'],
+		// Exclude WebSocket-related files from SSR optimizations that might cause issues
+		exclude: []
 	}
 });

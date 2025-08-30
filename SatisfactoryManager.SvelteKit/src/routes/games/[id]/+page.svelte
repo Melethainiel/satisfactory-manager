@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { getGameState } from '$lib/states/gameState.svelte';
@@ -14,7 +14,10 @@
 	let error = $state<string | null>(null);
 
 	// Get the game ID from the route parameters
-	const gameId = $page.params.id;
+	const gameId = page.params.id;
+
+	// Get siteId from URL search parameters
+	let siteIdFromUrl = $derived(page.url.searchParams.get('siteId'));
 
 	onMount(async () => {
 		// Wait for authentication to finish loading before checking auth state
@@ -53,6 +56,19 @@
 
 			// Load game data in parallel
 			await Promise.all([gameState.loadGameUsers(gameId), gameState.loadGameSites(gameId)]);
+
+			// Set selected site from URL parameter if provided and valid
+			if (siteIdFromUrl) {
+				const siteExists = gameState.gameSites.some((site) => site.id === siteIdFromUrl);
+				if (siteExists) {
+					gameState.selectSite(siteIdFromUrl, false); // false to avoid updating URL again
+				} else {
+					// Clean invalid siteId from URL
+					const url = new URL(window.location.href);
+					url.searchParams.delete('siteId');
+					window.history.replaceState({}, '', url.toString());
+				}
+			}
 		} catch (e: any) {
 			console.error('Error loading game:', e);
 			error = e?.message ?? $t('game.load_error');

@@ -2,7 +2,7 @@ import { browser } from '$app/environment';
 import { getSSEService } from './sseService.svelte.js';
 import { notificationService } from './notificationService.svelte.js';
 import type {
-	WebSocketMessage,
+	RealtimeMessage,
 	ProductionInstanceCreatedMessage,
 	ProductionInstanceUpdatedMessage,
 	ProductionInstanceDeletedMessage,
@@ -12,7 +12,7 @@ import type {
 	UserJoinedMessage,
 	UserLeftMessage,
 	ModuleVersionChangedMessage
-} from '../server/websocket/types.js';
+} from '../types/realtime.js';
 import type { AuthState } from '../states/authState.svelte.js';
 import type { GameState } from '../states/gameState.svelte.js';
 
@@ -182,7 +182,7 @@ export class RealtimeService {
 
 			console.log('🔑 Got access token for SSE authentication');
 			const gameId = this.gameState?.selectedGameId;
-			const connected = await this.getSSEService().connect(accessToken, gameId);
+			const connected = await this.getSSEService().connect(accessToken, gameId || undefined);
 			if (connected) {
 				this._state.isConnected = true;
 				this._state.isConnecting = false;
@@ -332,7 +332,7 @@ export class RealtimeService {
 	/**
 	 * Handle production instance created message
 	 */
-	private handleProductionInstanceCreated(message: WebSocketMessage): void {
+	private handleProductionInstanceCreated(message: RealtimeMessage): void {
 		const data = (message as ProductionInstanceCreatedMessage).data;
 
 		// Don't handle our own messages
@@ -351,7 +351,7 @@ export class RealtimeService {
 	/**
 	 * Handle production instance updated message
 	 */
-	private handleProductionInstanceUpdated(message: WebSocketMessage): void {
+	private handleProductionInstanceUpdated(message: RealtimeMessage): void {
 		const data = (message as ProductionInstanceUpdatedMessage).data;
 
 		// Don't handle our own messages
@@ -370,7 +370,7 @@ export class RealtimeService {
 	/**
 	 * Handle production instance deleted message
 	 */
-	private handleProductionInstanceDeleted(message: WebSocketMessage): void {
+	private handleProductionInstanceDeleted(message: RealtimeMessage): void {
 		const data = (message as ProductionInstanceDeletedMessage).data;
 
 		// Don't handle our own messages
@@ -389,7 +389,7 @@ export class RealtimeService {
 	/**
 	 * Handle site created message
 	 */
-	private handleSiteCreated(message: WebSocketMessage): void {
+	private handleSiteCreated(message: RealtimeMessage): void {
 		const data = (message as SiteCreatedMessage).data;
 
 		// Don't handle our own messages
@@ -408,7 +408,7 @@ export class RealtimeService {
 	/**
 	 * Handle site updated message
 	 */
-	private handleSiteUpdated(message: WebSocketMessage): void {
+	private handleSiteUpdated(message: RealtimeMessage): void {
 		const data = (message as SiteUpdatedMessage).data;
 
 		// Don't handle our own messages
@@ -427,7 +427,7 @@ export class RealtimeService {
 	/**
 	 * Handle site deleted message
 	 */
-	private handleSiteDeleted(message: WebSocketMessage): void {
+	private handleSiteDeleted(message: RealtimeMessage): void {
 		const data = (message as SiteDeletedMessage).data;
 
 		// Don't handle our own messages
@@ -446,7 +446,7 @@ export class RealtimeService {
 	/**
 	 * Handle user joined message
 	 */
-	private handleUserJoined(message: WebSocketMessage): void {
+	private handleUserJoined(message: RealtimeMessage): void {
 		const data = (message as UserJoinedMessage).data;
 
 		// Don't handle our own join messages
@@ -478,7 +478,7 @@ export class RealtimeService {
 	/**
 	 * Handle user left message
 	 */
-	private handleUserLeft(message: WebSocketMessage): void {
+	private handleUserLeft(message: RealtimeMessage): void {
 		const data = (message as UserLeftMessage).data;
 
 		// Remove user from online users list
@@ -491,7 +491,7 @@ export class RealtimeService {
 	/**
 	 * Handle module version changed message
 	 */
-	private handleModuleVersionChanged(message: WebSocketMessage): void {
+	private handleModuleVersionChanged(message: RealtimeMessage): void {
 		const data = (message as ModuleVersionChangedMessage).data;
 
 		// Don't handle our own messages

@@ -29,36 +29,50 @@ export async function runMigrations(): Promise<void> {
 
 	try {
 		// Run migrations from the drizzle folder with explicit table configuration
-		await migrate(migrationDb, { 
+		await migrate(migrationDb, {
 			migrationsFolder: './drizzle',
 			migrationsTable: 'drizzle_migrations',
 			migrationsSchema: 'public'
 		});
 		console.log('✅ Database migrations completed successfully');
 	} catch (error) {
-		// Check if the error is about already existing relations/constraints
+		// Check if the error is about already existing relations/constraints using PostgreSQL error codes
+		const isPostgresError = error && typeof error === 'object' && 'code' in error;
+		const errorCode = isPostgresError ? (error as any).code : '';
 		const errorMessage = error instanceof Error ? error.message : String(error);
+
+		// PostgreSQL error codes for existing objects:
+		// 42P07 = duplicate table/relation
+		// 42P06 = duplicate schema
+		// 42710 = duplicate object (general)
 		const isAlreadyExistsError =
-			errorMessage.includes('already exists') ||
-			(errorMessage.includes('relation') && errorMessage.includes('already exists'));
+			errorCode === '42P07' || // duplicate table
+			errorCode === '42P06' || // duplicate schema
+			errorCode === '42710' || // duplicate object
+			// Fallback to string matching for non-PostgreSQL errors
+			(!errorCode &&
+				(errorMessage.includes('already exists') ||
+					(errorMessage.includes('relation') && errorMessage.includes('already exists'))));
 
 		if (isAlreadyExistsError) {
 			console.log('⚠️ Some database objects already exist - this is likely harmless');
 			console.log('✅ Database migrations completed (some objects already existed)');
-			
+
 			// Check if we need to record existing migrations
 			try {
-				const checkCount = await migrationClient`SELECT COUNT(*) as count FROM public.drizzle_migrations`;
+				const checkCount =
+					await migrationClient`SELECT COUNT(*) as count FROM public.drizzle_migrations`;
 				const recordedCount = parseInt(checkCount[0]?.count || '0');
-				
+
 				if (recordedCount === 0) {
 					console.log('📝 Migration table is empty, recording existing migrations...');
-					// Close current connection before creating a new one in recordExistingMigrations
-					await migrationClient.end();
-					await recordExistingMigrations();
+					// Reuse the existing connection for recording migrations to optimize connection usage
+					await recordExistingMigrations(migrationClient);
 					return;
 				} else {
-					console.log(`📊 Found ${recordedCount} recorded migrations, no additional recording needed`);
+					console.log(
+						`📊 Found ${recordedCount} recorded migrations, no additional recording needed`
+					);
 				}
 			} catch (recordError) {
 				console.warn('⚠️ Could not check or record existing migrations:', recordError);
@@ -71,8 +85,18 @@ export async function runMigrations(): Promise<void> {
 		// Close the migration connection if not already closed
 		try {
 			await migrationClient.end();
-		} catch (error) {
-			// Connection might already be closed, ignore the error
+		} catch (closeError) {
+			// Log warning for unexpected connection cleanup failures but don't throw
+			const errorMessage = closeError instanceof Error ? closeError.message : String(closeError);
+			if (
+				!errorMessage.includes('Connection terminated') &&
+				!errorMessage.includes('already closed')
+			) {
+				console.warn(
+					'⚠️ Warning: Unexpected error while closing migration connection:',
+					errorMessage
+				);
+			}
 		}
 	}
 }
@@ -80,12 +104,15 @@ export async function runMigrations(): Promise<void> {
 /**
  * Record existing migrations in the database when objects already exist
  * This ensures migration tracking is maintained even for pre-existing database objects
+ *
+ * @param existingClient Optional existing database client to reuse (avoids creating new connection)
  */
-async function recordExistingMigrations(): Promise<void> {
+async function recordExistingMigrations(existingClient?: any): Promise<void> {
 	console.log('📝 Recording existing migrations in database...');
 
-	// Create connection for recording migrations
-	const recordClient = await createMigrationConnection();
+	// Use existing client if provided, otherwise create new connection
+	const recordClient = existingClient || (await createMigrationConnection());
+	const shouldCloseConnection = !existingClient;
 
 	try {
 		// Get all SQL migration files from filesystem
@@ -98,10 +125,24 @@ async function recordExistingMigrations(): Promise<void> {
 		for (const sqlFile of sqlFiles) {
 			const filePath = join(migrationsDir, sqlFile);
 			const content = await readFile(filePath, 'utf-8');
-			
+
 			// Calculate hash like Drizzle does (MD5 of content)
 			const hash = createHash('md5').update(content).digest('hex');
+
+			// Validate hash format (MD5 should be 32 hexadecimal characters)
+			if (!/^[a-f0-9]{32}$/i.test(hash)) {
+				console.warn(`⚠️ Invalid hash format for ${sqlFile}: ${hash}`);
+				continue;
+			}
+
+			// Use timestamp format compatible with Drizzle (milliseconds since epoch)
 			const timestamp = Date.now();
+
+			// Validate timestamp (should be a reasonable Unix timestamp in milliseconds)
+			if (timestamp < 1000000000000 || timestamp > 9999999999999) {
+				console.warn(`⚠️ Invalid timestamp format: ${timestamp}`);
+				continue;
+			}
 
 			// Insert migration record (simple insert since table should be empty)
 			try {
@@ -109,9 +150,13 @@ async function recordExistingMigrations(): Promise<void> {
 					INSERT INTO public.drizzle_migrations (hash, created_at) 
 					VALUES (${hash}, ${timestamp})
 				`;
-				console.log(`✅ Recorded migration: ${sqlFile}`);
+				console.log(`✅ Recorded migration: ${sqlFile} (hash: ${hash.substring(0, 8)}...)`);
 			} catch (error) {
-				console.warn(`⚠️ Could not record migration ${sqlFile}:`, error);
+				// Log structured error information for better debugging
+				const errorCode =
+					error && typeof error === 'object' && 'code' in error ? (error as any).code : 'UNKNOWN';
+				const errorMessage = error instanceof Error ? error.message : String(error);
+				console.warn(`⚠️ Could not record migration ${sqlFile} [${errorCode}]: ${errorMessage}`);
 			}
 		}
 
@@ -120,7 +165,14 @@ async function recordExistingMigrations(): Promise<void> {
 		console.error('❌ Failed to record existing migrations:', error);
 		throw error;
 	} finally {
-		await recordClient.end();
+		// Only close connection if we created it (not reusing existing one)
+		if (shouldCloseConnection) {
+			try {
+				await recordClient.end();
+			} catch (closeError) {
+				console.warn('⚠️ Warning: Could not close migration recording connection:', closeError);
+			}
+		}
 	}
 }
 

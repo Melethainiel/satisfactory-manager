@@ -640,23 +640,61 @@ export class GameDashboardService {
 		sites: GameDashboardData['sites'],
 		aggregated: GameDashboardData['aggregated']
 	): GameDashboardData['performance'] {
-		// Top producing sites by total production rate
+		// Top producing sites by energy productivity (items produced per MW consumed)
 		const topProducingSites = sites
-			.map((site) => ({
-				siteId: site.siteId,
-				siteName: site.siteName,
-				productionScore: site.totalProduction.reduce((sum, p) => sum + p.rate, 0)
-			}))
+			.map((site) => {
+				const totalItemsProduced = site.totalProduction.reduce((sum, p) => sum + p.rate, 0);
+
+				// Calculate productivity score based on site type
+				let productionScore: number;
+
+				if (site.powerProduction > 0 && site.powerConsumption === 0) {
+					// Power generation sites: use power output as score
+					productionScore = site.powerProduction;
+				} else if (site.powerConsumption > 0) {
+					// Production sites: items produced per MW consumed
+					productionScore = totalItemsProduced / site.powerConsumption;
+				} else if (totalItemsProduced > 0) {
+					// Sites with no power consumption but production (edge case)
+					productionScore = totalItemsProduced;
+				} else {
+					// No production or consumption
+					productionScore = 0;
+				}
+
+				return {
+					siteId: site.siteId,
+					siteName: site.siteName,
+					productionScore: Number(productionScore.toFixed(2))
+				};
+			})
 			.sort((a, b) => b.productionScore - a.productionScore)
 			.slice(0, 10);
 
-		// Power efficiency by site (production per power consumption)
+		// Energy productivity by site (meaningful energy efficiency)
 		const powerEfficiencyBySite = sites
-			.map((site) => ({
-				siteId: site.siteId,
-				siteName: site.siteName,
-				efficiency: site.powerConsumption > 0 ? site.powerProduction / site.powerConsumption : 0
-			}))
+			.map((site) => {
+				const totalItemsProduced = site.totalProduction.reduce((sum, p) => sum + p.rate, 0);
+
+				let efficiency: number;
+
+				if (site.powerProduction > 0 && site.powerConsumption === 0) {
+					// Power generation sites: energy production efficiency
+					efficiency = site.powerProduction;
+				} else if (site.powerConsumption > 0) {
+					// Production sites: energy productivity (items/MW)
+					efficiency = totalItemsProduced / site.powerConsumption;
+				} else {
+					// Sites with no power consumption
+					efficiency = totalItemsProduced;
+				}
+
+				return {
+					siteId: site.siteId,
+					siteName: site.siteName,
+					efficiency: Number(efficiency.toFixed(2))
+				};
+			})
 			.sort((a, b) => b.efficiency - a.efficiency);
 
 		// Bottlenecks - items with negative balance

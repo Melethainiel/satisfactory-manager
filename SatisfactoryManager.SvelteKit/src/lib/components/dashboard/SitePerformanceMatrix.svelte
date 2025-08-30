@@ -29,7 +29,7 @@
 					powerEfficiency: efficiencyData?.efficiency || 0,
 					rank: performanceData
 						? performance.topProducingSites.indexOf(performanceData) + 1
-						: sites.length
+						: sites.length + 1
 				};
 			})
 			.sort((a, b) => a.rank - b.rank);
@@ -43,6 +43,12 @@
 	function formatPower(mw: number): string {
 		if (mw >= 1000) return `${(mw / 1000).toFixed(1)} GW`;
 		return `${mw.toFixed(0)} MW`;
+	}
+
+	function formatProductivity(value: number): string {
+		if (value >= 1000) return `${(value / 1000).toFixed(1)}k`;
+		if (value >= 10) return value.toFixed(1);
+		return value.toFixed(2);
 	}
 
 	function getEfficiencyColor(efficiency: number): string {
@@ -95,7 +101,8 @@
 							<th class="w-16">{$t('dashboard.rank')}</th>
 							<th>{$t('dashboard.site_name')}</th>
 							<th class="text-center">{$t('dashboard.production_score')}</th>
-							<th class="text-center">{$t('dashboard.efficiency')}</th>
+							<th class="text-center">{$t('dashboard.building_efficiency')}</th>
+							<th class="text-center">{$t('dashboard.energy_productivity')}</th>
 							<th class="text-center">{$t('dashboard.power_balance')}</th>
 							<th class="text-center">{$t('dashboard.items_produced')}</th>
 							<th class="text-center">{$t('dashboard.instances')}</th>
@@ -139,7 +146,7 @@
 									</div>
 								</td>
 
-								<!-- Efficiency -->
+								<!-- Building Efficiency (Underclocking) -->
 								<td class="text-center">
 									<div class="flex flex-col items-center">
 										<span class="font-medium {getEfficiencyColor(site.averageEfficiency)}">
@@ -151,6 +158,18 @@
 												value={site.averageEfficiency}
 												max={100}
 											></progress>
+										</div>
+									</div>
+								</td>
+
+								<!-- Energy Productivity -->
+								<td class="text-center">
+									<div class="flex flex-col items-center">
+										<span class="font-medium text-accent">
+											{formatProductivity(site.powerEfficiency)}
+										</span>
+										<div class="text-xs text-base-content/70">
+											{site.powerConsumption > 0 ? 'items/MW' : 'MW'}
 										</div>
 									</div>
 								</td>

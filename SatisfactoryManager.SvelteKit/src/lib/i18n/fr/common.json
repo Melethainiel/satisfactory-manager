@@ -391,6 +391,8 @@
 		"total_production": "Production totale",
 		"power_balance": "Balance énergétique",
 		"efficiency": "Efficacité moyenne",
+		"building_efficiency": "Efficacité des bâtiments",
+		"energy_productivity": "Productivité énergétique",
 		"factory_status": "État de l'usine",
 		"unique_items": "objets uniques",
 		"sites": "sites",

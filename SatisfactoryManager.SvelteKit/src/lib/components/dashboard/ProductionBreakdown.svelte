@@ -100,8 +100,14 @@
 					bValue = Math.max(b.totalProduction, b.totalConsumption);
 					break;
 				case 'siteCount':
-					aValue = a.productionSites.length + a.consumptionSites.length;
-					bValue = b.productionSites.length + b.consumptionSites.length;
+					aValue = new Set([
+						...a.productionSites.map(s => s.siteId),
+						...a.consumptionSites.map(s => s.siteId)
+					]).size;
+					bValue = new Set([
+						...b.productionSites.map(s => s.siteId),
+						...b.consumptionSites.map(s => s.siteId)
+					]).size;
 					break;
 				default:
 					aValue = 0;
@@ -258,7 +264,10 @@
 							<!-- Sites Count -->
 							<td class="text-center">
 								<span class="text-xs">
-									{item.productionSites.length + item.consumptionSites.length}
+									{new Set([
+										...item.productionSites.map(s => s.siteId),
+										...item.consumptionSites.map(s => s.siteId)
+									]).size}
 								</span>
 							</td>
 

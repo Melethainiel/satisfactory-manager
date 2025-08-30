@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { getGameState } from '$lib/states/gameState.svelte';
@@ -14,10 +14,10 @@
 	let error = $state<string | null>(null);
 
 	// Get the game ID from the route parameters
-	const gameId = $page.params.id;
+	const gameId = page.params.id;
 
 	// Get siteId from URL search parameters
-	let siteIdFromUrl = $derived($page.url.searchParams.get('siteId'));
+	let siteIdFromUrl = $derived(page.url.searchParams.get('siteId'));
 
 	onMount(async () => {
 		// Wait for authentication to finish loading before checking auth state

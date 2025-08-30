@@ -29,7 +29,7 @@
 					powerEfficiency: efficiencyData?.efficiency || 0,
 					rank: performanceData
 						? performance.topProducingSites.indexOf(performanceData) + 1
-						: sites.length
+						: sites.length + 1
 				};
 			})
 			.sort((a, b) => a.rank - b.rank);
@@ -43,6 +43,30 @@
 	function formatPower(mw: number): string {
 		if (mw >= 1000) return `${(mw / 1000).toFixed(1)} GW`;
 		return `${mw.toFixed(0)} MW`;
+	}
+
+	function formatProductivity(value: number): string {
+		if (value >= 1000) return `${(value / 1000).toFixed(1)}k`;
+		if (value >= 10) return value.toFixed(1);
+		return value.toFixed(2);
+	}
+
+	function formatEnergyBalance(balance: number): string {
+		const absBalance = Math.abs(balance);
+		if (absBalance >= 1000) {
+			return `${balance >= 0 ? '+' : ''}${(balance / 1000).toFixed(1)} GW`;
+		}
+		if (absBalance < 0.1) {
+			return '±0 MW';
+		}
+		return `${balance >= 0 ? '+' : ''}${balance.toFixed(1)} MW`;
+	}
+
+	function getEnergyBalanceColor(balance: number): string {
+		if (balance > 50) return 'text-success';
+		if (balance > 0) return 'text-info';
+		if (balance > -50) return 'text-warning';
+		return 'text-error';
 	}
 
 	function getEfficiencyColor(efficiency: number): string {
@@ -95,7 +119,8 @@
 							<th class="w-16">{$t('dashboard.rank')}</th>
 							<th>{$t('dashboard.site_name')}</th>
 							<th class="text-center">{$t('dashboard.production_score')}</th>
-							<th class="text-center">{$t('dashboard.efficiency')}</th>
+							<th class="text-center">{$t('dashboard.energy_balance')}</th>
+							<th class="text-center">{$t('dashboard.energy_productivity')}</th>
 							<th class="text-center">{$t('dashboard.power_balance')}</th>
 							<th class="text-center">{$t('dashboard.items_produced')}</th>
 							<th class="text-center">{$t('dashboard.instances')}</th>
@@ -139,18 +164,26 @@
 									</div>
 								</td>
 
-								<!-- Efficiency -->
+								<!-- Energy Balance -->
 								<td class="text-center">
 									<div class="flex flex-col items-center">
-										<span class="font-medium {getEfficiencyColor(site.averageEfficiency)}">
-											{site.averageEfficiency.toFixed(1)}%
+										<span class="font-medium {getEnergyBalanceColor(site.powerProduction - site.powerConsumption)}">
+											{formatEnergyBalance(site.powerProduction - site.powerConsumption)}
 										</span>
-										<div class="mt-1 w-16">
-											<progress
-												class="progress-sm progress progress-info"
-												value={site.averageEfficiency}
-												max={100}
-											></progress>
+										<div class="text-xs text-base-content/70">
+											{site.powerProduction - site.powerConsumption >= 0 ? 'surplus' : 'déficit'}
+										</div>
+									</div>
+								</td>
+
+								<!-- Energy Productivity -->
+								<td class="text-center">
+									<div class="flex flex-col items-center">
+										<span class="font-medium text-accent">
+											{formatProductivity(site.powerEfficiency)}
+										</span>
+										<div class="text-xs text-base-content/70">
+											{site.powerConsumption > 0 ? 'items/MW' : 'MW'}
 										</div>
 									</div>
 								</td>
@@ -201,17 +234,6 @@
 							({formatRate(performance.topProducingSites[0].productionScore)}
 							{$t('dashboard.production_score')})
 						</p>
-						{#if enrichedSites.length > 1}
-							{@const avgEfficiency =
-								enrichedSites.reduce((sum, site) => sum + site.averageEfficiency, 0) /
-								enrichedSites.length}
-							<p>
-								{$t('dashboard.average_efficiency')}:
-								<span class="font-medium {getEfficiencyColor(avgEfficiency)}">
-									{avgEfficiency.toFixed(1)}%
-								</span>
-							</p>
-						{/if}
 					</div>
 				</div>
 			{/if}

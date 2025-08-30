@@ -210,65 +210,79 @@ export class GameDashboardService {
 		);
 
 		// Batch fetch products, ingredients, and item data
-		const [productsData, ingredientsData, extractedItemsData, waterItemData] = await Promise.all([
-			// Recipe products
-			recipeVersionIds.length > 0
-				? db
-						.select({
-							recipeVersionId: recipeProducts.recipeVersionId,
-							itemId: recipeProducts.itemId,
-							count: recipeProducts.count,
-							itemName: items.displayName
-						})
-						.from(recipeProducts)
-						.innerJoin(items, eq(recipeProducts.itemId, items.id))
-						.where(inArray(recipeProducts.recipeVersionId, recipeVersionIds))
-				: [],
+		const [productsData, ingredientsData, extractedItemsData, fuelItemsData, waterItemData] =
+			await Promise.all([
+				// Recipe products
+				recipeVersionIds.length > 0
+					? db
+							.select({
+								recipeVersionId: recipeProducts.recipeVersionId,
+								itemId: recipeProducts.itemId,
+								count: recipeProducts.count,
+								itemName: items.displayName
+							})
+							.from(recipeProducts)
+							.innerJoin(items, eq(recipeProducts.itemId, items.id))
+							.where(inArray(recipeProducts.recipeVersionId, recipeVersionIds))
+					: [],
 
-			// Recipe ingredients
-			recipeVersionIds.length > 0
-				? db
-						.select({
-							recipeVersionId: recipeIngredients.recipeVersionId,
-							itemId: recipeIngredients.itemId,
-							count: recipeIngredients.count,
-							itemName: items.displayName
-						})
-						.from(recipeIngredients)
-						.innerJoin(items, eq(recipeIngredients.itemId, items.id))
-						.where(inArray(recipeIngredients.recipeVersionId, recipeVersionIds))
-				: [],
+				// Recipe ingredients
+				recipeVersionIds.length > 0
+					? db
+							.select({
+								recipeVersionId: recipeIngredients.recipeVersionId,
+								itemId: recipeIngredients.itemId,
+								count: recipeIngredients.count,
+								itemName: items.displayName
+							})
+							.from(recipeIngredients)
+							.innerJoin(items, eq(recipeIngredients.itemId, items.id))
+							.where(inArray(recipeIngredients.recipeVersionId, recipeVersionIds))
+					: [],
 
-			// Extracted items
-			extractedItemVersionIds.length > 0
-				? db
-						.select({
-							id: itemVersions.id,
-							itemId: itemVersions.itemId,
-							itemName: items.displayName
-						})
-						.from(itemVersions)
-						.innerJoin(items, eq(itemVersions.itemId, items.id))
-						.where(inArray(itemVersions.id, extractedItemVersionIds))
-				: [],
+				// Extracted items
+				extractedItemVersionIds.length > 0
+					? db
+							.select({
+								id: itemVersions.id,
+								itemId: itemVersions.itemId,
+								itemName: items.displayName
+							})
+							.from(itemVersions)
+							.innerJoin(items, eq(itemVersions.itemId, items.id))
+							.where(inArray(itemVersions.id, extractedItemVersionIds))
+					: [],
 
-			// Water item for generators
-			needsWaterItem
-				? db
-						.select({
-							id: items.id,
-							itemName: items.displayName
-						})
-						.from(items)
-						.leftJoin(modules, eq(items.moduleId, modules.id))
-						.leftJoin(
-							moduleGames,
-							and(eq(moduleGames.moduleId, modules.id), eq(moduleGames.gameId, gameId))
-						)
-						.where(eq(items.className, 'Desc_Water_C'))
-						.limit(1)
-				: []
-		]);
+				// Fuel items for generators
+				fuelItemVersionIds.length > 0
+					? db
+							.select({
+								id: itemVersions.id,
+								itemId: itemVersions.itemId,
+								itemName: items.displayName
+							})
+							.from(itemVersions)
+							.innerJoin(items, eq(itemVersions.itemId, items.id))
+							.where(inArray(itemVersions.id, fuelItemVersionIds))
+					: [],
+
+				// Water item for generators
+				needsWaterItem
+					? db
+							.select({
+								id: items.id,
+								itemName: items.displayName
+							})
+							.from(items)
+							.leftJoin(modules, eq(items.moduleId, modules.id))
+							.leftJoin(
+								moduleGames,
+								and(eq(moduleGames.moduleId, modules.id), eq(moduleGames.gameId, gameId))
+							)
+							.where(eq(items.className, 'Desc_Water_C'))
+							.limit(1)
+					: []
+			]);
 
 		// Create lookup maps
 		const productsByRecipeVersion = new Map<
@@ -280,6 +294,7 @@ export class GameDashboardService {
 			Array<{ itemId: string; itemName: string; count: number }>
 		>();
 		const extractedItemsMap = new Map<string, { itemId: string; itemName: string }>();
+		const fuelItemsMap = new Map<string, { itemId: string; itemName: string }>();
 		const waterItem = waterItemData.length > 0 ? waterItemData[0] : null;
 
 		productsData.forEach((p) => {
@@ -311,6 +326,13 @@ export class GameDashboardService {
 			});
 		});
 
+		fuelItemsData.forEach((item) => {
+			fuelItemsMap.set(item.id, {
+				itemId: item.itemId,
+				itemName: item.itemName
+			});
+		});
+
 		// Transform the data into SiteProductionData
 		return productionQuery.map((row) => {
 			let products: Array<{ itemId: string; itemName: string; count: number }> = [];
@@ -336,13 +358,14 @@ export class GameDashboardService {
 				// Generator-based production - fuel as ingredient
 				const fuelEnergyValueMJ = parseFloat(row.fuelEnergyValue?.toString() || '0') * 1000; // Convert GJ to MJ
 				const buildingEnergyProductionMW = parseFloat(row.powerProduction?.toString() || '0');
+				const fuelItem = fuelItemsMap.get(row.fuelItemVersionId);
 
-				if (fuelEnergyValueMJ > 0 && buildingEnergyProductionMW > 0) {
+				if (fuelEnergyValueMJ > 0 && buildingEnergyProductionMW > 0 && fuelItem) {
 					// Calculate fuel consumption rate
 					const fuelConsumptionPerBuilding = 60 / (fuelEnergyValueMJ / buildingEnergyProductionMW);
 					ingredients.push({
-						itemId: row.fuelItemVersionId,
-						itemName: 'Fuel', // Will be updated with actual name if needed
+						itemId: fuelItem.itemId,
+						itemName: fuelItem.itemName,
 						count: fuelConsumptionPerBuilding
 					});
 				}
@@ -394,8 +417,7 @@ export class GameDashboardService {
 
 		if (instance.recipeVersionId) {
 			// Recipe-based production
-			const { manufacturingDuration } = instance;
-			const rate = (buildingCount * efficiencyRatio) / manufacturingDuration;
+			const rate = buildingCount * efficiencyRatio;
 
 			production = instance.products.map((p) => ({
 				itemId: p.itemId,
@@ -640,23 +662,61 @@ export class GameDashboardService {
 		sites: GameDashboardData['sites'],
 		aggregated: GameDashboardData['aggregated']
 	): GameDashboardData['performance'] {
-		// Top producing sites by total production rate
+		// Top producing sites by energy productivity (items produced per MW consumed)
 		const topProducingSites = sites
-			.map((site) => ({
-				siteId: site.siteId,
-				siteName: site.siteName,
-				productionScore: site.totalProduction.reduce((sum, p) => sum + p.rate, 0)
-			}))
+			.map((site) => {
+				const totalItemsProduced = site.totalProduction.reduce((sum, p) => sum + p.rate, 0);
+
+				// Calculate productivity score based on site type
+				let productionScore: number;
+
+				if (site.powerProduction > 0 && site.powerConsumption === 0) {
+					// Power generation sites: use power output as score
+					productionScore = site.powerProduction;
+				} else if (site.powerConsumption > 0) {
+					// Production sites: items produced per MW consumed
+					productionScore = totalItemsProduced / site.powerConsumption;
+				} else if (totalItemsProduced > 0) {
+					// Sites with no power consumption but production (edge case)
+					productionScore = totalItemsProduced;
+				} else {
+					// No production or consumption
+					productionScore = 0;
+				}
+
+				return {
+					siteId: site.siteId,
+					siteName: site.siteName,
+					productionScore: Number(productionScore.toFixed(2))
+				};
+			})
 			.sort((a, b) => b.productionScore - a.productionScore)
 			.slice(0, 10);
 
-		// Power efficiency by site (production per power consumption)
+		// Energy productivity by site (meaningful energy efficiency)
 		const powerEfficiencyBySite = sites
-			.map((site) => ({
-				siteId: site.siteId,
-				siteName: site.siteName,
-				efficiency: site.powerConsumption > 0 ? site.powerProduction / site.powerConsumption : 0
-			}))
+			.map((site) => {
+				const totalItemsProduced = site.totalProduction.reduce((sum, p) => sum + p.rate, 0);
+
+				let efficiency: number;
+
+				if (site.powerProduction > 0 && site.powerConsumption === 0) {
+					// Power generation sites: energy production efficiency
+					efficiency = site.powerProduction;
+				} else if (site.powerConsumption > 0) {
+					// Production sites: energy productivity (items/MW)
+					efficiency = totalItemsProduced / site.powerConsumption;
+				} else {
+					// Sites with no power consumption
+					efficiency = totalItemsProduced;
+				}
+
+				return {
+					siteId: site.siteId,
+					siteName: site.siteName,
+					efficiency: Number(efficiency.toFixed(2))
+				};
+			})
 			.sort((a, b) => b.efficiency - a.efficiency);
 
 		// Bottlenecks - items with negative balance
@@ -704,15 +764,40 @@ export class GameDashboardService {
 			}
 		}
 
-		// Fetch and calculate
-		const gameData = await this.fetchGameProductionData(gameId);
-		const sites = this.aggregateSiteData(gameData);
-		const aggregated = this.aggregateGameData(sites);
-		const performance = this.calculatePerformanceMetrics(sites, aggregated);
+		// Fetch production data and all sites
+		const [gameData, allSites] = await Promise.all([
+			this.fetchGameProductionData(gameId),
+			db.select({ id: sites.id, name: sites.name }).from(sites).where(eq(sites.gameId, gameId))
+		]);
+
+		// Aggregate site data from production instances
+		const sitesWithProduction = this.aggregateSiteData(gameData);
+
+		// Include all sites, even those without production instances
+		const sitesWithProductionMap = new Map(sitesWithProduction.map((site) => [site.siteId, site]));
+		const allSitesWithData = allSites.map((site) => {
+			const productionSite = sitesWithProductionMap.get(site.id);
+			return (
+				productionSite || {
+					siteId: site.id,
+					siteName: site.name,
+					totalProduction: [],
+					totalConsumption: [],
+					powerConsumption: 0,
+					powerProduction: 0,
+					instanceCount: 0,
+					buildingCount: 0,
+					averageEfficiency: 0
+				}
+			);
+		});
+
+		const aggregated = this.aggregateGameData(allSitesWithData);
+		const performance = this.calculatePerformanceMetrics(allSitesWithData, aggregated);
 
 		const dashboardData: GameDashboardData = {
 			gameId,
-			sites,
+			sites: allSitesWithData,
 			aggregated,
 			performance,
 			lastUpdated: new Date()

@@ -16,13 +16,6 @@
 		return { status: 'balanced', color: 'text-info' };
 	});
 
-	let efficiencyStatus = $derived(() => {
-		const efficiency = data.aggregated.averageEfficiency;
-		if (efficiency >= 95) return { status: 'excellent', color: 'text-success' };
-		if (efficiency >= 80) return { status: 'good', color: 'text-info' };
-		if (efficiency >= 60) return { status: 'fair', color: 'text-warning' };
-		return { status: 'poor', color: 'text-error' };
-	});
 
 	// Format large numbers
 	function formatNumber(num: number): string {
@@ -38,7 +31,7 @@
 	}
 </script>
 
-<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 	<!-- Total Production -->
 	<div class="stat rounded-lg border border-base-300 bg-base-100 p-4 shadow-sm">
 		<div class="stat-figure text-primary">
@@ -79,27 +72,6 @@
 		</div>
 	</div>
 
-	<!-- Efficiency -->
-	<div class="stat rounded-lg border border-base-300 bg-base-100 p-4 shadow-sm">
-		<div class="stat-figure {efficiencyStatus().color}">
-			<div
-				class="radial-progress {efficiencyStatus().color}"
-				style="--value:{data.aggregated.averageEfficiency};"
-			>
-				{data.aggregated.averageEfficiency.toFixed(0)}%
-			</div>
-		</div>
-		<div class="stat-title text-sm">{$t('dashboard.efficiency')}</div>
-		<div class="stat-value text-2xl {efficiencyStatus().color}">
-			{$t(`dashboard.efficiency_status.${efficiencyStatus().status}`)}
-		</div>
-		<div class="stat-desc text-xs">
-			{data.aggregated.totalInstances}
-			{$t('dashboard.instances')} •
-			{data.aggregated.totalBuildings}
-			{$t('dashboard.buildings')}
-		</div>
-	</div>
 
 	<!-- Factory Status -->
 	<div class="stat rounded-lg border border-base-300 bg-base-100 p-4 shadow-sm">

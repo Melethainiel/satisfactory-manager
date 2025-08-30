@@ -212,77 +212,77 @@ export class GameDashboardService {
 		// Batch fetch products, ingredients, and item data
 		const [productsData, ingredientsData, extractedItemsData, fuelItemsData, waterItemData] =
 			await Promise.all([
-			// Recipe products
-			recipeVersionIds.length > 0
-				? db
-						.select({
-							recipeVersionId: recipeProducts.recipeVersionId,
-							itemId: recipeProducts.itemId,
-							count: recipeProducts.count,
-							itemName: items.displayName
-						})
-						.from(recipeProducts)
-						.innerJoin(items, eq(recipeProducts.itemId, items.id))
-						.where(inArray(recipeProducts.recipeVersionId, recipeVersionIds))
-				: [],
+				// Recipe products
+				recipeVersionIds.length > 0
+					? db
+							.select({
+								recipeVersionId: recipeProducts.recipeVersionId,
+								itemId: recipeProducts.itemId,
+								count: recipeProducts.count,
+								itemName: items.displayName
+							})
+							.from(recipeProducts)
+							.innerJoin(items, eq(recipeProducts.itemId, items.id))
+							.where(inArray(recipeProducts.recipeVersionId, recipeVersionIds))
+					: [],
 
-			// Recipe ingredients
-			recipeVersionIds.length > 0
-				? db
-						.select({
-							recipeVersionId: recipeIngredients.recipeVersionId,
-							itemId: recipeIngredients.itemId,
-							count: recipeIngredients.count,
-							itemName: items.displayName
-						})
-						.from(recipeIngredients)
-						.innerJoin(items, eq(recipeIngredients.itemId, items.id))
-						.where(inArray(recipeIngredients.recipeVersionId, recipeVersionIds))
-				: [],
+				// Recipe ingredients
+				recipeVersionIds.length > 0
+					? db
+							.select({
+								recipeVersionId: recipeIngredients.recipeVersionId,
+								itemId: recipeIngredients.itemId,
+								count: recipeIngredients.count,
+								itemName: items.displayName
+							})
+							.from(recipeIngredients)
+							.innerJoin(items, eq(recipeIngredients.itemId, items.id))
+							.where(inArray(recipeIngredients.recipeVersionId, recipeVersionIds))
+					: [],
 
-			// Extracted items
-			extractedItemVersionIds.length > 0
-				? db
-						.select({
-							id: itemVersions.id,
-							itemId: itemVersions.itemId,
-							itemName: items.displayName
-						})
-						.from(itemVersions)
-						.innerJoin(items, eq(itemVersions.itemId, items.id))
-						.where(inArray(itemVersions.id, extractedItemVersionIds))
-				: [],
+				// Extracted items
+				extractedItemVersionIds.length > 0
+					? db
+							.select({
+								id: itemVersions.id,
+								itemId: itemVersions.itemId,
+								itemName: items.displayName
+							})
+							.from(itemVersions)
+							.innerJoin(items, eq(itemVersions.itemId, items.id))
+							.where(inArray(itemVersions.id, extractedItemVersionIds))
+					: [],
 
-			// Fuel items for generators
-			fuelItemVersionIds.length > 0
-				? db
-						.select({
-							id: itemVersions.id,
-							itemId: itemVersions.itemId,
-							itemName: items.displayName
-						})
-						.from(itemVersions)
-						.innerJoin(items, eq(itemVersions.itemId, items.id))
-						.where(inArray(itemVersions.id, fuelItemVersionIds))
-				: [],
+				// Fuel items for generators
+				fuelItemVersionIds.length > 0
+					? db
+							.select({
+								id: itemVersions.id,
+								itemId: itemVersions.itemId,
+								itemName: items.displayName
+							})
+							.from(itemVersions)
+							.innerJoin(items, eq(itemVersions.itemId, items.id))
+							.where(inArray(itemVersions.id, fuelItemVersionIds))
+					: [],
 
-			// Water item for generators
-			needsWaterItem
-				? db
-						.select({
-							id: items.id,
-							itemName: items.displayName
-						})
-						.from(items)
-						.leftJoin(modules, eq(items.moduleId, modules.id))
-						.leftJoin(
-							moduleGames,
-							and(eq(moduleGames.moduleId, modules.id), eq(moduleGames.gameId, gameId))
-						)
-						.where(eq(items.className, 'Desc_Water_C'))
-						.limit(1)
-				: []
-		]);
+				// Water item for generators
+				needsWaterItem
+					? db
+							.select({
+								id: items.id,
+								itemName: items.displayName
+							})
+							.from(items)
+							.leftJoin(modules, eq(items.moduleId, modules.id))
+							.leftJoin(
+								moduleGames,
+								and(eq(moduleGames.moduleId, modules.id), eq(moduleGames.gameId, gameId))
+							)
+							.where(eq(items.className, 'Desc_Water_C'))
+							.limit(1)
+					: []
+			]);
 
 		// Create lookup maps
 		const productsByRecipeVersion = new Map<
@@ -417,8 +417,7 @@ export class GameDashboardService {
 
 		if (instance.recipeVersionId) {
 			// Recipe-based production
-			const { manufacturingDuration } = instance;
-			const rate = (buildingCount * efficiencyRatio) / manufacturingDuration;
+			const rate = buildingCount * efficiencyRatio;
 
 			production = instance.products.map((p) => ({
 				itemId: p.itemId,
@@ -765,15 +764,40 @@ export class GameDashboardService {
 			}
 		}
 
-		// Fetch and calculate
-		const gameData = await this.fetchGameProductionData(gameId);
-		const sites = this.aggregateSiteData(gameData);
-		const aggregated = this.aggregateGameData(sites);
-		const performance = this.calculatePerformanceMetrics(sites, aggregated);
+		// Fetch production data and all sites
+		const [gameData, allSites] = await Promise.all([
+			this.fetchGameProductionData(gameId),
+			db.select({ id: sites.id, name: sites.name }).from(sites).where(eq(sites.gameId, gameId))
+		]);
+
+		// Aggregate site data from production instances
+		const sitesWithProduction = this.aggregateSiteData(gameData);
+
+		// Include all sites, even those without production instances
+		const sitesWithProductionMap = new Map(sitesWithProduction.map((site) => [site.siteId, site]));
+		const allSitesWithData = allSites.map((site) => {
+			const productionSite = sitesWithProductionMap.get(site.id);
+			return (
+				productionSite || {
+					siteId: site.id,
+					siteName: site.name,
+					totalProduction: [],
+					totalConsumption: [],
+					powerConsumption: 0,
+					powerProduction: 0,
+					instanceCount: 0,
+					buildingCount: 0,
+					averageEfficiency: 0
+				}
+			);
+		});
+
+		const aggregated = this.aggregateGameData(allSitesWithData);
+		const performance = this.calculatePerformanceMetrics(allSitesWithData, aggregated);
 
 		const dashboardData: GameDashboardData = {
 			gameId,
-			sites,
+			sites: allSitesWithData,
 			aggregated,
 			performance,
 			lastUpdated: new Date()

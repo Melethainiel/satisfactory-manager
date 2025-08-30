@@ -62,6 +62,11 @@
 				const siteExists = gameState.gameSites.some((site) => site.id === siteIdFromUrl);
 				if (siteExists) {
 					gameState.selectSite(siteIdFromUrl, false); // false to avoid updating URL again
+				} else {
+					// Clean invalid siteId from URL
+					const url = new URL(window.location.href);
+					url.searchParams.delete('siteId');
+					window.history.replaceState({}, '', url.toString());
 				}
 			}
 		} catch (e: any) {

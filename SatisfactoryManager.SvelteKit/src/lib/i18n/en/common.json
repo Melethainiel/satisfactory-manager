@@ -392,6 +392,7 @@
 		"power_balance": "Power Balance",
 		"efficiency": "Average Efficiency",
 		"building_efficiency": "Building Efficiency",
+		"energy_balance": "Energy Balance",
 		"energy_productivity": "Energy Productivity",
 		"factory_status": "Factory Status",
 		"unique_items": "unique items",

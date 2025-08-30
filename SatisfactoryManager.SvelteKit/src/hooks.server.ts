@@ -3,6 +3,7 @@ import { createRemoteJWKSet, jwtVerify, type JWTPayload } from 'jose';
 import { locale } from 'svelte-i18n';
 import { getAzureB2CConfig } from '$lib/config/auth.config.js';
 import { getServerEnvVar } from '$lib/config/env.server.js';
+import { getDatabaseInitialization } from '$lib/server/db/index.js';
 
 // Initialize authentication configuration asynchronously
 let authConfigPromise: Promise<{
@@ -95,8 +96,63 @@ async function verifyBearer(token: string): Promise<AuthUserLocals | null> {
 // Initialize WebSocket server once
 let wsInitialized = false;
 
+// Initialize database once with atomic Promise-based approach
+let dbInitPromise: Promise<void> | null = null;
+
+async function initializeDatabaseOnce(): Promise<void> {
+	if (dbInitPromise) return dbInitPromise;
+
+	dbInitPromise = (async () => {
+		console.log('🚀 Initializing database at server startup...');
+		try {
+			await getDatabaseInitialization();
+			console.log('✅ Database initialization completed successfully');
+		} catch (error) {
+			console.error('❌ Database initialization failed at startup:', error);
+
+			// Determine if this is a critical error that should fail fast
+			const isCriticalError =
+				error instanceof Error &&
+				(error.message.includes('ECONNREFUSED') ||
+					error.message.includes('authentication failed') ||
+					error.message.includes('database does not exist'));
+
+			if (isCriticalError) {
+				console.error('💀 Critical database error detected - application cannot continue');
+				// Reset the promise to allow retry on next request
+				dbInitPromise = null;
+				throw error;
+			} else {
+				console.warn('⚠️ Non-critical database error - application will continue');
+			}
+		}
+	})();
+
+	return dbInitPromise;
+}
+
 export const handle: Handle = async ({ event, resolve }) => {
 	const urlPath = event.url.pathname;
+
+	// Initialize database at first HTTP hit (atomic with Promise)
+	try {
+		await initializeDatabaseOnce();
+	} catch (error) {
+		// For critical database errors, return 503 Service Unavailable
+		if (urlPath.startsWith('/api')) {
+			return new Response(
+				JSON.stringify({
+					error: 'Service temporarily unavailable',
+					message: 'Database initialization failed'
+				}),
+				{
+					status: 503,
+					headers: { 'content-type': 'application/json' }
+				}
+			);
+		}
+		// For non-API routes, let the application continue (may render error pages)
+	}
 
 	// Initialize WebSocket server once per process
 	if (!wsInitialized) {
@@ -116,7 +172,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 	// Handle authentication
 	let authHeader =
 		event.request.headers.get('authorization') || event.request.headers.get('Authorization');
-	
+
 	// For SSE endpoints, also check token in URL parameters (since EventSource cannot send custom headers)
 	if (!authHeader && event.url.pathname === '/api/events') {
 		const tokenParam = event.url.searchParams.get('token');

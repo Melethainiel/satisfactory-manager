@@ -202,7 +202,7 @@ export interface GameState {
 	deleteGameSite: (gameId: string, siteId: string) => Promise<void>;
 	gameSites: GameSite[];
 	selectedSiteId: string | null;
-	selectSite: (siteId: string | null) => void;
+	selectSite: (siteId: string | null, updateUrl?: boolean) => void;
 	// Production management - consolidated
 	siteProductionSummary: ProductionSummary | null;
 	loadSiteProductionSummary: (siteId: string, fresh?: boolean) => Promise<void>;
@@ -555,8 +555,18 @@ class GameStateClass implements GameState {
 		}
 	}
 
-	selectSite(siteId: string | null) {
+	selectSite(siteId: string | null, updateUrl: boolean = true) {
 		this.selectedSiteId = siteId;
+
+		if (updateUrl && typeof window !== 'undefined') {
+			const url = new URL(window.location.href);
+			if (siteId) {
+				url.searchParams.set('siteId', siteId);
+			} else {
+				url.searchParams.delete('siteId');
+			}
+			window.history.replaceState({}, '', url.toString());
+		}
 	}
 
 	async loadGameSites(gameId: string) {

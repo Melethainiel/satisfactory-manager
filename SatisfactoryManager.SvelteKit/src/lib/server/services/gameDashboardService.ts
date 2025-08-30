@@ -210,7 +210,8 @@ export class GameDashboardService {
 		);
 
 		// Batch fetch products, ingredients, and item data
-		const [productsData, ingredientsData, extractedItemsData, waterItemData] = await Promise.all([
+		const [productsData, ingredientsData, extractedItemsData, fuelItemsData, waterItemData] =
+			await Promise.all([
 			// Recipe products
 			recipeVersionIds.length > 0
 				? db
@@ -252,6 +253,19 @@ export class GameDashboardService {
 						.where(inArray(itemVersions.id, extractedItemVersionIds))
 				: [],
 
+			// Fuel items for generators
+			fuelItemVersionIds.length > 0
+				? db
+						.select({
+							id: itemVersions.id,
+							itemId: itemVersions.itemId,
+							itemName: items.displayName
+						})
+						.from(itemVersions)
+						.innerJoin(items, eq(itemVersions.itemId, items.id))
+						.where(inArray(itemVersions.id, fuelItemVersionIds))
+				: [],
+
 			// Water item for generators
 			needsWaterItem
 				? db
@@ -280,6 +294,7 @@ export class GameDashboardService {
 			Array<{ itemId: string; itemName: string; count: number }>
 		>();
 		const extractedItemsMap = new Map<string, { itemId: string; itemName: string }>();
+		const fuelItemsMap = new Map<string, { itemId: string; itemName: string }>();
 		const waterItem = waterItemData.length > 0 ? waterItemData[0] : null;
 
 		productsData.forEach((p) => {
@@ -311,6 +326,13 @@ export class GameDashboardService {
 			});
 		});
 
+		fuelItemsData.forEach((item) => {
+			fuelItemsMap.set(item.id, {
+				itemId: item.itemId,
+				itemName: item.itemName
+			});
+		});
+
 		// Transform the data into SiteProductionData
 		return productionQuery.map((row) => {
 			let products: Array<{ itemId: string; itemName: string; count: number }> = [];
@@ -336,13 +358,14 @@ export class GameDashboardService {
 				// Generator-based production - fuel as ingredient
 				const fuelEnergyValueMJ = parseFloat(row.fuelEnergyValue?.toString() || '0') * 1000; // Convert GJ to MJ
 				const buildingEnergyProductionMW = parseFloat(row.powerProduction?.toString() || '0');
+				const fuelItem = fuelItemsMap.get(row.fuelItemVersionId);
 
-				if (fuelEnergyValueMJ > 0 && buildingEnergyProductionMW > 0) {
+				if (fuelEnergyValueMJ > 0 && buildingEnergyProductionMW > 0 && fuelItem) {
 					// Calculate fuel consumption rate
 					const fuelConsumptionPerBuilding = 60 / (fuelEnergyValueMJ / buildingEnergyProductionMW);
 					ingredients.push({
-						itemId: row.fuelItemVersionId,
-						itemName: 'Fuel', // Will be updated with actual name if needed
+						itemId: fuelItem.itemId,
+						itemName: fuelItem.itemName,
 						count: fuelConsumptionPerBuilding
 					});
 				}

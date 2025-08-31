@@ -2,6 +2,7 @@
 	import { getAuthState } from '$lib/states/authState.svelte';
 	import { getGameState } from '$lib/states/gameState.svelte';
 	import { t } from '$lib/i18n';
+	import { apiService } from '$lib/services/apiService';
 
 	interface ModuleVersion {
 		id: string;
@@ -42,20 +43,13 @@
 	let showImportDetails = $state<Record<string, boolean>>({});
 
 	async function loadVersions() {
-		if (!authState.apiFetch) return;
+		if (!authState.isAuthenticated) return;
 
 		isLoading = true;
 		error = null;
 
 		try {
-			const res = await authState.apiFetch(`/api/modules/${module.id}/versions`);
-
-			if (!res.ok) {
-				const errorData = await res.json();
-				throw new Error(errorData.error || `Failed to load versions (${res.status})`);
-			}
-
-			versions = await res.json();
+			versions = await apiService.get<ModuleVersion[]>(`/api/modules/${module.id}/versions`);
 			// Load content status for all versions
 			await loadVersionsContentStatus();
 		} catch (e: unknown) {
@@ -66,18 +60,11 @@
 	}
 
 	async function loadVersionsContentStatus() {
-		if (!authState.apiFetch || versions.length === 0) return;
+		if (!authState.isAuthenticated || versions.length === 0) return;
 
 		try {
 			// Use batch endpoint for better performance
-			const res = await authState.apiFetch(`/api/modules/${module.id}/versions/content-status`);
-
-			if (!res.ok) {
-				console.warn('Failed to load batch content status:', res.status, res.statusText);
-				return;
-			}
-
-			const batchData = await res.json();
+			const batchData = await apiService.get(`/api/modules/${module.id}/versions/content-status`, { showErrorNotification: false });
 
 			if (batchData.contentStatus) {
 				// Update the status record with batch results
@@ -92,23 +79,21 @@
 
 	// Fallback method for individual status requests (kept for reliability)
 	async function loadVersionsContentStatusIndividual() {
-		if (!authState.apiFetch || versions.length === 0) return;
+		if (!authState.isAuthenticated || versions.length === 0) return;
 
 		try {
 			// Load content status for all versions in parallel
 			const statusPromises = versions.map(async (version) => {
 				try {
-					const res = await authState.apiFetch(
-						`/api/modules/${module.id}/versions/${version.id}/content-status`
+					const statusData = await apiService.get(
+						`/api/modules/${module.id}/versions/${version.id}/content-status`,
+						{ showErrorNotification: false }
 					);
-					if (res.ok) {
-						const statusData = await res.json();
-						return {
-							versionId: version.id,
-							hasContent: statusData.hasContent,
-							canImport: statusData.canImport
-						};
-					}
+					return {
+						versionId: version.id,
+						hasContent: statusData.hasContent,
+						canImport: statusData.canImport
+					};
 				} catch (error) {
 					console.warn(`Failed to load content status for version ${version.id}:`, error);
 				}
@@ -136,22 +121,13 @@
 	}
 
 	async function syncFromGitHub() {
-		if (!authState.apiFetch || !module.githubRepo) return;
+		if (!authState.isAuthenticated || !module.githubRepo) return;
 
 		isSyncing = true;
 		error = null;
 
 		try {
-			const res = await authState.apiFetch(`/api/modules/${module.id}/sync-versions`, {
-				method: 'POST'
-			});
-
-			if (!res.ok) {
-				const errorData = await res.json();
-				throw new Error(errorData.error || `Failed to sync versions (${res.status})`);
-			}
-
-			await res.json();
+			await apiService.post(`/api/modules/${module.id}/sync-versions`);
 
 			// Reload versions to get the updated list
 			await loadVersions();
@@ -163,7 +139,7 @@
 	}
 
 	async function setGameModuleVersion(versionId: string) {
-		if (!authState.apiFetch || !gameState.selectedGameId) return;
+		if (!authState.isAuthenticated || !gameState.selectedGameId) return;
 
 		isUpdatingVersion = true;
 		error = null;
@@ -185,7 +161,7 @@
 	}
 
 	async function importVersionContent(versionId: string) {
-		if (!authState.apiFetch) return;
+		if (!authState.isAuthenticated) return;
 
 		// Add to importing set
 		const newImportingVersions = new Set(importingVersions);
@@ -194,19 +170,9 @@
 		error = null;
 
 		try {
-			const res = await authState.apiFetch(
-				`/api/modules/${module.id}/versions/${versionId}/import`,
-				{
-					method: 'POST'
-				}
+			const importResult = await apiService.post(
+				`/api/modules/${module.id}/versions/${versionId}/import`
 			);
-
-			if (!res.ok) {
-				const errorData = await res.json();
-				throw new Error(errorData.error || `Failed to import version content (${res.status})`);
-			}
-
-			const importResult = await res.json();
 
 			// Update content status for this version
 			versionContentStatus = {

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { getAuthState } from '$lib/states/authState.svelte';
 	import type { CreateModuleDialogHandle } from './CreateModuleDialogHandle';
+	import { apiService } from '$lib/services/apiService';
 
 	const authState = getAuthState();
 
@@ -34,7 +35,7 @@
 			return;
 		}
 
-		if (!authState.apiFetch) {
+		if (!authState.isAuthenticated) {
 			error = 'Authentication required';
 			return;
 		}
@@ -44,22 +45,9 @@
 		manifestPreview = null;
 
 		try {
-			const res = await authState.apiFetch('/api/modules/yaml-preview', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
-					manifestUrl: manifestUrl.trim()
-				})
+			const data = await apiService.post('/api/modules/yaml-preview', {
+				manifestUrl: manifestUrl.trim()
 			});
-
-			if (!res.ok) {
-				const errorData = await res.json();
-				throw new Error(errorData.error || `Failed to preview manifest (${res.status})`);
-			}
-
-			const data = await res.json();
 			manifestPreview = data.manifest;
 
 			// Auto-populate fields with preview data
@@ -82,7 +70,7 @@
 			return;
 		}
 
-		if (!authState.apiFetch) {
+		if (!authState.isAuthenticated) {
 			error = 'Authentication required';
 			return;
 		}
@@ -91,22 +79,9 @@
 		error = null;
 
 		try {
-			const res = await authState.apiFetch('/api/modules/github-preview', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
-					githubUrl: githubRepo.trim()
-				})
+			const data = await apiService.post('/api/modules/github-preview', {
+				githubUrl: githubRepo.trim()
 			});
-
-			if (!res.ok) {
-				const errorData = await res.json();
-				throw new Error(errorData.error || `Failed to fetch GitHub versions (${res.status})`);
-			}
-
-			const data = await res.json();
 			previewVersions = data.versions || [];
 		} catch (e: any) {
 			error = e?.message ?? 'Failed to preview GitHub versions';
@@ -119,7 +94,7 @@
 	async function submit(e?: Event) {
 		e?.preventDefault();
 
-		if (!authState.apiFetch) {
+		if (!authState.isAuthenticated) {
 			error = 'Authentication required';
 			return;
 		}
@@ -170,20 +145,7 @@
 							githubRepo: githubRepo.trim() || null
 						};
 
-			const res = await authState.apiFetch('/api/modules', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify(requestBody)
-			});
-
-			if (!res.ok) {
-				const errorData = await res.json();
-				throw new Error(errorData.error || `Failed to create module (${res.status})`);
-			}
-
-			const createdModule = await res.json();
+			const createdModule = await apiService.post('/api/modules', requestBody);
 
 			// Call the callback with the created module
 			if (onCreateCallback) {

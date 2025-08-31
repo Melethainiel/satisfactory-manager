@@ -5,6 +5,7 @@
 	import { getRealtimeService } from '$lib/services/realtimeService.svelte';
 	import { t, locale, setLocale } from '$lib/i18n';
 	import OnlineUsersIndicator from './OnlineUsersIndicator.svelte';
+	import { getGravatarUrl } from '$lib/utils/gravatar';
 	// New Svelte 5 pattern: accept a callback prop instead of dispatching an event
 	let { toggleNav } = $props<{ toggleNav?: () => void }>();
 
@@ -16,6 +17,28 @@
 
 	// Connection status for avatar border
 	const isConnected = $derived(() => realtimeService.state.isConnected);
+
+	// Generate Gravatar URL for the current user
+	let userAvatarUrl = $state<string>('https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=facearea&facepad=3&w=256&h=256&q=80');
+	let avatarLoading = $state<boolean>(false);
+
+	// Update avatar URL when user changes
+	$effect(() => {
+		if (authState.user?.email) {
+			avatarLoading = true;
+			getGravatarUrl(authState.user.email, { size: 256 })
+				.then(url => {
+					userAvatarUrl = url;
+				})
+				.catch(error => {
+					console.error('Error generating Gravatar URL:', error);
+					// Keep the default fallback URL
+				})
+				.finally(() => {
+					avatarLoading = false;
+				});
+		}
+	});
 
 	// Popover helpers
 	const popoverId = 'user-menu-popover';
@@ -137,14 +160,21 @@
 					aria-label={$t('ui.user_menu')}
 				>
 					<div class="flex items-center gap-x-2">
-						<img
-							class="h-10 w-10 rounded-full object-cover ring-2 {isConnected()
-								? 'ring-success'
-								: 'ring-error'}"
-							src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=facearea&facepad=3&w=256&h=256&q=80"
-							alt={$t('ui.user_avatar')}
-							title={isConnected() ? $t('ui.connected') : $t('ui.offline')}
-						/>
+						<div class="relative">
+							<img
+								class="h-10 w-10 rounded-full object-cover ring-2 {isConnected()
+									? 'ring-success'
+									: 'ring-error'} {avatarLoading ? 'opacity-70' : 'opacity-100'} transition-opacity duration-200"
+								src={userAvatarUrl}
+								alt={$t('ui.user_avatar')}
+								title={isConnected() ? $t('ui.connected') : $t('ui.offline')}
+							/>
+							{#if avatarLoading}
+								<div class="absolute inset-0 flex items-center justify-center">
+									<div class="loading loading-spinner loading-xs text-primary"></div>
+								</div>
+							{/if}
+						</div>
 						<div class="hidden text-left md:block">
 							<h1 class="text-lg font-semibold text-gray-700 capitalize dark:text-white">
 								{authState.user.displayName || $t('auth.user')}

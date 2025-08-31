@@ -28,6 +28,23 @@ function getPurityMultiplier(purity: string | null): number {
 	}
 }
 
+// Power calculation functions based on Satisfactory wiki formula
+function calculatePowerMultiplier(filledSlots: number, totalSlots: number): number {
+	if (totalSlots === 0) return 1.0;
+	const slotRatio = filledSlots / totalSlots;
+	return Math.pow(1 + slotRatio, 2);
+}
+
+function calculatePowerConsumption(basePowerUsage: number, powerMultiplier: number, clockSpeed: number): number {
+	const clockSpeedRatio = clockSpeed / 100;
+	return basePowerUsage * powerMultiplier * Math.pow(clockSpeedRatio, 1.321928);
+}
+
+function calculatePowerProduction(basePowerProduction: number, clockSpeed: number): number {
+	const clockSpeedRatio = clockSpeed / 100;
+	return basePowerProduction * clockSpeedRatio; // Linear scaling for power production
+}
+
 export interface ProductionInstanceDetail {
 	id: string;
 	siteId: string;
@@ -173,8 +190,16 @@ export class ProductionCalculationService {
 	): ProductionCalculation {
 		const buildingCount = parseFloat(instance.buildingCount);
 		const efficiency = parseFloat(instance.efficiencyRatio);
-		const powerConsumption = parseFloat(instance.buildingVersion?.energyConsumption || '0');
-		const powerProduction = parseFloat(instance.buildingVersion?.energyProduction || '0');
+		const basePowerConsumption = parseFloat(instance.buildingVersion?.energyConsumption || '0');
+		const basePowerProduction = parseFloat(instance.buildingVersion?.energyProduction || '0');
+
+		// Calculate power multiplier based on slots usage
+		// Temporarily using 0 filledSlots and 1 totalSlots
+		let filledSlots = 0;
+		let totalSlots = 1;
+
+		const powerMultiplier = calculatePowerMultiplier(filledSlots, totalSlots);
+		const clockSpeed = efficiency * 100; // efficiency is typically clock speed as percentage
 
 		// Handle extraction (no recipe)
 		if (!instance.recipeVersionId) {
@@ -182,12 +207,15 @@ export class ProductionCalculationService {
 			const purityMultiplier = getPurityMultiplier(instance.extractorPurity);
 			const totalRate = buildingOutput * buildingCount * efficiency * purityMultiplier;
 
+			const actualPowerConsumption = calculatePowerConsumption(basePowerConsumption, powerMultiplier, clockSpeed);
+			const actualPowerProduction = calculatePowerProduction(basePowerProduction, clockSpeed);
+
 			return {
 				itemsPerMinute: totalRate,
 				totalProduction: totalRate,
 				buildingUtilization: efficiency,
-				powerConsumption: powerConsumption * buildingCount * efficiency,
-				powerProduction: powerProduction * buildingCount * efficiency
+				powerConsumption: actualPowerConsumption * buildingCount,
+				powerProduction: actualPowerProduction * buildingCount
 			};
 		}
 
@@ -201,12 +229,15 @@ export class ProductionCalculationService {
 				efficiency
 			: 0;
 
+		const actualPowerConsumption = calculatePowerConsumption(basePowerConsumption, powerMultiplier, clockSpeed);
+		const actualPowerProduction = calculatePowerProduction(basePowerProduction, clockSpeed);
+
 		return {
 			itemsPerMinute: primaryProductRate,
 			totalProduction: primaryProductRate,
 			buildingUtilization: efficiency,
-			powerConsumption: powerConsumption * buildingCount * efficiency,
-			powerProduction: powerProduction * buildingCount * efficiency
+			powerConsumption: actualPowerConsumption * buildingCount,
+			powerProduction: actualPowerProduction * buildingCount
 		};
 	}
 

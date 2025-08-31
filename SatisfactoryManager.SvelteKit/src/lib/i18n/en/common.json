@@ -477,7 +477,7 @@
 	"buildingTypes": {
 		"Constructor": "Constructors",
 		"Generator": "Generators",
-		"Miner": "Miners"
+		"Miner": "Raw Materials"
 	},
 	"ui": {
 		"built": "Built",

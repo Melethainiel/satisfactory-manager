@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { getRealtimeService } from '$lib/services/realtimeService.svelte';
 	import { t } from '$lib/i18n';
+	import { getGravatarUrl } from '$lib/utils/gravatar';
 
 	interface Props {
 		siteId?: string;
@@ -34,6 +35,69 @@
 	const isConnected = $derived(() => realtimeService.state.isConnected);
 	const connectionError = $derived(() => realtimeService.state.connectionError);
 
+	// Generate avatar URLs for online users
+	let userAvatars = $state<Record<string, string>>({});
+	let loadingAvatars = $state<Set<string>>(new Set());
+
+	// Update avatars when online users change
+	$effect(() => {
+		const users = onlineUsers();
+		const loadAvatars = async () => {
+			// Filter users who need avatar URLs
+			const usersNeedingAvatars = users.filter(
+				user => user.userEmail && !userAvatars[user.userId] && !loadingAvatars.has(user.userId)
+			);
+
+			if (usersNeedingAvatars.length === 0) return;
+
+			// Mark users as loading
+			const newLoadingSet = new Set(loadingAvatars);
+			usersNeedingAvatars.forEach(user => newLoadingSet.add(user.userId));
+			loadingAvatars = newLoadingSet;
+
+			// Load all avatars concurrently
+			const avatarPromises = usersNeedingAvatars.map(async (user) => {
+				try {
+					const avatarUrl = await getGravatarUrl(user.userEmail, { size: 32 });
+					return { userId: user.userId, avatarUrl };
+				} catch (error) {
+					console.error('Error generating Gravatar URL for user:', user.userName, error);
+					return { userId: user.userId, avatarUrl: null };
+				}
+			});
+
+			const results = await Promise.allSettled(avatarPromises);
+			
+			// Update userAvatars with successful results
+			const newAvatars = { ...userAvatars };
+			const newLoadingSetAfter = new Set(loadingAvatars);
+			
+			results.forEach((result) => {
+				if (result.status === 'fulfilled' && result.value) {
+					const { userId, avatarUrl } = result.value;
+					newLoadingSetAfter.delete(userId);
+					if (avatarUrl) {
+						newAvatars[userId] = avatarUrl;
+					}
+				}
+			});
+
+			// Clean up avatars for users no longer online
+			const currentUserIds = users.map(u => u.userId);
+			Object.keys(newAvatars).forEach(userId => {
+				if (!currentUserIds.includes(userId)) {
+					delete newAvatars[userId];
+					newLoadingSetAfter.delete(userId);
+				}
+			});
+
+			userAvatars = newAvatars;
+			loadingAvatars = newLoadingSetAfter;
+		};
+
+		loadAvatars();
+	});
+
 	// Debug: log connection state changes
 	$effect(() => {
 		console.log('🔌 WebSocket connection state changed:', {
@@ -51,14 +115,35 @@
 		<div class="flex -space-x-2">
 			{#each onlineUsers() as user}
 				<div
-					class="placeholder avatar"
+					class="avatar"
 					title="{user.userName} {user.activity ? `- ${user.activity}` : ''}"
 				>
-					<div class="h-8 w-8 rounded-full bg-neutral text-neutral-content">
-						<span class="text-xs font-medium">
-							{user.userName.substring(0, 2).toUpperCase()}
-						</span>
-					</div>
+					{#if userAvatars[user.userId]}
+						<div class="h-8 w-8 rounded-full">
+							<img
+								class="h-8 w-8 rounded-full object-cover"
+								src={userAvatars[user.userId]}
+								alt={user.userName}
+							/>
+						</div>
+					{:else if loadingAvatars.has(user.userId)}
+						<div class="relative h-8 w-8 rounded-full bg-neutral text-neutral-content">
+							<div class="placeholder h-8 w-8 rounded-full bg-neutral text-neutral-content opacity-50">
+								<span class="text-xs font-medium">
+									{user.userName.substring(0, 2).toUpperCase()}
+								</span>
+							</div>
+							<div class="absolute inset-0 flex items-center justify-center">
+								<div class="loading loading-spinner loading-xs text-primary"></div>
+							</div>
+						</div>
+					{:else}
+						<div class="placeholder h-8 w-8 rounded-full bg-neutral text-neutral-content">
+							<span class="text-xs font-medium">
+								{user.userName.substring(0, 2).toUpperCase()}
+							</span>
+						</div>
+					{/if}
 					{#if user.activity && showActivity}
 						<div class="indicator-item badge badge-xs badge-info" title={user.activity}></div>
 					{/if}

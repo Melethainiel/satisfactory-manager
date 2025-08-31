@@ -19,6 +19,23 @@ import {
 } from '../db/schema';
 import { eq, and, inArray } from 'drizzle-orm';
 
+// Power calculation functions based on Satisfactory wiki formula
+function calculatePowerMultiplier(filledSlots: number, totalSlots: number): number {
+	if (totalSlots === 0) return 1.0;
+	const slotRatio = filledSlots / totalSlots;
+	return Math.pow(1 + slotRatio, 2);
+}
+
+function calculatePowerConsumption(basePowerUsage: number, powerMultiplier: number, clockSpeed: number): number {
+	const clockSpeedRatio = clockSpeed / 100;
+	return basePowerUsage * powerMultiplier * Math.pow(clockSpeedRatio, 1.321928);
+}
+
+function calculatePowerProduction(basePowerProduction: number, clockSpeed: number): number {
+	const clockSpeedRatio = clockSpeed / 100;
+	return basePowerProduction * clockSpeedRatio; // Linear scaling for power production
+}
+
 // Data structures for the game dashboard
 export interface GameDashboardData {
 	gameId: string;
@@ -449,11 +466,23 @@ export class GameDashboardService {
 			}));
 		}
 
+		// Calculate power multiplier based on slots usage
+		// Temporarily using 0 filledSlots and 1 totalSlots
+		let filledSlots = 0;
+		let totalSlots = 1;
+
+		// Apply correct power formula
+		const powerMultiplier = calculatePowerMultiplier(filledSlots, totalSlots);
+		const clockSpeed = efficiencyRatio * 100; // efficiency is typically clock speed as percentage
+
+		const actualPowerConsumption = calculatePowerConsumption(instance.powerConsumption, powerMultiplier, clockSpeed);
+		const actualPowerProduction = calculatePowerProduction(instance.powerProduction, clockSpeed);
+
 		return {
 			production,
 			consumption,
-			powerConsumption: instance.powerConsumption * buildingCount * efficiencyRatio,
-			powerProduction: instance.powerProduction * buildingCount * efficiencyRatio
+			powerConsumption: actualPowerConsumption * buildingCount,
+			powerProduction: actualPowerProduction * buildingCount
 		};
 	}
 

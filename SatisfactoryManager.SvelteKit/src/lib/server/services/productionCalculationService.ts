@@ -40,6 +40,11 @@ function calculatePowerConsumption(basePowerUsage: number, powerMultiplier: numb
 	return basePowerUsage * powerMultiplier * Math.pow(clockSpeedRatio, 1.321928);
 }
 
+function calculatePowerProduction(basePowerProduction: number, clockSpeed: number): number {
+	const clockSpeedRatio = clockSpeed / 100;
+	return basePowerProduction * clockSpeedRatio; // Linear scaling for power production
+}
+
 export interface ProductionInstanceDetail {
 	id: string;
 	siteId: string;
@@ -203,7 +208,7 @@ export class ProductionCalculationService {
 			const totalRate = buildingOutput * buildingCount * efficiency * purityMultiplier;
 
 			const actualPowerConsumption = calculatePowerConsumption(basePowerConsumption, powerMultiplier, clockSpeed);
-			const actualPowerProduction = calculatePowerConsumption(basePowerProduction, powerMultiplier, clockSpeed);
+			const actualPowerProduction = calculatePowerProduction(basePowerProduction, clockSpeed);
 
 			return {
 				itemsPerMinute: totalRate,
@@ -225,7 +230,7 @@ export class ProductionCalculationService {
 			: 0;
 
 		const actualPowerConsumption = calculatePowerConsumption(basePowerConsumption, powerMultiplier, clockSpeed);
-		const actualPowerProduction = calculatePowerConsumption(basePowerProduction, powerMultiplier, clockSpeed);
+		const actualPowerProduction = calculatePowerProduction(basePowerProduction, clockSpeed);
 
 		return {
 			itemsPerMinute: primaryProductRate,

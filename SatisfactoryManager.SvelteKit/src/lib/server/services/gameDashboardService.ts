@@ -31,6 +31,11 @@ function calculatePowerConsumption(basePowerUsage: number, powerMultiplier: numb
 	return basePowerUsage * powerMultiplier * Math.pow(clockSpeedRatio, 1.321928);
 }
 
+function calculatePowerProduction(basePowerProduction: number, clockSpeed: number): number {
+	const clockSpeedRatio = clockSpeed / 100;
+	return basePowerProduction * clockSpeedRatio; // Linear scaling for power production
+}
+
 // Data structures for the game dashboard
 export interface GameDashboardData {
 	gameId: string;
@@ -471,7 +476,7 @@ export class GameDashboardService {
 		const clockSpeed = efficiencyRatio * 100; // efficiency is typically clock speed as percentage
 
 		const actualPowerConsumption = calculatePowerConsumption(instance.powerConsumption, powerMultiplier, clockSpeed);
-		const actualPowerProduction = calculatePowerConsumption(instance.powerProduction, powerMultiplier, clockSpeed);
+		const actualPowerProduction = calculatePowerProduction(instance.powerProduction, clockSpeed);
 
 		return {
 			production,

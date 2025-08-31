@@ -1,6 +1,6 @@
 // Real-time message types for SSE communication
 
-export type RealtimeMessageType = 
+export type RealtimeMessageType =
 	| 'production_instance_created'
 	| 'production_instance_updated'
 	| 'production_instance_deleted'
@@ -125,7 +125,7 @@ export interface ModuleVersionChangedMessage extends BaseRealtimeMessage {
 }
 
 // Union type for all messages
-export type RealtimeMessage = 
+export type RealtimeMessage =
 	| ProductionInstanceCreatedMessage
 	| ProductionInstanceUpdatedMessage
 	| ProductionInstanceDeletedMessage

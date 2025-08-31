@@ -172,7 +172,9 @@
 						<span class="badge badge-sm badge-warning">{$t('ui.none_built')}</span>
 					{:else}
 						<span class="badge badge-sm badge-info">
-							{$t('ui.built_count', { values: { built: builtStats().built, total: builtStats().total } })}
+							{$t('ui.built_count', {
+								values: { built: builtStats().built, total: builtStats().total }
+							})}
 						</span>
 					{/if}
 				</div>
@@ -341,7 +343,8 @@
 										{/if}
 									</div>
 									<div class="mt-1 text-xs opacity-70">
-										{parseFloat(instance.buildingCount)} {$t('ui.buildings')} •
+										{parseFloat(instance.buildingCount)}
+										{$t('ui.buildings')} •
 										{Math.round(parseFloat(instance.efficiencyRatio) * 100)}% {$t('ui.efficiency')}
 									</div>
 									{#if instance.isBuilt}

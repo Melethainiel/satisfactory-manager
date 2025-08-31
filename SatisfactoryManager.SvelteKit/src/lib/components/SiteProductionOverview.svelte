@@ -275,7 +275,8 @@
 
 				return {
 					itemId,
-					itemName: production?.itemName || consumption?.itemName || balance?.itemName || $t('ui.unknown'),
+					itemName:
+						production?.itemName || consumption?.itemName || balance?.itemName || $t('ui.unknown'),
 					productionRate,
 					consumptionRate,
 					netBalance,
@@ -585,13 +586,19 @@
 								class="btn btn-sm {builtStatusFilter === 'all' ? 'btn-primary' : 'btn-outline'}"
 								onclick={() => (builtStatusFilter = 'all')}
 							>
-								{$t('ui.all_filter', { values: { count: gameState.siteProductionInstances.length } })}
+								{$t('ui.all_filter', {
+									values: { count: gameState.siteProductionInstances.length }
+								})}
 							</button>
 							<button
 								class="btn btn-sm {builtStatusFilter === 'built' ? 'btn-success' : 'btn-outline'}"
 								onclick={() => (builtStatusFilter = 'built')}
 							>
-								{$t('ui.built_filter', { values: { count: gameState.siteProductionInstances.filter((i) => i.isBuilt).length } })}
+								{$t('ui.built_filter', {
+									values: {
+										count: gameState.siteProductionInstances.filter((i) => i.isBuilt).length
+									}
+								})}
 							</button>
 							<button
 								class="btn btn-sm {builtStatusFilter === 'not-built'
@@ -599,7 +606,11 @@
 									: 'btn-outline'}"
 								onclick={() => (builtStatusFilter = 'not-built')}
 							>
-								{$t('ui.not_built_filter', { values: { count: gameState.siteProductionInstances.filter((i) => !i.isBuilt).length } })}
+								{$t('ui.not_built_filter', {
+									values: {
+										count: gameState.siteProductionInstances.filter((i) => !i.isBuilt).length
+									}
+								})}
 							</button>
 						</div>
 
@@ -637,7 +648,14 @@
 							{#if searchTerm}
 								{$t('productionInstances.no_instances_found')}
 							{:else}
-								{$t('ui.no_instances_with_filter', { values: { filter: builtStatusFilter === 'built' ? $t('ui.built').toLowerCase() : $t('ui.not_built').toLowerCase() } })}
+								{$t('ui.no_instances_with_filter', {
+									values: {
+										filter:
+											builtStatusFilter === 'built'
+												? $t('ui.built').toLowerCase()
+												: $t('ui.not_built').toLowerCase()
+									}
+								})}
 							{/if}
 						</p>
 						<button class="btn mt-2 btn-ghost btn-sm" onclick={clearAllFilters}>

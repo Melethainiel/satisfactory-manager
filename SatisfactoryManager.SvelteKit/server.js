@@ -27,7 +27,7 @@ async function initializeServer() {
 	// Graceful shutdown handlers
 	const gracefulShutdown = () => {
 		console.log('🛑 Shutdown signal received, closing gracefully...');
-		
+
 		server.close(() => {
 			console.log('✅ HTTP server closed');
 			process.exit(0);

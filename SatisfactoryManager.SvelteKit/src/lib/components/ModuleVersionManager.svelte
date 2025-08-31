@@ -64,7 +64,9 @@
 
 		try {
 			// Use batch endpoint for better performance
-			const batchData = await apiService.get(`/api/modules/${module.id}/versions/content-status`, { showErrorNotification: false });
+			const batchData = await apiService.get(`/api/modules/${module.id}/versions/content-status`, {
+				showErrorNotification: false
+			});
 
 			if (batchData.contentStatus) {
 				// Update the status record with batch results

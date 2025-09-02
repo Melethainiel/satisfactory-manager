@@ -75,8 +75,9 @@ export class SSEService {
 			console.log('🔄 SSE connection already in progress, waiting...');
 			// Wait for current connection to complete instead of skipping
 			let retries = 0;
-			while (this._state.isConnecting && retries < 50) { // Wait up to 5 seconds
-				await new Promise(resolve => setTimeout(resolve, 100));
+			while (this._state.isConnecting && retries < 50) {
+				// Wait up to 5 seconds
+				await new Promise((resolve) => setTimeout(resolve, 100));
 				retries++;
 			}
 			if (this._state.isConnecting) {
@@ -109,7 +110,7 @@ export class SSEService {
 			// Create EventSource (token passed via URL parameter)
 			this.eventSource = new EventSource(url.toString());
 			console.log('🔌 EventSource created, readyState:', this.eventSource.readyState);
-			
+
 			// Set up event handlers
 			this.eventSource.onopen = this.handleOpen.bind(this);
 			this.eventSource.onmessage = this.handleMessage.bind(this);
@@ -137,7 +138,6 @@ export class SSEService {
 
 				this.addConnectionHandler(onConnect);
 			});
-
 		} catch (error) {
 			this._state.isConnecting = false;
 			this._state.lastError = error instanceof Error ? error.message : 'Connection failed';
@@ -151,7 +151,7 @@ export class SSEService {
 	 */
 	public disconnect(): void {
 		console.log('🔌 Disconnecting SSE service...');
-		
+
 		this.clearReconnectTimer();
 
 		if (this.eventSource) {
@@ -168,10 +168,10 @@ export class SSEService {
 		this._state.reconnectCount = 0;
 		this._state.lastError = null;
 		this._state.connectionId = null;
-		
+
 		// Notify handlers
 		this.notifyConnectionHandlers(false);
-		
+
 		console.log('✅ SSE service disconnected');
 	}
 
@@ -184,13 +184,13 @@ export class SSEService {
 		}
 
 		console.log('🎮 Joining game room:', gameId);
-		
+
 		// Ensure clean disconnection before reconnecting
 		this.disconnect();
-		
+
 		// Small delay to ensure cleanup completes
-		await new Promise(resolve => setTimeout(resolve, 50));
-		
+		await new Promise((resolve) => setTimeout(resolve, 50));
+
 		return await this.connect(this.authToken, gameId);
 	}
 
@@ -203,13 +203,13 @@ export class SSEService {
 		}
 
 		console.log('🚪 Leaving game room');
-		
+
 		// Ensure clean disconnection before reconnecting
 		this.disconnect();
-		
+
 		// Small delay to ensure cleanup completes
-		await new Promise(resolve => setTimeout(resolve, 50));
-		
+		await new Promise((resolve) => setTimeout(resolve, 50));
+
 		return await this.connect(this.authToken);
 	}
 
@@ -229,7 +229,7 @@ export class SSEService {
 		try {
 			const message: SSEMessage = JSON.parse(event.data);
 			console.log('📨 SSE message:', message.type);
-			
+
 			// Handle connection confirmation
 			if (message.type === 'connected') {
 				console.log('✅ SSE authentication successful');
@@ -267,7 +267,6 @@ export class SSEService {
 			} else {
 				console.log('📨 Unhandled SSE message type:', message.type);
 			}
-
 		} catch (error) {
 			console.error('❌ Error parsing SSE message:', error);
 		}
@@ -280,7 +279,7 @@ export class SSEService {
 		console.error('❌ SSE connection error:', event);
 		console.error('❌ EventSource readyState:', this.eventSource?.readyState);
 		console.error('❌ EventSource URL:', this.eventSource?.url);
-		
+
 		this._state.isConnected = false;
 		this._state.lastError = 'Connection error';
 		this.notifyErrorHandlers('Connection error');
@@ -307,11 +306,13 @@ export class SSEService {
 			30000 // Max 30 seconds
 		);
 
-		console.log(`🔄 Scheduling SSE reconnect attempt ${this._state.reconnectCount}/${this.config.maxReconnectAttempts} in ${delay}ms`);
+		console.log(
+			`🔄 Scheduling SSE reconnect attempt ${this._state.reconnectCount}/${this.config.maxReconnectAttempts} in ${delay}ms`
+		);
 
 		this.reconnectTimer = setTimeout(async () => {
 			this.reconnectTimer = null;
-			
+
 			// Check if we should still reconnect
 			if (!this.authToken || this._state.reconnectCount >= this.config.maxReconnectAttempts) {
 				console.log('🚫 Stopping SSE reconnection attempts');
@@ -427,7 +428,7 @@ export function getSSEService(): SSEService {
 	if (!browser) {
 		throw new Error('SSE service should only be initialized on the client side');
 	}
-	
+
 	if (!sseService) {
 		console.log('🔌 SSE service initialized');
 		sseService = new SSEService();

@@ -249,7 +249,9 @@
 						<span class="label-text">{$t('production.selected_building')}</span>
 					</div>
 					<div class="rounded-lg bg-base-200 p-3">
-						<div class="font-medium">{currentInstance.building?.name || $t('ui.unknown_building')}</div>
+						<div class="font-medium">
+							{currentInstance.building?.name || $t('ui.unknown_building')}
+						</div>
 						<div class="text-sm text-base-content/70">
 							{$t('production.building_type')}: {currentInstance.building?.type || $t('ui.unknown')}
 						</div>

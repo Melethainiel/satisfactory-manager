@@ -3,6 +3,7 @@
 	import { fade, fly, scale } from 'svelte/transition';
 	import { getAuthState } from '$lib/states/authState.svelte';
 	import { t } from '$lib/i18n';
+	import { apiService } from '$lib/services/apiService';
 	import { Icon, Cube, Link, Calendar, Tag, Trash } from 'svelte-hero-icons';
 	import ModuleVersionManager from '$lib/components/ModuleVersionManager.svelte';
 	import {
@@ -32,20 +33,13 @@
 	let deleteModuleDialogRef = $state<DeleteModuleDialog | null>(null);
 
 	async function loadModules() {
-		if (!authState.apiFetch) return;
+		if (!authState.isAuthenticated) return;
 
 		isLoading = true;
 		error = null;
 
 		try {
-			const res = await authState.apiFetch('/api/modules');
-
-			if (!res.ok) {
-				const errorData = await res.json();
-				throw new Error(errorData.error || `Failed to load modules (${res.status})`);
-			}
-
-			modules = await res.json();
+			modules = await apiService.get<Module[]>('/api/modules');
 		} catch (e: any) {
 			error = e?.message ?? 'Failed to load modules';
 		} finally {

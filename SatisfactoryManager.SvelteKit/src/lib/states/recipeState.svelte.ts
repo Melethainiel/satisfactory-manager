@@ -1,4 +1,5 @@
 import { getContext, setContext } from 'svelte';
+import { apiService } from '$lib/services/apiService';
 
 // TypeScript interfaces for recipe-related data
 export interface Recipe {
@@ -63,13 +64,10 @@ class RecipeStateClass implements RecipeState {
 
 	attachAuth(apiFetch: AuthFetchFn) {
 		this.apiFetch = apiFetch;
+		apiService.setApiFetch(apiFetch);
 	}
 
 	async searchRecipes(gameId: string, query: string): Promise<Recipe[]> {
-		if (!this.apiFetch) {
-			throw new Error('Authentication not attached to recipeState');
-		}
-
 		if (!query.trim()) {
 			this.searchResults = [];
 			return [];
@@ -77,11 +75,9 @@ class RecipeStateClass implements RecipeState {
 
 		this.isSearching = true;
 		try {
-			const res = await this.apiFetch(
+			const results = await apiService.get<Recipe[]>(
 				`/api/recipes?gameId=${encodeURIComponent(gameId)}&search=${encodeURIComponent(query.trim())}`
 			);
-			if (!res.ok) throw new Error(`Failed to search recipes (${res.status})`);
-			const results = (await res.json()) as Recipe[];
 			this.searchResults = results;
 			return results;
 		} catch (error) {
@@ -94,10 +90,6 @@ class RecipeStateClass implements RecipeState {
 	}
 
 	async loadCompatibleBuildings(recipeVersionId: string): Promise<Building[]> {
-		if (!this.apiFetch) {
-			throw new Error('Authentication not attached to recipeState');
-		}
-
 		if (!recipeVersionId) {
 			this.availableBuildings = [];
 			return [];
@@ -105,9 +97,9 @@ class RecipeStateClass implements RecipeState {
 
 		this.isLoadingBuildings = true;
 		try {
-			const res = await this.apiFetch(`/api/recipes/versions/${recipeVersionId}/buildings`);
-			if (!res.ok) throw new Error(`Failed to load buildings (${res.status})`);
-			const buildings = (await res.json()) as Building[];
+			const buildings = await apiService.get<Building[]>(
+				`/api/recipes/versions/${recipeVersionId}/buildings`
+			);
 
 			this.availableBuildings = buildings;
 			return buildings;

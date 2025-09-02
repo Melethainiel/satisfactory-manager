@@ -1,4 +1,5 @@
 import { getContext, setContext } from 'svelte';
+import { apiService } from '$lib/services/apiService';
 
 // TypeScript interfaces for item-based production data
 export interface ItemWithVersion {
@@ -104,13 +105,10 @@ class ItemStateClass implements ItemState {
 
 	attachAuth(apiFetch: AuthFetchFn) {
 		this.apiFetch = apiFetch;
+		apiService.setApiFetch(apiFetch);
 	}
 
 	async searchItems(gameId: string, query: string): Promise<ItemWithVersion[]> {
-		if (!this.apiFetch) {
-			throw new Error('Authentication not attached to itemState');
-		}
-
 		if (!query.trim()) {
 			this.searchResults = [];
 			return [];
@@ -118,11 +116,9 @@ class ItemStateClass implements ItemState {
 
 		this.isSearching = true;
 		try {
-			const res = await this.apiFetch(
+			const results = await apiService.get<ItemWithVersion[]>(
 				`/api/items?gameId=${encodeURIComponent(gameId)}&search=${encodeURIComponent(query.trim())}`
 			);
-			if (!res.ok) throw new Error(`Failed to search items (${res.status})`);
-			const results = (await res.json()) as ItemWithVersion[];
 			this.searchResults = results;
 			return results;
 		} catch (error) {
@@ -135,10 +131,6 @@ class ItemStateClass implements ItemState {
 	}
 
 	async loadProductionOptions(gameId: string, itemId: string): Promise<ProductionOptions> {
-		if (!this.apiFetch) {
-			throw new Error('Authentication not attached to itemState');
-		}
-
 		if (!itemId) {
 			this.productionOptions = null;
 			return {
@@ -153,15 +145,15 @@ class ItemStateClass implements ItemState {
 
 		this.isLoadingProductionOptions = true;
 		try {
-			const res = await this.apiFetch(
-				`/api/items/${itemId}/production-options?gameId=${encodeURIComponent(gameId)}`
-			);
-			if (!res.ok) throw new Error(`Failed to load production options (${res.status})`);
-			const response = await res.json();
+			const response = await apiService.get<{
+				success: boolean;
+				data?: ProductionOptions;
+				error?: string;
+			}>(`/api/items/${itemId}/production-options?gameId=${encodeURIComponent(gameId)}`);
 
 			if (response.success) {
-				this.productionOptions = response.data;
-				return response.data;
+				this.productionOptions = response.data!;
+				return response.data!;
 			} else {
 				throw new Error(response.error || 'Failed to load production options');
 			}
@@ -180,33 +172,23 @@ class ItemStateClass implements ItemState {
 		productionType: 'extract' | 'craft' | 'power',
 		recipeVersionId?: string
 	): Promise<Building[]> {
-		if (!this.apiFetch) {
-			throw new Error('Authentication not attached to itemState');
-		}
-
 		this.isLoadingBuildings = true;
 		try {
 			let buildings: Building[] = [];
 
 			switch (productionType) {
 				case 'extract':
-					const extractorRes = await this.apiFetch(
+					const extractorData = await apiService.get<{ success: boolean; data?: Building[] }>(
 						`/api/items/${itemId}/extractors?gameId=${encodeURIComponent(gameId)}`
 					);
-					if (!extractorRes.ok)
-						throw new Error(`Failed to load extractors (${extractorRes.status})`);
-					const extractorData = await extractorRes.json();
-					buildings = extractorData.success ? extractorData.data : [];
+					buildings = extractorData.success ? extractorData.data || [] : [];
 					break;
 
 				case 'power':
-					const generatorRes = await this.apiFetch(
+					const generatorData = await apiService.get<{ success: boolean; data?: Building[] }>(
 						`/api/items/${itemId}/generators?gameId=${encodeURIComponent(gameId)}`
 					);
-					if (!generatorRes.ok)
-						throw new Error(`Failed to load generators (${generatorRes.status})`);
-					const generatorData = await generatorRes.json();
-					buildings = generatorData.success ? generatorData.data : [];
+					buildings = generatorData.success ? generatorData.data || [] : [];
 					break;
 
 				case 'craft':
@@ -214,12 +196,9 @@ class ItemStateClass implements ItemState {
 						throw new Error('Recipe version ID is required for craft production type');
 					}
 					// Use the existing endpoint for recipe buildings
-					const recipeRes = await this.apiFetch(
+					buildings = await apiService.get<Building[]>(
 						`/api/recipes/versions/${recipeVersionId}/buildings`
 					);
-					if (!recipeRes.ok)
-						throw new Error(`Failed to load recipe buildings (${recipeRes.status})`);
-					buildings = await recipeRes.json();
 					break;
 
 				default:

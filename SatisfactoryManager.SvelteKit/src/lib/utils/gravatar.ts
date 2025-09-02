@@ -60,17 +60,12 @@ export async function getGravatarUrl(
 		return defaultImage;
 	}
 
-	const {
-		size = 200,
-		default: defaultType = 'mp',
-		forceDefault = false,
-		rating = 'g'
-	} = options;
+	const { size = 200, default: defaultType = 'mp', forceDefault = false, rating = 'g' } = options;
 
 	try {
 		// Normalize email: lowercase and trim (as per Gravatar docs)
 		const normalizedEmail = email.toLowerCase().trim();
-		
+
 		// Generate SHA256 hash (as per Gravatar docs)
 		const hash = await generateSHA256(normalizedEmail);
 
@@ -120,12 +115,12 @@ export async function getGravatarWithFallback(
 	try {
 		// First try to get Gravatar URL
 		const gravatarUrl = await getGravatarUrl(email, options);
-		
+
 		// If it's our default fallback, use the provided fallback instead
 		if (gravatarUrl.includes('unsplash.com')) {
 			return fallbackUrl;
 		}
-		
+
 		return gravatarUrl;
 	} catch (error) {
 		console.error('Error getting Gravatar with fallback:', error);

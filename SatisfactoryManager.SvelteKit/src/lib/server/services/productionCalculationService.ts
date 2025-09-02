@@ -35,7 +35,11 @@ function calculatePowerMultiplier(filledSlots: number, totalSlots: number): numb
 	return Math.pow(1 + slotRatio, 2);
 }
 
-function calculatePowerConsumption(basePowerUsage: number, powerMultiplier: number, clockSpeed: number): number {
+function calculatePowerConsumption(
+	basePowerUsage: number,
+	powerMultiplier: number,
+	clockSpeed: number
+): number {
 	const clockSpeedRatio = clockSpeed / 100;
 	return basePowerUsage * powerMultiplier * Math.pow(clockSpeedRatio, 1.321928);
 }
@@ -207,7 +211,11 @@ export class ProductionCalculationService {
 			const purityMultiplier = getPurityMultiplier(instance.extractorPurity);
 			const totalRate = buildingOutput * buildingCount * efficiency * purityMultiplier;
 
-			const actualPowerConsumption = calculatePowerConsumption(basePowerConsumption, powerMultiplier, clockSpeed);
+			const actualPowerConsumption = calculatePowerConsumption(
+				basePowerConsumption,
+				powerMultiplier,
+				clockSpeed
+			);
 			const actualPowerProduction = calculatePowerProduction(basePowerProduction, clockSpeed);
 
 			return {
@@ -229,7 +237,11 @@ export class ProductionCalculationService {
 				efficiency
 			: 0;
 
-		const actualPowerConsumption = calculatePowerConsumption(basePowerConsumption, powerMultiplier, clockSpeed);
+		const actualPowerConsumption = calculatePowerConsumption(
+			basePowerConsumption,
+			powerMultiplier,
+			clockSpeed
+		);
 		const actualPowerProduction = calculatePowerProduction(basePowerProduction, clockSpeed);
 
 		return {

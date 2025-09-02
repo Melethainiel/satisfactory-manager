@@ -26,7 +26,11 @@ function calculatePowerMultiplier(filledSlots: number, totalSlots: number): numb
 	return Math.pow(1 + slotRatio, 2);
 }
 
-function calculatePowerConsumption(basePowerUsage: number, powerMultiplier: number, clockSpeed: number): number {
+function calculatePowerConsumption(
+	basePowerUsage: number,
+	powerMultiplier: number,
+	clockSpeed: number
+): number {
 	const clockSpeedRatio = clockSpeed / 100;
 	return basePowerUsage * powerMultiplier * Math.pow(clockSpeedRatio, 1.321928);
 }
@@ -475,7 +479,11 @@ export class GameDashboardService {
 		const powerMultiplier = calculatePowerMultiplier(filledSlots, totalSlots);
 		const clockSpeed = efficiencyRatio * 100; // efficiency is typically clock speed as percentage
 
-		const actualPowerConsumption = calculatePowerConsumption(instance.powerConsumption, powerMultiplier, clockSpeed);
+		const actualPowerConsumption = calculatePowerConsumption(
+			instance.powerConsumption,
+			powerMultiplier,
+			clockSpeed
+		);
 		const actualPowerProduction = calculatePowerProduction(instance.powerProduction, clockSpeed);
 
 		return {

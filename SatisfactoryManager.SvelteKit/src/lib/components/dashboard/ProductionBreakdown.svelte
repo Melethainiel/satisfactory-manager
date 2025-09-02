@@ -101,12 +101,12 @@
 					break;
 				case 'siteCount':
 					aValue = new Set([
-						...a.productionSites.map(s => s.siteId),
-						...a.consumptionSites.map(s => s.siteId)
+						...a.productionSites.map((s) => s.siteId),
+						...a.consumptionSites.map((s) => s.siteId)
 					]).size;
 					bValue = new Set([
-						...b.productionSites.map(s => s.siteId),
-						...b.consumptionSites.map(s => s.siteId)
+						...b.productionSites.map((s) => s.siteId),
+						...b.consumptionSites.map((s) => s.siteId)
 					]).size;
 					break;
 				default:
@@ -265,8 +265,8 @@
 							<td class="text-center">
 								<span class="text-xs">
 									{new Set([
-										...item.productionSites.map(s => s.siteId),
-										...item.consumptionSites.map(s => s.siteId)
+										...item.productionSites.map((s) => s.siteId),
+										...item.consumptionSites.map((s) => s.siteId)
 									]).size}
 								</span>
 							</td>

@@ -1,5 +1,6 @@
 import { getContext, setContext } from 'svelte';
 import { notificationService } from '$lib/services/notificationService.svelte';
+import { apiService } from '$lib/services/apiService';
 
 export interface GameSummary {
 	id: string;
@@ -265,6 +266,8 @@ class GameStateClass implements GameState {
 
 	attachAuth(apiFetch: AuthFetchFn) {
 		this.apiFetch = apiFetch;
+		// Initialize the centralized API service
+		apiService.setApiFetch(apiFetch);
 	}
 
 	getApiFetch(): AuthFetchFn | null {
@@ -279,12 +282,10 @@ class GameStateClass implements GameState {
 			notificationService.error('Game ID is required');
 			return;
 		}
-		if (!this.apiFetch) return;
 
 		this.isLoading = true;
 		try {
-			const res = await this.apiFetch(`/api/games/${id}`, { method: 'DELETE' });
-			if (!res.ok) throw new Error(`Failed to delete game (${res.status})`);
+			await apiService.delete(`/api/games/${id}`);
 			// Remove from local state
 			this.games = this.games.filter((g) => g.id !== id);
 			if (this.selectedGameId === id) this.selectedGameId = null;
@@ -323,13 +324,12 @@ class GameStateClass implements GameState {
 			notificationService.error('User email is required');
 			return;
 		}
-		if (!this.apiFetch) return;
 
 		this.isLoading = true;
 		try {
-			const res = await this.apiFetch(`/api/games?email=${encodeURIComponent(userEmail)}`);
-			if (!res.ok) throw new Error(`Failed to load games (${res.status})`);
-			const data = (await res.json()) as GameSummary[];
+			const data = await apiService.get<GameSummary[]>(
+				`/api/games?email=${encodeURIComponent(userEmail)}`
+			);
 			this.games = data;
 			// Auto-select if only one
 			if (data.length === 1) this.selectedGameId = data[0].id;
@@ -353,17 +353,9 @@ class GameStateClass implements GameState {
 			notificationService.error('Game name is required');
 			return;
 		}
-		if (!this.apiFetch) return;
-
 		this.isLoading = true;
 		try {
-			const res = await this.apiFetch('/api/games', {
-				method: 'POST',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ email: userEmail, name })
-			});
-			if (!res.ok) throw new Error(`Failed to create game (${res.status})`);
-			const created = (await res.json()) as GameSummary;
+			const created = await apiService.post<GameSummary>('/api/games', { email: userEmail, name });
 			this.games = [...this.games, created].sort((a, b) => a.name.localeCompare(b.name));
 			this.selectedGameId = created.id;
 			notificationService.success(`Game "${name}" created successfully`);
@@ -383,17 +375,9 @@ class GameStateClass implements GameState {
 			notificationService.error('Game name is required');
 			return;
 		}
-		if (!this.apiFetch) return;
-
 		this.isLoading = true;
 		try {
-			const res = await this.apiFetch(`/api/games/${id}`, {
-				method: 'PATCH',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ name })
-			});
-			if (!res.ok) throw new Error(`Failed to update game (${res.status})`);
-			const updated = (await res.json()) as GameSummary;
+			const updated = await apiService.patch<GameSummary>(`/api/games/${id}`, { name });
 			this.games = this.games
 				.map((g) => (g.id === id ? updated : g))
 				.sort((a, b) => a.name.localeCompare(b.name));
@@ -406,11 +390,9 @@ class GameStateClass implements GameState {
 	}
 
 	async loadGameUsers(gameId: string) {
-		if (!gameId || !this.apiFetch) return;
+		if (!gameId) return;
 		try {
-			const res = await this.apiFetch(`/api/games/${gameId}/users`);
-			if (!res.ok) throw new Error(`Failed to load users (${res.status})`);
-			const data = (await res.json()) as GameUser[];
+			const data = await apiService.get<GameUser[]>(`/api/games/${gameId}/users`);
 			this.gameUsers = data.sort((a, b) => a.displayName.localeCompare(b.displayName));
 		} catch (e: any) {
 			notificationService.error(e?.message ?? 'Failed to load game users');
@@ -418,53 +400,39 @@ class GameStateClass implements GameState {
 	}
 
 	async addGameUser(gameId: string, users: string[]) {
-		if (!gameId || !this.apiFetch) return;
+		if (!gameId) return;
 		try {
-			const res = await this.apiFetch(`/api/games/${gameId}/users`, {
-				method: 'POST',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ emails: users })
-			});
-			if (!res.ok) throw new Error(`Failed to add users (${res.status})`);
+			await apiService.post(`/api/games/${gameId}/users`, { emails: users });
 		} catch (e: any) {
 			notificationService.error(e?.message ?? 'Failed to add game users');
 		}
 	}
 
 	async removeGameUser(gameId: string, userEmail: string) {
-		if (!gameId || !this.apiFetch) return;
+		if (!gameId) return;
 		try {
-			const res = await this.apiFetch(`/api/games/${gameId}/users`, {
-				method: 'DELETE',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ email: userEmail })
+			await apiService.delete(`/api/games/${gameId}/users`, {
+				body: JSON.stringify({ email: userEmail }),
+				headers: { 'content-type': 'application/json' }
 			});
-			if (!res.ok) throw new Error(`Failed to remove user (${res.status})`);
 		} catch (e: any) {
 			notificationService.error(e?.message ?? 'Failed to remove game user');
 		}
 	}
 
 	async updateGameUserRole(gameId: string, userEmail: string, role: string) {
-		if (!gameId || !this.apiFetch) return;
+		if (!gameId) return;
 		try {
-			const res = await this.apiFetch(`/api/games/${gameId}/users`, {
-				method: 'PATCH',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ email: userEmail, role })
-			});
-			if (!res.ok) throw new Error(`Failed to update role (${res.status})`);
+			await apiService.patch(`/api/games/${gameId}/users`, { email: userEmail, role });
 		} catch (e: any) {
 			notificationService.error(e?.message ?? 'Failed to update game user role');
 		}
 	}
 
 	async loadGameModules(gameId: string) {
-		if (!gameId || !this.apiFetch) return;
+		if (!gameId) return;
 		try {
-			const res = await this.apiFetch(`/api/games/${gameId}/modules`);
-			if (!res.ok) throw new Error(`Failed to load modules (${res.status})`);
-			const data = (await res.json()) as GameModule[];
+			const data = await apiService.get<GameModule[]>(`/api/games/${gameId}/modules`);
 			this.gameModules = data.sort((a, b) => a.name.localeCompare(b.name));
 		} catch (e: any) {
 			notificationService.error(e?.message ?? 'Failed to load game modules');
@@ -472,44 +440,32 @@ class GameStateClass implements GameState {
 	}
 
 	async addGameModule(gameId: string, moduleId: string) {
-		if (!gameId || !moduleId || !this.apiFetch) return;
+		if (!gameId || !moduleId) return;
 		try {
-			const res = await this.apiFetch(`/api/games/${gameId}/modules`, {
-				method: 'POST',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ moduleId })
-			});
-			if (!res.ok) throw new Error(`Failed to add module (${res.status})`);
+			await apiService.post(`/api/games/${gameId}/modules`, { moduleId });
 		} catch (e: any) {
 			notificationService.error(e?.message ?? 'Failed to add game module');
 		}
 	}
 
 	async removeGameModule(gameId: string, moduleId: string) {
-		if (!gameId || !moduleId || !this.apiFetch) return;
+		if (!gameId || !moduleId) return;
 		try {
-			const res = await this.apiFetch(`/api/games/${gameId}/modules`, {
-				method: 'DELETE',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ moduleId })
+			await apiService.delete(`/api/games/${gameId}/modules`, {
+				body: JSON.stringify({ moduleId }),
+				headers: { 'content-type': 'application/json' }
 			});
-			if (!res.ok) throw new Error(`Failed to remove module (${res.status})`);
 		} catch (e: any) {
 			notificationService.error(e?.message ?? 'Failed to remove game module');
 		}
 	}
 
 	async setGameModuleVersion(gameId: string, moduleId: string, versionId: string) {
-		if (!gameId || !moduleId || !versionId || !this.apiFetch) return;
+		if (!gameId || !moduleId || !versionId) return;
 		try {
-			const res = await this.apiFetch(`/api/games/${gameId}/modules/${moduleId}/version`, {
-				method: 'PUT',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ versionId })
+			const result = await apiService.put(`/api/games/${gameId}/modules/${moduleId}/version`, {
+				versionId
 			});
-			if (!res.ok) throw new Error(`Failed to set module version (${res.status})`);
-
-			const result = await res.json();
 
 			// Show migration results if any
 			if (result.migrationResult) {
@@ -570,11 +526,9 @@ class GameStateClass implements GameState {
 	}
 
 	async loadGameSites(gameId: string) {
-		if (!gameId || !this.apiFetch) return;
+		if (!gameId) return;
 		try {
-			const res = await this.apiFetch(`/api/games/${gameId}/sites`);
-			if (!res.ok) throw new Error(`Failed to load sites (${res.status})`);
-			const data = (await res.json()) as GameSite[];
+			const data = await apiService.get<GameSite[]>(`/api/games/${gameId}/sites`);
 			this.gameSites = data.sort((a, b) => a.name.localeCompare(b.name));
 			// Auto-select first site if none selected
 			if (this.gameSites.length > 0 && !this.selectedSiteId) {
@@ -586,15 +540,9 @@ class GameStateClass implements GameState {
 	}
 
 	async createGameSite(gameId: string, name: string) {
-		if (!gameId || !name || !this.apiFetch) return;
+		if (!gameId || !name) return;
 		try {
-			const res = await this.apiFetch(`/api/games/${gameId}/sites`, {
-				method: 'POST',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ name })
-			});
-			if (!res.ok) throw new Error(`Failed to create site (${res.status})`);
-			const created = (await res.json()) as GameSite;
+			const created = await apiService.post<GameSite>(`/api/games/${gameId}/sites`, { name });
 			this.gameSites = [...this.gameSites, created].sort((a, b) => a.name.localeCompare(b.name));
 			this.selectedSiteId = created.id;
 
@@ -605,15 +553,11 @@ class GameStateClass implements GameState {
 	}
 
 	async updateGameSite(gameId: string, siteId: string, name: string) {
-		if (!gameId || !siteId || !name || !this.apiFetch) return;
+		if (!gameId || !siteId || !name) return;
 		try {
-			const res = await this.apiFetch(`/api/games/${gameId}/sites/${siteId}`, {
-				method: 'PATCH',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ name })
+			const updated = await apiService.patch<GameSite>(`/api/games/${gameId}/sites/${siteId}`, {
+				name
 			});
-			if (!res.ok) throw new Error(`Failed to update site (${res.status})`);
-			const updated = (await res.json()) as GameSite;
 			this.gameSites = this.gameSites
 				.map((s) => (s.id === siteId ? updated : s))
 				.sort((a, b) => a.name.localeCompare(b.name));
@@ -625,12 +569,9 @@ class GameStateClass implements GameState {
 	}
 
 	async deleteGameSite(gameId: string, siteId: string) {
-		if (!gameId || !siteId || !this.apiFetch) return;
+		if (!gameId || !siteId) return;
 		try {
-			const res = await this.apiFetch(`/api/games/${gameId}/sites/${siteId}`, {
-				method: 'DELETE'
-			});
-			if (!res.ok) throw new Error(`Failed to delete site (${res.status})`);
+			await apiService.delete(`/api/games/${gameId}/sites/${siteId}`);
 			this.gameSites = this.gameSites.filter((s) => s.id !== siteId);
 			// Clear selection if deleted site was selected
 			if (this.selectedSiteId === siteId) {
@@ -645,15 +586,12 @@ class GameStateClass implements GameState {
 
 	// Production management - consolidated
 	async loadSiteProductionSummary(siteId: string, fresh: boolean = false) {
-		if (!siteId || !this.apiFetch) return;
+		if (!siteId) return;
 
 		this.isLoading = true;
 		try {
 			const url = `/api/sites/${siteId}/production-summary${fresh ? '?fresh=true' : ''}`;
-			const response = await this.apiFetch(url);
-			if (!response.ok) throw new Error(`Failed to load production summary (${response.status})`);
-
-			const data = await response.json();
+			const data = await apiService.get(url);
 			if (data.success) {
 				// Convert string dates to Date objects in the data
 				const summary = data.data as ProductionSummary;
@@ -685,20 +623,11 @@ class GameStateClass implements GameState {
 			fuelItemVersionId?: string;
 		}
 	) {
-		if (!siteId || !this.apiFetch) return;
+		if (!siteId) return;
 
 		this.isLoading = true;
 		try {
-			const response = await this.apiFetch(`/api/sites/${siteId}/production-instances`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(data)
-			});
-
-			if (!response.ok)
-				throw new Error(`Failed to create production instance (${response.status})`);
-
-			const result = await response.json();
+			const result = await apiService.post(`/api/sites/${siteId}/production-instances`, data);
 			if (result.success) {
 				// Reload production summary to get updated data
 				await this.loadSiteProductionSummary(siteId, true);
@@ -723,7 +652,7 @@ class GameStateClass implements GameState {
 			notes?: string;
 		}
 	) {
-		if (!instanceId || !this.apiFetch) return;
+		if (!instanceId) return;
 
 		// Find the instance to get its siteId
 		const instance = this.siteProductionInstances.find(
@@ -736,19 +665,10 @@ class GameStateClass implements GameState {
 
 		this.isLoading = true;
 		try {
-			const response = await this.apiFetch(
+			const result = await apiService.patch(
 				`/api/sites/${instance.siteId}/production-instances/${instanceId}`,
-				{
-					method: 'PATCH',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify(data)
-				}
+				data
 			);
-
-			if (!response.ok)
-				throw new Error(`Failed to update production instance (${response.status})`);
-
-			const result = await response.json();
 			if (result.success) {
 				// Reload production summary to get updated data
 				await this.loadSiteProductionSummary(instance.siteId, true);
@@ -764,7 +684,7 @@ class GameStateClass implements GameState {
 
 	// Optimistic update for built status - no global loading
 	async updateProductionInstanceBuiltStatus(instanceId: string, isBuilt: boolean) {
-		if (!instanceId || !this.apiFetch) return false;
+		if (!instanceId) return false;
 
 		// Find the instance to get its siteId
 		const instance = this.siteProductionInstances.find(
@@ -796,20 +716,10 @@ class GameStateClass implements GameState {
 
 		// Background API call
 		try {
-			const response = await this.apiFetch(
+			const result = await apiService.patch(
 				`/api/sites/${instance.siteId}/production-instances/${instanceId}`,
-				{
-					method: 'PATCH',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ isBuilt })
-				}
+				{ isBuilt }
 			);
-
-			if (!response.ok) {
-				throw new Error(`Failed to update production instance (${response.status})`);
-			}
-
-			const result = await response.json();
 			if (result.success) {
 				// No need to reload - optimistic update is sufficient for built status
 				return true;
@@ -842,7 +752,7 @@ class GameStateClass implements GameState {
 
 	// Optimistic delete - immediate removal with rollback on error
 	async deleteProductionInstanceOptimistic(instanceId: string) {
-		if (!instanceId || !this.apiFetch) return false;
+		if (!instanceId) return false;
 
 		// Find the instance to get its siteId and store for rollback
 		const instance = this.siteProductionInstances.find(
@@ -869,18 +779,9 @@ class GameStateClass implements GameState {
 
 		// Background API call
 		try {
-			const response = await this.apiFetch(
-				`/api/sites/${instance.siteId}/production-instances/${instanceId}`,
-				{
-					method: 'DELETE'
-				}
+			const result = await apiService.delete(
+				`/api/sites/${instance.siteId}/production-instances/${instanceId}`
 			);
-
-			if (!response.ok) {
-				throw new Error(`Failed to delete production instance (${response.status})`);
-			}
-
-			const result = await response.json();
 			if (result.success) {
 				notificationService.success('Production instance deleted successfully');
 				return true;
@@ -907,7 +808,7 @@ class GameStateClass implements GameState {
 	}
 
 	async deleteProductionInstance(instanceId: string) {
-		if (!instanceId || !this.apiFetch) return;
+		if (!instanceId) return;
 
 		// Find the instance to get its siteId
 		const instance = this.siteProductionInstances.find(
@@ -920,17 +821,9 @@ class GameStateClass implements GameState {
 
 		this.isLoading = true;
 		try {
-			const response = await this.apiFetch(
-				`/api/sites/${instance.siteId}/production-instances/${instanceId}`,
-				{
-					method: 'DELETE'
-				}
+			const result = await apiService.delete(
+				`/api/sites/${instance.siteId}/production-instances/${instanceId}`
 			);
-
-			if (!response.ok)
-				throw new Error(`Failed to delete production instance (${response.status})`);
-
-			const result = await response.json();
 			if (result.success) {
 				// Reload production summary to get updated data
 				await this.loadSiteProductionSummary(instance.siteId, true);
@@ -962,23 +855,17 @@ class GameStateClass implements GameState {
 
 	// Dashboard management methods
 	async loadGameDashboard(gameId: string, forceRefresh: boolean = false) {
-		if (!gameId || !this.apiFetch) return;
+		if (!gameId) return;
 
 		this.isDashboardLoading = true;
 		this.dashboardError = null;
 
 		try {
 			const url = `/api/games/${gameId}/dashboard${forceRefresh ? '?fresh=true' : ''}`;
-			const response = await this.apiFetch(url);
-
-			if (!response.ok) {
-				throw new Error(`Failed to load dashboard data (${response.status})`);
-			}
-
-			const data = await response.json();
+			const data = await apiService.get<GameDashboardData>(url);
 
 			// Convert string dates to Date objects
-			const dashboardData = data as GameDashboardData;
+			const dashboardData = data;
 			dashboardData.lastUpdated = new Date(dashboardData.lastUpdated);
 
 			this.gameDashboard = dashboardData;

@@ -45,14 +45,14 @@
 		const loadAvatars = async () => {
 			// Filter users who need avatar URLs
 			const usersNeedingAvatars = users.filter(
-				user => user.userEmail && !userAvatars[user.userId] && !loadingAvatars.has(user.userId)
+				(user) => user.userEmail && !userAvatars[user.userId] && !loadingAvatars.has(user.userId)
 			);
 
 			if (usersNeedingAvatars.length === 0) return;
 
 			// Mark users as loading
 			const newLoadingSet = new Set(loadingAvatars);
-			usersNeedingAvatars.forEach(user => newLoadingSet.add(user.userId));
+			usersNeedingAvatars.forEach((user) => newLoadingSet.add(user.userId));
 			loadingAvatars = newLoadingSet;
 
 			// Load all avatars concurrently
@@ -67,11 +67,11 @@
 			});
 
 			const results = await Promise.allSettled(avatarPromises);
-			
+
 			// Update userAvatars with successful results
 			const newAvatars = { ...userAvatars };
 			const newLoadingSetAfter = new Set(loadingAvatars);
-			
+
 			results.forEach((result) => {
 				if (result.status === 'fulfilled' && result.value) {
 					const { userId, avatarUrl } = result.value;
@@ -83,8 +83,8 @@
 			});
 
 			// Clean up avatars for users no longer online
-			const currentUserIds = users.map(u => u.userId);
-			Object.keys(newAvatars).forEach(userId => {
+			const currentUserIds = users.map((u) => u.userId);
+			Object.keys(newAvatars).forEach((userId) => {
 				if (!currentUserIds.includes(userId)) {
 					delete newAvatars[userId];
 					newLoadingSetAfter.delete(userId);
@@ -114,10 +114,7 @@
 		<!-- Online users avatars -->
 		<div class="flex -space-x-2">
 			{#each onlineUsers() as user}
-				<div
-					class="avatar"
-					title="{user.userName} {user.activity ? `- ${user.activity}` : ''}"
-				>
+				<div class="avatar" title="{user.userName} {user.activity ? `- ${user.activity}` : ''}">
 					{#if userAvatars[user.userId]}
 						<div class="h-8 w-8 rounded-full">
 							<img
@@ -128,13 +125,15 @@
 						</div>
 					{:else if loadingAvatars.has(user.userId)}
 						<div class="relative h-8 w-8 rounded-full bg-neutral text-neutral-content">
-							<div class="placeholder h-8 w-8 rounded-full bg-neutral text-neutral-content opacity-50">
+							<div
+								class="placeholder h-8 w-8 rounded-full bg-neutral text-neutral-content opacity-50"
+							>
 								<span class="text-xs font-medium">
 									{user.userName.substring(0, 2).toUpperCase()}
 								</span>
 							</div>
 							<div class="absolute inset-0 flex items-center justify-center">
-								<div class="loading loading-spinner loading-xs text-primary"></div>
+								<div class="loading loading-xs loading-spinner text-primary"></div>
 							</div>
 						</div>
 					{:else}
@@ -161,7 +160,8 @@
 
 		<!-- Online count text -->
 		<span class="text-sm text-base-content/70">
-			{onlineUsers().length + additionalCount()} {$t('ui.online')}
+			{onlineUsers().length + additionalCount()}
+			{$t('ui.online')}
 		</span>
 	</div>
 {/if}

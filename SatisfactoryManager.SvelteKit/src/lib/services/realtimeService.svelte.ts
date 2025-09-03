@@ -63,17 +63,17 @@ export class RealtimeService {
 		if (!browser) {
 			throw new Error('SSE service is only available on the client side');
 		}
-		
+
 		if (!this.sseService) {
 			this.sseService = getSSEService();
-			
+
 			// Setup handlers on first access
 			if (!this.handlersSetup) {
 				this.setupSSEHandlers();
 				this.handlersSetup = true;
 			}
 		}
-		
+
 		return this.sseService;
 	}
 
@@ -104,8 +104,12 @@ export class RealtimeService {
 	 * Handle authentication state changes (called from component context)
 	 */
 	public handleAuthStateChange(isAuthenticated: boolean): void {
-		console.log('🔄 Auth state changed:', { isAuthenticated, currentlyConnected: this._state.isConnected, currentlyConnecting: this._state.isConnecting });
-		
+		console.log('🔄 Auth state changed:', {
+			isAuthenticated,
+			currentlyConnected: this._state.isConnected,
+			currentlyConnecting: this._state.isConnecting
+		});
+
 		if (isAuthenticated) {
 			// Only connect if we're not already connected or connecting
 			if (!this._state.isConnected && !this._state.isConnecting) {

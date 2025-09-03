@@ -167,7 +167,11 @@
 								<!-- Energy Balance -->
 								<td class="text-center">
 									<div class="flex flex-col items-center">
-										<span class="font-medium {getEnergyBalanceColor(site.powerProduction - site.powerConsumption)}">
+										<span
+											class="font-medium {getEnergyBalanceColor(
+												site.powerProduction - site.powerConsumption
+											)}"
+										>
 											{formatEnergyBalance(site.powerProduction - site.powerConsumption)}
 										</span>
 										<div class="text-xs text-base-content/70">

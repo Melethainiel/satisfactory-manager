@@ -16,7 +16,6 @@
 		return { status: 'balanced', color: 'text-info' };
 	});
 
-
 	// Format large numbers
 	function formatNumber(num: number): string {
 		if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
@@ -71,7 +70,6 @@
 			{$t('dashboard.consumption_short')}
 		</div>
 	</div>
-
 
 	<!-- Factory Status -->
 	<div class="stat rounded-lg border border-base-300 bg-base-100 p-4 shadow-sm">

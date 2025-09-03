@@ -6,6 +6,7 @@
 	import CreateModuleDialog from './CreateModuleDialog.svelte';
 	import type { CreateModuleDialogHandle } from './CreateModuleDialogHandle';
 	import { t } from '$lib/i18n';
+	import { apiService } from '$lib/services/apiService';
 
 	const gameState = getGameState();
 	const authState = getAuthState();
@@ -19,12 +20,10 @@
 	let createModuleDialogRef: CreateModuleDialogHandle | null = $state(null);
 
 	async function loadAvailableModules() {
-		if (!authState.apiFetch) return;
+		if (!authState.isAuthenticated) return;
 		isLoadingModules = true;
 		try {
-			const res = await authState.apiFetch('/api/modules');
-			if (!res.ok) throw new Error(`Failed to load modules (${res.status})`);
-			const data = (await res.json()) as GameModule[];
+			const data = await apiService.get<GameModule[]>('/api/modules');
 
 			// Filter out modules already attached to this game
 			const attachedModuleIds = new Set(gameState.gameModules.map((m) => m.id));

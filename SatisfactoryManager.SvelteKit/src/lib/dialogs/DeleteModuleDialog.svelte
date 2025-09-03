@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { getAuthState } from '$lib/states/authState.svelte';
 	import { t } from '$lib/i18n';
+	import { apiService } from '$lib/services/apiService';
 
 	interface Module {
 		id: string;
@@ -35,20 +36,13 @@
 	}
 
 	async function deleteModule() {
-		if (!currentModule || !authState.apiFetch) return;
+		if (!currentModule || !authState.isAuthenticated) return;
 
 		isDeleting = true;
 		error = null;
 
 		try {
-			const res = await authState.apiFetch(`/api/modules/${currentModule.id}`, {
-				method: 'DELETE'
-			});
-
-			if (!res.ok) {
-				const errorData = await res.json();
-				throw new Error(errorData.error || `Failed to delete module (${res.status})`);
-			}
+			await apiService.delete(`/api/modules/${currentModule.id}`);
 
 			// Notify parent component of successful deletion
 			if (onModuleDeleted) {

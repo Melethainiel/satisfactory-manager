@@ -8,7 +8,7 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { getDatabaseConfig, getDrizzleConfig } from '../../config/database.config.js';
-import { getAzurePostgreSQLToken } from './auth.js';
+import { createAzureTokenProvider } from './auth.js';
 import * as schema from './schema.js';
 
 // Global connection instance
@@ -35,52 +35,36 @@ async function createConnection() {
 		console.log('🆔 Setting up Azure Managed Identity authentication...');
 
 		try {
-			// Get initial token
-			const token = await getAzurePostgreSQLToken();
-			console.log(`🔐 Obtained Azure token (${token.substring(0, 20)}...)`);
-
-			// Parse the connection URL to replace password with token
+			// Parse the connection URL to remove any existing password
 			const url = new URL(connectionUrl);
-			url.password = token; // Set the token as the password
+			url.password = ''; // Clear password as it will be provided by the password function
 			connectionUrl = url.toString();
 
-			console.log('✅ Successfully injected Azure token into connection string');
+			// Create Azure token provider function
+			const tokenProvider = createAzureTokenProvider();
 
-			// Create postgres instance with token refresh capability
+			// Create postgres instance with dynamic password function
+			// This will automatically request a new token for each new connection
 			sqlInstance = postgres(connectionUrl, {
 				ssl: dbConfig.ssl,
 				max: dbConfig.maxConnections || 20,
 				idle_timeout: (dbConfig.idleTimeout || 30000) / 1000,
 				connect_timeout: (dbConfig.connectionTimeout || 10000) / 1000,
-				// Setup periodic token refresh
+				// Dynamic password function - called for each new connection
+				password: tokenProvider,
+				// Handle authentication errors
 				onnotice: (notice) => {
 					if (notice.message?.includes('password authentication failed')) {
-						console.warn('🔄 Token may have expired, will refresh on next connection...');
+						console.warn('⚠️ Authentication failed, connection will retry with fresh token');
 					}
 				}
 			});
 
-			// Set up periodic token refresh (every 20 hours to be safe)
-			const tokenRefreshInterval = 20 * 60 * 60 * 1000; // 20 hours
-
-			setInterval(async () => {
-				try {
-					console.log('🔄 Refreshing Azure PostgreSQL token...');
-					const newToken = await getAzurePostgreSQLToken();
-
-					// Note: postgres-js doesn't support runtime password updates
-					// In a production environment, you'd want to recreate the connection
-					console.log(
-						'✅ Token refreshed successfully (connection will use new token on next reconnect)'
-					);
-				} catch (error) {
-					console.error('❌ Failed to refresh Azure token:', error);
-				}
-			}, tokenRefreshInterval);
+			console.log('✅ Azure Managed Identity authentication configured with dynamic token provider');
 		} catch (error) {
-			console.error('❌ Failed to authenticate with Azure Managed Identity:', error);
+			console.error('❌ Failed to configure Azure Managed Identity:', error);
 			throw new Error(
-				`Azure authentication failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+				`Azure authentication configuration failed: ${error instanceof Error ? error.message : 'Unknown error'}`
 			);
 		}
 	} else {

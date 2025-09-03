@@ -1,14 +1,14 @@
 <script lang="ts">
-	import { Icon, BoltSlash, Bolt, CubeTransparent, ChartBar } from 'svelte-hero-icons';
+	import { Bolt, BoltSlash, ChartBar, CubeTransparent, Icon } from 'svelte-hero-icons';
 	import { t } from '$lib/i18n';
 	import type { GameDashboardData } from '$lib/states/gameState.svelte';
 
-	let { data }: { data: GameDashboardData } = $props();
+	const { data }: { data: GameDashboardData } = $props();
 
 	// Calculate key metrics for display
-	let totalItems = $derived(data.aggregated.uniqueItems);
-	let totalSites = $derived(data.sites.length);
-	let powerStatus = $derived(() => {
+	const totalItems = $derived(data.aggregated.uniqueItems);
+	const totalSites = $derived(data.sites.length);
+	const powerStatus = $derived(() => {
 		const balance = data.aggregated.netPowerBalance;
 		if (balance > 0) return { status: 'surplus', color: 'text-success' };
 		if (balance < -50) return { status: 'critical', color: 'text-error' };

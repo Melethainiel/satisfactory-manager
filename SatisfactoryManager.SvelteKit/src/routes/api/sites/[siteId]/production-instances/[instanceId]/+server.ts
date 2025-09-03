@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { productionInstanceService } from '$lib/server/services/productionInstanceService';
-import { requireSiteAccess, isValidUUID } from '$lib/server/auth/authUtils';
+import { isValidUUID, requireSiteAccess } from '$lib/server/auth/authUtils';
 
 export const GET: RequestHandler = requireSiteAccess('Reader')(async ({ params, user }) => {
 	try {

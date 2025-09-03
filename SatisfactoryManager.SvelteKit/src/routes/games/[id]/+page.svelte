@@ -17,7 +17,7 @@
 	const gameId = page.params.id;
 
 	// Get siteId from URL search parameters
-	let siteIdFromUrl = $derived(page.url.searchParams.get('siteId'));
+	const siteIdFromUrl = $derived(page.url.searchParams.get('siteId'));
 
 	onMount(async () => {
 		// Wait for authentication to finish loading before checking auth state
@@ -78,7 +78,7 @@
 	});
 
 	// Get current game info
-	let currentGame = $derived(gameState.games.find((g) => g.id === gameId));
+	const currentGame = $derived(gameState.games.find((g) => g.id === gameId));
 </script>
 
 <svelte:head>

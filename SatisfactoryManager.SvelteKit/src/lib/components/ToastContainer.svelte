@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { notificationService, type Notification } from '$lib/services/notificationService.svelte';
+	import { type Notification, notificationService } from '$lib/services/notificationService.svelte';
 	import { fly } from 'svelte/transition';
 	import { t } from '$lib/i18n';
 
 	// Get notifications from the service
-	let { notifications } = $derived({ notifications: notificationService.notifications });
+	const { notifications } = $derived({ notifications: notificationService.notifications });
 
 	// CSS classes for different notification types
 	const getAlertClass = (type: Notification['type']) => {

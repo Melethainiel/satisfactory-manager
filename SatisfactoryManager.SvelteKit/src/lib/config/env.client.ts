@@ -7,7 +7,7 @@
 
 import { z } from 'zod';
 import { browser } from '$app/environment';
-import type { PublicEnv, EnvValidationError } from './env.types.js';
+import type { EnvValidationError, PublicEnv } from './env.types.js';
 
 // Note: In Aspire deployments, public environment variables are injected at runtime
 // so we use dynamic imports only to avoid build-time dependency issues

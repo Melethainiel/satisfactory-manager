@@ -1,11 +1,11 @@
 import type {
-	NewUser,
+	NewBuilding,
 	NewGame,
+	NewItem,
 	NewModule,
 	NewModuleVersion,
-	NewItem,
-	NewBuilding,
-	NewRecipe
+	NewRecipe,
+	NewUser
 } from '../../src/lib/server/db/schema';
 
 export const testUsers: NewUser[] = [

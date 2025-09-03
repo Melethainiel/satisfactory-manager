@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { Icon, Trophy, ChartBar, Cog6Tooth } from 'svelte-hero-icons';
+	import { ChartBar, Cog6Tooth, Icon, Trophy } from 'svelte-hero-icons';
 	import { t } from '$lib/i18n';
 	import type {
-		GameDashboardSiteData,
-		GameDashboardPerformanceData
+		GameDashboardPerformanceData,
+		GameDashboardSiteData
 	} from '$lib/states/gameState.svelte';
 
-	let {
+	const {
 		sites,
 		performance
 	}: {
@@ -15,7 +15,7 @@
 	} = $props();
 
 	// Combine site data with performance metrics
-	let enrichedSites = $derived.by(() => {
+	const enrichedSites = $derived.by(() => {
 		return sites
 			.map((site) => {
 				const performanceData = performance.topProducingSites.find((p) => p.siteId === site.siteId);

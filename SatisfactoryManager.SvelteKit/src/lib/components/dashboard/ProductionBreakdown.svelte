@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { Icon, ChevronDown, ChevronRight, Bars3BottomRight } from 'svelte-hero-icons';
+	import { Bars3BottomRight, ChevronDown, ChevronRight, Icon } from 'svelte-hero-icons';
 	import { t } from '$lib/i18n';
 	import type { GameDashboardAggregatedData } from '$lib/states/gameState.svelte';
 
-	let { data }: { data: GameDashboardAggregatedData } = $props();
+	const { data }: { data: GameDashboardAggregatedData } = $props();
 
 	type SortField = 'itemName' | 'totalRate' | 'siteCount';
 	type SortDirection = 'asc' | 'desc';
@@ -14,7 +14,7 @@
 	let searchTerm = $state('');
 
 	// Combine production and consumption data for comprehensive view
-	let combinedItemData = $derived.by(() => {
+	const combinedItemData = $derived.by(() => {
 		const itemMap = new Map<
 			string,
 			{
@@ -76,7 +76,7 @@
 	});
 
 	// Filter and sort items
-	let filteredAndSortedItems = $derived.by(() => {
+	const filteredAndSortedItems = $derived.by(() => {
 		let filtered = combinedItemData;
 
 		// Apply search filter

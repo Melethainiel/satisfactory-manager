@@ -6,7 +6,7 @@
  * Includes automatic database migration on startup.
  */
 
-import { getDatabase, closeDatabase } from './drizzle.js';
+import { closeDatabase, getDatabase } from './drizzle.js';
 import { initializeDatabase } from '../migrations/migrate.js';
 
 // Get the database instance with Azure authentication support

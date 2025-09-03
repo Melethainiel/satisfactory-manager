@@ -1,17 +1,17 @@
 import { db } from '../db';
 import {
-	productionInstances,
-	sites,
-	moduleGames,
-	itemVersions,
-	items,
+	type ProductionInstance,
 	buildingVersions,
 	buildings,
+	itemVersions,
+	items,
+	moduleGames,
+	productionInstances,
 	recipeVersions,
 	recipes,
-	type ProductionInstance
+	sites
 } from '../db/schema';
-import { eq, and } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { productionCalculationService } from './productionCalculationService';
 
@@ -246,7 +246,7 @@ class ProductionInstanceMigrationService implements IProductionInstanceMigration
 		};
 	}> {
 		const updates: Partial<ProductionInstance> = {};
-		let migrationErrors: string[] = [];
+		const migrationErrors: string[] = [];
 
 		// Migrate building version
 		if (instance.buildingVersionId && instance.buildingClassName) {

@@ -21,7 +21,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 
 		// Check if user already exists
-		let existing = await userService.getByEmail(email);
+		const existing = await userService.getByEmail(email);
 		if (existing) {
 			// Update display name if different
 			if (existing.displayName !== displayName) {

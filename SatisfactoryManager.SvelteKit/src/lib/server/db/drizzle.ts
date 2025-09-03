@@ -60,7 +60,9 @@ async function createConnection() {
 				}
 			});
 
-			console.log('✅ Azure Managed Identity authentication configured with dynamic token provider');
+			console.log(
+				'✅ Azure Managed Identity authentication configured with dynamic token provider'
+			);
 		} catch (error) {
 			console.error('❌ Failed to configure Azure Managed Identity:', error);
 			throw new Error(

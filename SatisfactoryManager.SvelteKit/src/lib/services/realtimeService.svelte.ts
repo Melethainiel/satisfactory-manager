@@ -2,16 +2,16 @@ import { browser } from '$app/environment';
 import { getSSEService } from './sseService.svelte.js';
 import { notificationService } from './notificationService.svelte.js';
 import type {
-	RealtimeMessage,
+	ModuleVersionChangedMessage,
 	ProductionInstanceCreatedMessage,
-	ProductionInstanceUpdatedMessage,
 	ProductionInstanceDeletedMessage,
+	ProductionInstanceUpdatedMessage,
+	RealtimeMessage,
 	SiteCreatedMessage,
-	SiteUpdatedMessage,
 	SiteDeletedMessage,
+	SiteUpdatedMessage,
 	UserJoinedMessage,
-	UserLeftMessage,
-	ModuleVersionChangedMessage
+	UserLeftMessage
 } from '../types/realtime.js';
 import type { AuthState } from '../states/authState.svelte.js';
 import type { GameState } from '../states/gameState.svelte.js';

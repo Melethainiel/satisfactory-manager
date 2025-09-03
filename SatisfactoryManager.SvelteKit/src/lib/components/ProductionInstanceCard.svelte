@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { getGameState, type ProductionInstanceData } from '$lib/states/gameState.svelte';
+	import { type ProductionInstanceData, getGameState } from '$lib/states/gameState.svelte';
 	import { getAuthState } from '$lib/states/authState.svelte';
-	import { Icon, PencilSquare, Trash, Cog6Tooth, CheckBadge } from 'svelte-hero-icons';
+	import { CheckBadge, Cog6Tooth, Icon, PencilSquare, Trash } from 'svelte-hero-icons';
 	import { t } from '$lib/i18n';
 
 	interface Props {
@@ -10,7 +10,7 @@
 		onDelete?: (instance: ProductionInstanceData) => void;
 	}
 
-	let { instance, onEdit, onDelete }: Props = $props();
+	const { instance, onEdit, onDelete }: Props = $props();
 
 	const gameState = getGameState();
 	const authState = getAuthState();
@@ -19,7 +19,7 @@
 	let isTogglingBuilt = $state(false);
 
 	// Check if current user can edit this instance
-	let canEdit = $derived(() => {
+	const canEdit = $derived(() => {
 		if (!authState.isAuthenticated || !authState.user?.email) return false;
 		return gameState.canManageSites(authState.user.email);
 	});
@@ -32,7 +32,7 @@
 	}
 
 	// Get production info from pre-calculated data
-	let productionInfo = $derived(() => {
+	const productionInfo = $derived(() => {
 		if (!instance.products || instance.products.length === 0) return null;
 
 		const primaryProduct = instance.products[0];
@@ -45,10 +45,10 @@
 	});
 
 	// Calculate efficiency percentage
-	let efficiencyPercent = $derived(() => Math.round(parseFloat(instance.efficiencyRatio) * 100));
+	const efficiencyPercent = $derived(() => Math.round(parseFloat(instance.efficiencyRatio) * 100));
 
 	// Building utilization color
-	let utilizationColor = $derived(() => {
+	const utilizationColor = $derived(() => {
 		const percent = efficiencyPercent();
 		if (percent >= 100) return 'text-success';
 		if (percent >= 75) return 'text-warning';
@@ -56,7 +56,7 @@
 	});
 
 	// Display name logic: item name + recipe name if exists, or just item/building name for extraction
-	let displayName = $derived(() => {
+	const displayName = $derived(() => {
 		// If we have products (either from recipe or extraction)
 		if (instance.products && instance.products.length > 0) {
 			const primaryProduct = instance.products[0];

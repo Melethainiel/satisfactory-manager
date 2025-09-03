@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getGameState, type ProductionInstanceData } from '$lib/states/gameState.svelte';
+	import { type ProductionInstanceData, getGameState } from '$lib/states/gameState.svelte';
 	import { t } from '$lib/i18n';
 	import type { EditProductionInstanceDialogHandle } from './EditProductionInstanceDialogHandle';
 
@@ -336,7 +336,8 @@
 						<input
 							id="building-count"
 							type="number"
-							class="input-bordered input w-full {autoCalculateMode ? 'input-disabled' : ''}"
+							class="input-bordered input w-full"
+							class:input-disabled={autoCalculateMode}
 							bind:value={buildingCount}
 							min="1"
 							max="1000"

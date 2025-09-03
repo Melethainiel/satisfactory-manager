@@ -1,5 +1,5 @@
 // Note: YAML parsing is now handled by yamlValidationService
-import { archiveService, type IArchiveService } from './archiveService';
+import { type IArchiveService, archiveService } from './archiveService';
 import { recipeService } from './recipeService';
 import { yamlValidationService } from './yamlValidationService';
 import { db } from '../db';

@@ -1,20 +1,20 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { GET, POST } from '../../../src/routes/api/games/+server';
-import { GET as GETById, PATCH, DELETE } from '../../../src/routes/api/games/[id]/+server';
+import { DELETE, GET as GETById, PATCH } from '../../../src/routes/api/games/[id]/+server';
 import {
+	DELETE as DELETEUser,
 	GET as GETUsers,
-	POST as POSTUser,
-	DELETE as DELETEUser
+	POST as POSTUser
 } from '../../../src/routes/api/games/[id]/users/+server';
 import {
 	GET as GETModules,
 	POST as POSTModules
 } from '../../../src/routes/api/games/[id]/modules/+server';
-import { testUsers, testGames, testModules, testUserGameRoles } from '../../setup/fixtures';
+import { testGames, testModules, testUserGameRoles, testUsers } from '../../setup/fixtures';
 import { userService } from '../../../src/lib/server/services/userService';
 import { gameService } from '../../../src/lib/server/services/gameService';
 import { moduleService } from '../../../src/lib/server/services/moduleService';
-import { createUserWithRole, createTestEnvironment } from '../../setup/test-utils';
+import { createTestEnvironment, createUserWithRole } from '../../setup/test-utils';
 
 describe('/api/games', () => {
 	let testUserId: string;

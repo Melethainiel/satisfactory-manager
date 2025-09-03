@@ -1,4 +1,4 @@
-import DeleteModuleDialog from './DeleteModuleDialog.svelte';
+import type DeleteModuleDialog from './DeleteModuleDialog.svelte';
 
 interface Module {
 	id: string;

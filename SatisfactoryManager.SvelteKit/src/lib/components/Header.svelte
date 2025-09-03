@@ -3,11 +3,11 @@
 	import { getGameState } from '$lib/states/gameState.svelte';
 	import { getPermissionState } from '$lib/states/permissionState.svelte';
 	import { getRealtimeService } from '$lib/services/realtimeService.svelte';
-	import { t, locale, setLocale } from '$lib/i18n';
+	import { locale, setLocale, t } from '$lib/i18n';
 	import OnlineUsersIndicator from './OnlineUsersIndicator.svelte';
 	import { getGravatarUrl } from '$lib/utils/gravatar';
 	// New Svelte 5 pattern: accept a callback prop instead of dispatching an event
-	let { toggleNav } = $props<{ toggleNav?: () => void }>();
+	const { toggleNav } = $props<{ toggleNav?: () => void }>();
 
 	// Get state from context
 	const authState = getAuthState();

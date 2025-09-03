@@ -1,5 +1,5 @@
 import type { Handle } from '@sveltejs/kit';
-import { createRemoteJWKSet, jwtVerify, type JWTPayload } from 'jose';
+import { type JWTPayload, createRemoteJWKSet, jwtVerify } from 'jose';
 import { locale } from 'svelte-i18n';
 import { getAzureB2CConfig } from '$lib/config/auth.config.js';
 import { getServerEnvVar } from '$lib/config/env.server.js';

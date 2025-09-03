@@ -5,7 +5,7 @@
  * These tests verify the controller state checking logic without requiring database connection.
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 // Mock controller that simulates ReadableStreamDefaultController behavior
 class MockController {

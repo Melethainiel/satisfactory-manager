@@ -2,7 +2,7 @@
 	import '../app.css';
 	import { onMount } from 'svelte';
 	import { setAuthState } from '$lib/states/authState.svelte';
-	import { getClientAzureB2CConfig, CLIENT_AUTH_SCOPES } from '$lib/config/auth.config.client';
+	import { CLIENT_AUTH_SCOPES, getClientAzureB2CConfig } from '$lib/config/auth.config.client';
 	import { setGameState } from '$lib/states/gameState.svelte';
 	import { setPermissionState } from '$lib/states/permissionState.svelte';
 	import { getRealtimeService } from '$lib/services/realtimeService.svelte';
@@ -15,7 +15,7 @@
 		navOpen = !navOpen;
 	}
 
-	let { children } = $props();
+	const { children } = $props();
 
 	// Initialize contexts
 	const authState = setAuthState();

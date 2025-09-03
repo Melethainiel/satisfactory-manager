@@ -4,14 +4,14 @@ const API_USER_ACCESS_SCOPE =
 	'https://SatisfactoryManager.onmicrosoft.com/71d43619-ad3d-49d4-bae9-97e38ec57dc4/access_users';
 import { notificationService } from '$lib/services/notificationService.svelte';
 import {
-	PublicClientApplication,
-	type Configuration,
 	type AuthenticationResult,
-	type RedirectRequest,
-	type SilentRequest,
+	type Configuration,
 	type EndSessionRequest,
+	InteractionRequiredAuthError,
 	LogLevel,
-	InteractionRequiredAuthError
+	PublicClientApplication,
+	type RedirectRequest,
+	type SilentRequest
 } from '@azure/msal-browser';
 
 // Types for Azure AD B2C configuration

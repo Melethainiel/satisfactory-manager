@@ -28,7 +28,7 @@
 	const authState = getAuthState();
 	const gameState = getGameState();
 
-	let { module, context = 'game' }: { module: Module; context?: 'game' | 'admin' } = $props();
+	const { module, context = 'game' }: { module: Module; context?: 'game' | 'admin' } = $props();
 
 	let versions = $state<ModuleVersion[]>([]);
 	let isLoading = $state(false);

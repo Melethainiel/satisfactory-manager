@@ -1,16 +1,16 @@
 import { db } from '../db';
 import {
-	modules,
-	moduleVersions,
 	type Module,
-	type NewModule,
 	type ModuleVersion,
-	type NewModuleVersion
+	type NewModule,
+	type NewModuleVersion,
+	moduleVersions,
+	modules
 } from '../db/schema';
-import { eq, desc, ilike } from 'drizzle-orm';
-import { githubService, type IModuleVersion } from './githubService';
-import { yamlService, type IParsedModuleInfo } from './yamlService';
-import { archiveContentService, type ArchiveContentImportResult } from './archiveContentService';
+import { desc, eq, ilike } from 'drizzle-orm';
+import { type IModuleVersion, githubService } from './githubService';
+import { type IParsedModuleInfo, yamlService } from './yamlService';
+import { type ArchiveContentImportResult, archiveContentService } from './archiveContentService';
 import { importQueueService } from './importQueueService';
 import { getModuleConfig, validateModuleConfig } from '../config/moduleConfig';
 
@@ -178,7 +178,7 @@ class ModuleService implements IModuleService {
 		}
 
 		// Ensure we have at least one module version for item import
-		let hasVersions = await this.getVersions(module.id);
+		const hasVersions = await this.getVersions(module.id);
 		if (hasVersions.length === 0 && parsedInfo.version) {
 			try {
 				await this.addVersion(module.id, {

@@ -3,7 +3,7 @@
  * Tests the fixes for GitHub issue #27: Server heartbeat errors
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReadableStreamDefaultController } from 'node:stream/web';
 
 // Mock the SSE service functions

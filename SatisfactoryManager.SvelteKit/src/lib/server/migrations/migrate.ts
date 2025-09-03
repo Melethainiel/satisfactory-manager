@@ -8,7 +8,7 @@
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { createMigrationConnection } from './connection.js';
-import { readdir, readFile } from 'fs/promises';
+import { readFile, readdir } from 'fs/promises';
 import { join } from 'path';
 import { createHash } from 'crypto';
 

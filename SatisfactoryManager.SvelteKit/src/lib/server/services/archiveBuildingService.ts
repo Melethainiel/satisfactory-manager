@@ -1,5 +1,5 @@
 import * as yaml from 'js-yaml';
-import { archiveService, type IArchiveService } from './archiveService';
+import { type IArchiveService, archiveService } from './archiveService';
 import { buildingService } from './buildingService';
 import { yamlValidationService } from './yamlValidationService';
 import { db } from '../db';

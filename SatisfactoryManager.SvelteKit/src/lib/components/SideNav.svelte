@@ -2,20 +2,20 @@
 	import { onMount } from 'svelte';
 	import { afterNavigate } from '$app/navigation';
 	import {
+		ChartBarSquare,
+		Cube,
+		Home,
 		Icon,
 		Map,
-		WrenchScrewdriver,
-		Home,
-		Cube,
 		MapPin,
-		ChartBarSquare
+		WrenchScrewdriver
 	} from 'svelte-hero-icons';
 	import { t } from '$lib/i18n';
 	import { getPermissionState } from '$lib/states/permissionState.svelte';
 	import { getGameState } from '$lib/states/gameState.svelte';
 
 	// Props
-	let { open, onClose } = $props<{ open: boolean; onClose?: () => void }>();
+	const { open, onClose } = $props<{ open: boolean; onClose?: () => void }>();
 
 	const permissionState = getPermissionState();
 	const gameState = getGameState();
@@ -49,8 +49,8 @@
 	}
 
 	// Check if game is selected and user has permissions
-	let hasSelectedGame = $derived(gameState.selectedGameId !== null);
-	let currentGameId = $derived(gameState.selectedGameId);
+	const hasSelectedGame = $derived(gameState.selectedGameId !== null);
+	const currentGameId = $derived(gameState.selectedGameId);
 </script>
 
 <!-- Desktop Sidebar (fixed scrollable) -->

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { GET, POST } from '../../../src/routes/api/modules/+server';
 import { DELETE } from '../../../src/routes/api/modules/[id]/+server';
 import { GET as GETGithubPreview } from '../../../src/routes/api/modules/github-preview/+server';

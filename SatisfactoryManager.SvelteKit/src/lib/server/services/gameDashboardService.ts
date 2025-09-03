@@ -1,23 +1,23 @@
 import { db } from '../db';
 import {
-	productionInstances,
-	sites,
-	games,
-	recipeVersions,
-	recipes,
-	buildings,
+	type GameUserRole,
 	buildingVersions,
-	recipeProducts,
-	recipeIngredients,
-	items,
+	buildings,
+	games,
 	itemVersions,
+	items,
 	moduleGames,
 	modules,
+	productionInstances,
+	recipeIngredients,
+	recipeProducts,
+	recipeVersions,
+	recipes,
+	sites,
 	userGames,
-	users,
-	type GameUserRole
+	users
 } from '../db/schema';
-import { eq, and, inArray } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 
 // Power calculation functions based on Satisfactory wiki formula
 function calculatePowerMultiplier(filledSlots: number, totalSlots: number): number {
@@ -472,8 +472,8 @@ export class GameDashboardService {
 
 		// Calculate power multiplier based on slots usage
 		// Temporarily using 0 filledSlots and 1 totalSlots
-		let filledSlots = 0;
-		let totalSlots = 1;
+		const filledSlots = 0;
+		const totalSlots = 1;
 
 		// Apply correct power formula
 		const powerMultiplier = calculatePowerMultiplier(filledSlots, totalSlots);

@@ -9,7 +9,7 @@
 		maxUsers?: number;
 	}
 
-	let { siteId, showActivity = false, maxUsers = 5 }: Props = $props();
+	const { siteId, showActivity = false, maxUsers = 5 }: Props = $props();
 
 	const realtimeService = getRealtimeService();
 

@@ -1,13 +1,13 @@
 <script lang="ts">
-	import { Icon, Bolt } from 'svelte-hero-icons';
+	import { Bolt, Icon } from 'svelte-hero-icons';
 	import { t } from '$lib/i18n';
 	import type {
-		GameDashboardSiteData,
 		GameDashboardAggregatedData,
-		GameDashboardPerformanceData
+		GameDashboardPerformanceData,
+		GameDashboardSiteData
 	} from '$lib/states/gameState.svelte';
 
-	let {
+	const {
 		sites,
 		aggregated,
 		performance
@@ -18,7 +18,7 @@
 	} = $props();
 
 	// Sort sites by power efficiency
-	let sortedSitesByEfficiency = $derived.by(() => {
+	const sortedSitesByEfficiency = $derived.by(() => {
 		return performance.powerEfficiencyBySite
 			.map((eff) => ({
 				...eff,
@@ -29,14 +29,14 @@
 	});
 
 	// Sort sites by power consumption
-	let sortedSitesByConsumption = $derived.by(() => {
+	const sortedSitesByConsumption = $derived.by(() => {
 		return [...sites]
 			.filter((site) => site.powerConsumption > 0)
 			.sort((a, b) => b.powerConsumption - a.powerConsumption);
 	});
 
 	// Sort sites by power production
-	let sortedSitesByProduction = $derived.by(() => {
+	const sortedSitesByProduction = $derived.by(() => {
 		return [...sites]
 			.filter((site) => site.powerProduction > 0)
 			.sort((a, b) => b.powerProduction - a.powerProduction);

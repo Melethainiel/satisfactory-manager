@@ -2,13 +2,13 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
 import {
-	buildings,
-	recipeBuildings,
 	buildingVersions,
+	buildings,
 	moduleVersions,
+	recipeBuildings,
 	recipeVersions
 } from '$lib/server/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 // GET /api/recipes/versions/:versionId/buildings - Get buildings compatible with a recipe version
 export const GET: RequestHandler = async ({ params }) => {

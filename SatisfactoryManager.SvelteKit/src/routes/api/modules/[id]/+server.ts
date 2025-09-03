@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { moduleService } from '$lib/server/services/moduleService';
-import { requireAdmin, isValidUUID } from '$lib/server/auth/authUtils';
+import { isValidUUID, requireAdmin } from '$lib/server/auth/authUtils';
 
 // DELETE /api/modules/[id] - Delete a module (Admin only)
 export const DELETE: RequestHandler = requireAdmin(async ({ params, user }) => {

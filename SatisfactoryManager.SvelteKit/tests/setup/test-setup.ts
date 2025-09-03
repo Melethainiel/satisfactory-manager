@@ -1,5 +1,5 @@
-import { beforeAll, afterAll, afterEach } from 'vitest';
-import { setupTestDb, cleanupTestDb, clearTestData } from './test-db';
+import { afterAll, afterEach, beforeAll } from 'vitest';
+import { cleanupTestDb, clearTestData, setupTestDb } from './test-db';
 import { config } from 'dotenv';
 import { resolve } from 'path';
 

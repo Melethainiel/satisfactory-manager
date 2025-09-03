@@ -1,19 +1,19 @@
 import { db } from '../db';
 import {
+	buildingVersions,
+	buildings,
+	itemVersions,
+	items,
+	moduleGames,
+	modules,
 	productionInstances,
-	sites,
+	recipeIngredients,
+	recipeProducts,
 	recipeVersions,
 	recipes,
-	buildings,
-	buildingVersions,
-	recipeProducts,
-	recipeIngredients,
-	items,
-	itemVersions,
-	moduleGames,
-	modules
+	sites
 } from '../db/schema';
-import { eq, and, inArray } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 
 // Purity multipliers for extractors
 function getPurityMultiplier(purity: string | null): number {
@@ -199,8 +199,8 @@ export class ProductionCalculationService {
 
 		// Calculate power multiplier based on slots usage
 		// Temporarily using 0 filledSlots and 1 totalSlots
-		let filledSlots = 0;
-		let totalSlots = 1;
+		const filledSlots = 0;
+		const totalSlots = 1;
 
 		const powerMultiplier = calculatePowerMultiplier(filledSlots, totalSlots);
 		const clockSpeed = efficiency * 100; // efficiency is typically clock speed as percentage

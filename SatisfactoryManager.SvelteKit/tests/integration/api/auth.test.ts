@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { POST } from '../../../src/routes/api/auth/ensure-user/+server';
 import { testUsers } from '../../setup/fixtures';
 import { userService } from '../../../src/lib/server/services/userService';

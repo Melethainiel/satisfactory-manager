@@ -1,14 +1,14 @@
 import {
-	pgTable,
-	varchar,
-	uuid,
-	primaryKey,
-	pgEnum,
-	timestamp,
-	numeric,
 	boolean,
 	index,
-	unique
+	numeric,
+	pgEnum,
+	pgTable,
+	primaryKey,
+	timestamp,
+	unique,
+	uuid,
+	varchar
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 

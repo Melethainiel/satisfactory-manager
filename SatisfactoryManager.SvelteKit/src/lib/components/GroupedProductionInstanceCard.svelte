@@ -1,14 +1,14 @@
 <script lang="ts">
-	import { getGameState, type ProductionInstanceData } from '$lib/states/gameState.svelte';
+	import { type ProductionInstanceData, getGameState } from '$lib/states/gameState.svelte';
 	import { getAuthState } from '$lib/states/authState.svelte';
 	import {
-		Icon,
-		PencilSquare,
-		Trash,
-		Cog6Tooth,
 		CheckBadge,
 		ChevronDown,
-		ChevronRight
+		ChevronRight,
+		Cog6Tooth,
+		Icon,
+		PencilSquare,
+		Trash
 	} from 'svelte-hero-icons';
 	import { t } from '$lib/i18n';
 	import { slide } from 'svelte/transition';
@@ -33,7 +33,7 @@
 		onDeleteInstance?: (instance: ProductionInstanceData) => void;
 	}
 
-	let { group, onEditInstance, onDeleteInstance }: Props = $props();
+	const { group, onEditInstance, onDeleteInstance }: Props = $props();
 
 	const gameState = getGameState();
 	const authState = getAuthState();
@@ -42,7 +42,7 @@
 	let isExpanded = $state(false);
 
 	// Check if current user can edit instances
-	let canEdit = $derived(() => {
+	const canEdit = $derived(() => {
 		if (!authState.isAuthenticated || !authState.user?.email) return false;
 		return gameState.canManageSites(authState.user.email);
 	});
@@ -57,7 +57,7 @@
 	}
 
 	// Calculate efficiency color
-	let utilizationColor = $derived(() => {
+	const utilizationColor = $derived(() => {
 		const percent = Math.round(group.averageEfficiency * 100);
 		if (percent >= 100) return 'text-success';
 		if (percent >= 75) return 'text-warning';
@@ -65,7 +65,7 @@
 	});
 
 	// Count of built vs unbuilt instances
-	let builtStats = $derived(() => {
+	const builtStats = $derived(() => {
 		const builtCount = group.instances.filter((i) => i.isBuilt).length;
 		const totalCount = group.instances.length;
 		return { built: builtCount, total: totalCount, unbuilt: totalCount - builtCount };

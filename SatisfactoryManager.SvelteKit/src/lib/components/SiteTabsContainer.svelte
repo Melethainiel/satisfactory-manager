@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { getGameState } from '$lib/states/gameState.svelte';
 	import { getAuthState } from '$lib/states/authState.svelte';
-	import { Icon, Plus, PencilSquare, Trash } from 'svelte-hero-icons';
+	import { Icon, PencilSquare, Plus, Trash } from 'svelte-hero-icons';
 	import { t } from '$lib/i18n';
 	import { fade, fly } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
@@ -22,10 +22,10 @@
 	let confirmDialogRef: ConfirmDialogHandle | null = $state(null);
 
 	// Generate unique radio group name based on game ID
-	let tabGroupName = $derived(() => `site_tabs_${gameState.selectedGameId || 'default'}`);
+	const tabGroupName = $derived(() => `site_tabs_${gameState.selectedGameId || 'default'}`);
 
 	// Check if current user has contributor+ permissions
-	let canManageSites = $derived(() => {
+	const canManageSites = $derived(() => {
 		if (!authState.isAuthenticated || !authState.user?.email) return false;
 		return gameState.canManageSites(authState.user.email);
 	});

@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { GET, POST } from '../../../src/routes/api/users/+server';
-import { GET as GETById, PUT, DELETE } from '../../../src/routes/api/users/[id]/+server';
+import { DELETE, GET as GETById, PUT } from '../../../src/routes/api/users/[id]/+server';
 import { testUsers } from '../../setup/fixtures';
 import { userService } from '../../../src/lib/server/services/userService';
 

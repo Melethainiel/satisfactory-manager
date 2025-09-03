@@ -1,13 +1,13 @@
 <script lang="ts">
-	import { getGameState, type ProductionInstanceData } from '$lib/states/gameState.svelte';
+	import { type ProductionInstanceData, getGameState } from '$lib/states/gameState.svelte';
 	import { getAuthState } from '$lib/states/authState.svelte';
 	import {
-		Icon,
-		Plus,
 		ChartBarSquare,
 		ChevronDown,
 		ChevronRight,
+		Icon,
 		MagnifyingGlass,
+		Plus,
 		XMark
 	} from 'svelte-hero-icons';
 	import { t } from '$lib/i18n';
@@ -23,14 +23,14 @@
 	import type { EditProductionInstanceDialogHandle } from '$lib/dialogs/EditProductionInstanceDialogHandle';
 	import ConfirmDialog from '$lib/dialogs/ConfirmDialog.svelte';
 	import type { ConfirmDialogHandle } from '$lib/dialogs/ConfirmDialogHandle';
-	import { formatEnergy, calculateTotalEnergy } from '$lib/utils/energyFormatter';
+	import { calculateTotalEnergy, formatEnergy } from '$lib/utils/energyFormatter';
 
 	interface Props {
 		siteId: string;
 		siteName: string;
 	}
 
-	let { siteId, siteName }: Props = $props();
+	const { siteId, siteName }: Props = $props();
 
 	const gameState = getGameState();
 	const authState = getAuthState();
@@ -41,7 +41,7 @@
 	let confirmDialogRef: ConfirmDialogHandle | null = $state(null);
 
 	// Check permissions
-	let canManage = $derived(() => {
+	const canManage = $derived(() => {
 		if (!authState.isAuthenticated || !authState.user?.email) return false;
 		return gameState.canManageSites(authState.user.email);
 	});
@@ -53,7 +53,7 @@
 	let builtStatusFilter = $state<'all' | 'built' | 'not-built'>('all');
 
 	// Filter production instances based on search term and built status
-	let filteredInstances = $derived(() => {
+	const filteredInstances = $derived(() => {
 		let instances = gameState.siteProductionInstances;
 
 		// Filter by built status first
@@ -127,7 +127,7 @@
 	}
 
 	// Group and aggregate instances
-	let groupedAndSortedInstances = $derived((): GroupedProductionInstance[] => {
+	const groupedAndSortedInstances = $derived((): GroupedProductionInstance[] => {
 		const filtered = filteredInstances();
 
 		// Group by building type and recipe/item
@@ -212,7 +212,7 @@
 	});
 
 	// Create building type sections
-	let buildingTypeSections = $derived(() => {
+	const buildingTypeSections = $derived(() => {
 		const sections: Array<{
 			type: 'Constructor' | 'Generator' | 'Miner';
 			groups: GroupedProductionInstance[];
@@ -236,7 +236,7 @@
 	// Removed unused productionStats
 
 	// Resource balance data with production and consumption values
-	let resourceBalance = $derived(() => {
+	const resourceBalance = $derived(() => {
 		const overview = gameState.siteProductionOverview;
 		if (!overview) return null;
 
@@ -347,7 +347,7 @@
 	}
 
 	// Energy consumption data
-	let energyConsumption = $derived(() => {
+	const energyConsumption = $derived(() => {
 		const overview = gameState.siteProductionOverview;
 		if (!overview) return null;
 
@@ -370,7 +370,7 @@
 	let hasLoadedOnce = $state(false);
 
 	// Conditional loading that only applies during initial load
-	let shouldShowInitialLoading = $derived(() => gameState.isLoading && !hasLoadedOnce);
+	const shouldShowInitialLoading = $derived(() => gameState.isLoading && !hasLoadedOnce);
 
 	// Effect pour marquer le premier chargement comme terminé
 	$effect(() => {

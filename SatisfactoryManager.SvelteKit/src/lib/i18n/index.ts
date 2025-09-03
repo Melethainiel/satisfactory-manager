@@ -1,10 +1,10 @@
 import {
-	register,
-	init,
-	getLocaleFromNavigator,
-	locale,
 	_,
+	getLocaleFromNavigator,
+	init,
 	isLoading,
+	locale,
+	register,
 	waitLocale
 } from 'svelte-i18n';
 import { browser } from '$app/environment';

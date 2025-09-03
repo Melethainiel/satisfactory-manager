@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import type { ServerEnv, EnvValidationError } from './env.types.js';
+import type { EnvValidationError, ServerEnv } from './env.types.js';
 
 // Note: In Aspire deployments, environment variables are injected at runtime
 // so we use dynamic imports only to avoid build-time dependency issues

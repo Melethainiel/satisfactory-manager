@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { GET, POST } from '../../../src/routes/api/buildings/+server';
-import { GET as GETById, PATCH, DELETE } from '../../../src/routes/api/buildings/[id]/+server';
+import { DELETE, GET as GETById, PATCH } from '../../../src/routes/api/buildings/[id]/+server';
 import { POST as POSTImport } from '../../../src/routes/api/buildings/import/+server';
 import { testImportBuildingData } from '../../setup/fixtures';
 import { moduleService } from '../../../src/lib/server/services/moduleService';

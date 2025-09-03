@@ -1,13 +1,13 @@
 import { expect } from 'vitest';
 // removed unused getTestDb import
 import {
-	testUsers,
-	testGames,
-	testModules,
-	testModuleVersions,
-	testItems,
 	testBuildings,
-	testRecipes
+	testGames,
+	testItems,
+	testModuleVersions,
+	testModules,
+	testRecipes,
+	testUsers
 } from './fixtures';
 import type { GameUserRole } from '../../src/lib/server/db/schema';
 import { userService } from '../../src/lib/server/services/userService';

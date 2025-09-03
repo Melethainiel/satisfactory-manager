@@ -3,12 +3,20 @@
 	"singleQuote": true,
 	"trailingComma": "none",
 	"printWidth": 100,
+	"semi": true,
+	"bracketSpacing": true,
+	"arrowParens": "always",
+	"htmlWhitespaceSensitivity": "css",
+	"endOfLine": "lf",
 	"plugins": ["prettier-plugin-svelte", "prettier-plugin-tailwindcss"],
 	"overrides": [
 		{
 			"files": "*.svelte",
 			"options": {
-				"parser": "svelte"
+				"parser": "svelte",
+				"svelteStrictMode": false,
+				"svelteIndentScriptAndStyle": true,
+				"svelteAllowShorthand": true
 			}
 		}
 	],

@@ -6,13 +6,13 @@
 	import { getAuthState } from '$lib/states/authState.svelte';
 	import { getPermissionState } from '$lib/states/permissionState.svelte';
 	import {
+		AdjustmentsHorizontal,
 		Icon,
 		Identification,
-		AdjustmentsHorizontal,
-		Trash,
-		Plus,
+		Map,
 		PencilSquare,
-		Map
+		Plus,
+		Trash
 	} from 'svelte-hero-icons';
 	import { notificationService } from '$lib/services/notificationService.svelte';
 	import { t } from '$lib/i18n';
@@ -48,12 +48,12 @@
 	let isDirty = $state(false);
 	let saveError = $state<string | null>(null);
 	let saveSuccess = $state(false);
-	let usersLoading = $state(false);
+	const usersLoading = $state(false);
 	let usersError = $state<string | null>(null);
-	let modulesLoading = $state(false);
+	const modulesLoading = $state(false);
 	let modulesError = $state<string | null>(null);
-	let sitesLoading = $state(false);
-	let sitesError = $state<string | null>(null);
+	const sitesLoading = $state(false);
+	const sitesError = $state<string | null>(null);
 
 	// Dialog refs
 	let createDialogRef: CreateGameDialogHandle | null = $state(null);
@@ -125,7 +125,7 @@
 	});
 
 	// Get current game info
-	let currentGame = $derived(gameState.games.find((g) => g.id === gameId));
+	const currentGame = $derived(gameState.games.find((g) => g.id === gameId));
 
 	// Handle name input changes
 	function handleNameInput(e: Event) {

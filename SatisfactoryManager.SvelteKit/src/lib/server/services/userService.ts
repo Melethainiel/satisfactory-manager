@@ -1,6 +1,6 @@
 import { db, getDatabaseInitialization } from '../db';
-import { users, type User, type NewUser } from '../db/schema';
-import { eq, or, like } from 'drizzle-orm';
+import { type NewUser, type User, users } from '../db/schema';
+import { eq, like, or } from 'drizzle-orm';
 
 export interface IUserService {
 	getAll(search?: string): Promise<User[]>;

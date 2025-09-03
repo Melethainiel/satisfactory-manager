@@ -3,7 +3,7 @@
 	import { fade, fly } from 'svelte/transition';
 	import { goto } from '$app/navigation';
 	import { getAuthState } from '$lib/states/authState.svelte';
-	import { getGameState, type GameSummary } from '$lib/states/gameState.svelte';
+	import { type GameSummary, getGameState } from '$lib/states/gameState.svelte';
 	import { Icon, Play, WrenchScrewdriver } from 'svelte-hero-icons';
 	import { t } from '$lib/i18n';
 	import AuthComponent from '$lib/components/AuthComponent.svelte';

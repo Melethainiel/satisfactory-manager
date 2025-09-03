@@ -49,7 +49,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 			const email = (raw || '').trim().toLowerCase();
 			if (!email) continue;
 			try {
-				let user = await userService.getByEmail(email);
+				const user = await userService.getByEmail(email);
 				if (!user) {
 					added.push({ email, error: 'User not found' });
 					continue;
@@ -93,7 +93,7 @@ export const DELETE: RequestHandler = async ({ params, request, locals }) => {
 		if (!body.email) {
 			return json({ error: 'Email is required' }, { status: 400 });
 		}
-		let user = await userService.getByEmail(body.email.trim().toLowerCase());
+		const user = await userService.getByEmail(body.email.trim().toLowerCase());
 		if (!user) {
 			return json({ error: 'User not found' }, { status: 404 });
 		}

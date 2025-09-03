@@ -1,14 +1,14 @@
 import { db } from '../db';
 import {
-	buildings,
-	buildingVersions,
 	type Building,
-	type NewBuilding,
+	type BuildingType,
 	type BuildingVersion,
+	type NewBuilding,
 	type NewBuildingVersion,
-	type BuildingType
+	buildingVersions,
+	buildings
 } from '../db/schema';
-import { eq, desc, and } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 
 export interface IBuildingService {
 	// Building CRUD operations

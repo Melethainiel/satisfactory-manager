@@ -1,23 +1,23 @@
 import { db } from '../db';
 import { broadcastToGame } from './sseService.js';
 import {
-	productionInstances,
-	sites,
-	recipeVersions,
-	recipes,
-	buildings,
+	type NewProductionInstance,
+	type ProductionInstance,
 	buildingVersions,
-	recipeProducts,
-	recipeIngredients,
-	items,
+	buildings,
 	itemVersions,
+	items,
 	moduleGames,
 	modules,
-	type ProductionInstance,
-	type NewProductionInstance
+	productionInstances,
+	recipeIngredients,
+	recipeProducts,
+	recipeVersions,
+	recipes,
+	sites
 } from '../db/schema';
 import { alias } from 'drizzle-orm/pg-core';
-import { eq, desc, and } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import { productionCalculationService } from './productionCalculationService';
 import { gameDashboardService } from './gameDashboardService';
 

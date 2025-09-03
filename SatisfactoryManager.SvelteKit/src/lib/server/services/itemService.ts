@@ -1,29 +1,29 @@
 import { db } from '../db';
 import {
-	items,
-	itemVersions,
+	type Building as DBBuilding,
+	type Item,
+	type ItemExtractionBuilding,
+	type ItemForm,
+	type ItemFuelGenerator,
+	type ItemVersion,
+	type NewItem,
+	type NewItemExtractionBuilding,
+	type NewItemFuelGenerator,
+	type NewItemVersion,
+	buildingVersions,
+	buildings,
 	itemExtractionBuildings,
 	itemFuelGenerators,
-	buildings,
-	buildingVersions,
-	recipeVersions,
-	recipeProducts,
+	itemVersions,
+	items,
 	moduleGames,
 	moduleVersions,
 	modules,
-	recipes,
-	type Item,
-	type NewItem,
-	type ItemVersion,
-	type NewItemVersion,
-	type ItemExtractionBuilding,
-	type NewItemExtractionBuilding,
-	type ItemFuelGenerator,
-	type NewItemFuelGenerator,
-	type ItemForm,
-	type Building as DBBuilding
+	recipeProducts,
+	recipeVersions,
+	recipes
 } from '../db/schema';
-import { eq, desc, and, inArray, ilike, isNotNull, sql } from 'drizzle-orm';
+import { and, desc, eq, ilike, inArray, isNotNull, sql } from 'drizzle-orm';
 
 export interface IItemService {
 	// Item CRUD operations

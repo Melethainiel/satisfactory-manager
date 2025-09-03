@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { Icon, ExclamationTriangle, XMark } from 'svelte-hero-icons';
+	import { ExclamationTriangle, Icon, XMark } from 'svelte-hero-icons';
 	import { t } from '$lib/i18n';
 	import type { GameDashboardPerformanceData } from '$lib/states/gameState.svelte';
 
-	let { bottlenecks }: { bottlenecks: GameDashboardPerformanceData['bottlenecks'] } = $props();
+	const { bottlenecks }: { bottlenecks: GameDashboardPerformanceData['bottlenecks'] } = $props();
 
 	let dismissed = $state(false);
 
@@ -25,7 +25,7 @@
 	}
 
 	// Sort bottlenecks by severity (highest deficit first)
-	let sortedBottlenecks = $derived.by(() => {
+	const sortedBottlenecks = $derived.by(() => {
 		return [...bottlenecks].sort((a, b) => b.deficit - a.deficit);
 	});
 

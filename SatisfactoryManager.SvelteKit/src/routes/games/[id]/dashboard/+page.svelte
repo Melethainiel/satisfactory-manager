@@ -5,7 +5,7 @@
 	import { getGameState } from '$lib/states/gameState.svelte';
 	import { getAuthState } from '$lib/states/authState.svelte';
 	import { t } from '$lib/i18n';
-	import { Icon, ChartBarSquare, ArrowPath } from 'svelte-hero-icons';
+	import { ArrowPath, ChartBarSquare, Icon } from 'svelte-hero-icons';
 	import GameDashboardOverview from '$lib/components/dashboard/GameDashboardOverview.svelte';
 	import ProductionBreakdown from '$lib/components/dashboard/ProductionBreakdown.svelte';
 	import EnergyDashboard from '$lib/components/dashboard/EnergyDashboard.svelte';
@@ -23,10 +23,10 @@
 	const gameId = $page.params.id!;
 
 	// Get current game info
-	let currentGame = $derived(gameState.games.find((g) => g.id === gameId));
+	const currentGame = $derived(gameState.games.find((g) => g.id === gameId));
 
 	// Check if user has read access
-	let hasReadAccess = $derived(() => {
+	const hasReadAccess = $derived(() => {
 		if (!authState.isAuthenticated || !authState.user?.email) return false;
 		const userRole = gameState.getUserRole(authState.user.email);
 		return ['Reader', 'Contributor', 'Administrator', 'Owner'].includes(userRole || '');

@@ -1,27 +1,27 @@
 import { db } from '../db';
 import {
-	recipes,
-	recipeVersions,
-	recipeIngredients,
-	recipeProducts,
-	recipeBuildings,
-	items,
+	type NewRecipe,
+	type NewRecipeBuilding,
+	type NewRecipeIngredient,
+	type NewRecipeProduct,
+	type NewRecipeVersion,
+	type Recipe,
+	type RecipeBuilding,
+	type RecipeIngredient,
+	type RecipeProduct,
+	type RecipeVersion,
 	buildings,
+	items,
 	moduleGames,
 	moduleVersions,
 	modules,
-	type Recipe,
-	type NewRecipe,
-	type RecipeVersion,
-	type NewRecipeVersion,
-	type RecipeIngredient,
-	type NewRecipeIngredient,
-	type RecipeProduct,
-	type NewRecipeProduct,
-	type RecipeBuilding,
-	type NewRecipeBuilding
+	recipeBuildings,
+	recipeIngredients,
+	recipeProducts,
+	recipeVersions,
+	recipes
 } from '../db/schema';
-import { eq, desc, ilike, inArray, and, isNotNull, sql } from 'drizzle-orm';
+import { and, desc, eq, ilike, inArray, isNotNull, sql } from 'drizzle-orm';
 
 export interface RecipeVersionWithDetails extends RecipeVersion {
 	ingredients: RecipeIngredient[];

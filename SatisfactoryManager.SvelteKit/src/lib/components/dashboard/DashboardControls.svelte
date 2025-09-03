@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { Icon, ArrowPath, Clock } from 'svelte-hero-icons';
+	import { ArrowPath, Clock, Icon } from 'svelte-hero-icons';
 	import { t } from '$lib/i18n';
-	import { onMount, onDestroy } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 
-	let {
+	const {
 		gameId,
 		isLoading,
 		lastUpdated,
@@ -91,7 +91,7 @@
 	});
 
 	// Auto refresh intervals in seconds
-	let intervalOptions = $derived([
+	const intervalOptions = $derived([
 		{ value: 60, label: $t('dashboard.auto_refresh.1_minute') },
 		{ value: 300, label: $t('dashboard.auto_refresh.5_minutes') },
 		{ value: 600, label: $t('dashboard.auto_refresh.10_minutes') },

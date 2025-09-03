@@ -4,11 +4,11 @@
 	import { getAuthState } from '$lib/states/authState.svelte';
 	import { t } from '$lib/i18n';
 	import { apiService } from '$lib/services/apiService';
-	import { Icon, Cube, Link, Calendar, Tag, Trash } from 'svelte-hero-icons';
+	import { Calendar, Cube, Icon, Link, Tag, Trash } from 'svelte-hero-icons';
 	import ModuleVersionManager from '$lib/components/ModuleVersionManager.svelte';
 	import {
-		setDeleteModuleDialog,
-		openDeleteModuleDialog
+		openDeleteModuleDialog,
+		setDeleteModuleDialog
 	} from '$lib/dialogs/DeleteModuleDialogHandle';
 	import DeleteModuleDialog from '$lib/dialogs/DeleteModuleDialog.svelte';
 

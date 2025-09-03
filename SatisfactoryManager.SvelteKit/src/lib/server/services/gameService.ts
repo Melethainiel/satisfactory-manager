@@ -1,20 +1,20 @@
 import { db } from '../db';
 import {
-	games,
-	userGames,
-	users,
-	modules,
-	moduleGames,
-	moduleVersions,
 	type Game,
+	type GameUserRole,
 	type NewGame,
 	type UserGame,
-	type GameUserRole
+	games,
+	moduleGames,
+	moduleVersions,
+	modules,
+	userGames,
+	users
 } from '../db/schema';
-import { eq, and, asc, desc, like } from 'drizzle-orm';
+import { and, asc, desc, eq, like } from 'drizzle-orm';
 import {
-	productionInstanceMigrationService,
-	type MigrationResult
+	type MigrationResult,
+	productionInstanceMigrationService
 } from './productionInstanceMigrationService';
 import { gameDashboardService } from './gameDashboardService';
 import { broadcastToGame } from './sseService.js';

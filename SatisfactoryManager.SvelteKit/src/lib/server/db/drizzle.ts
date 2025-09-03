@@ -147,9 +147,19 @@ export async function closeDatabase() {
 }
 
 /**
+ * Database health check result interface
+ */
+interface DatabaseHealthResult {
+	healthy: boolean;
+	timestamp?: Date;
+	version?: string;
+	error?: string;
+}
+
+/**
  * Health check for the database connection
  */
-export async function checkDatabaseHealth(): Promise<{ healthy: boolean; error?: string }> {
+export async function checkDatabaseHealth(): Promise<DatabaseHealthResult> {
 	try {
 		if (!currentSql) {
 			await getDatabase(); // Initialize if not already done
@@ -161,7 +171,7 @@ export async function checkDatabaseHealth(): Promise<{ healthy: boolean; error?:
 				healthy: true,
 				timestamp: result[0]?.timestamp,
 				version: result[0]?.version
-			} as any;
+			};
 		}
 
 		return { healthy: false, error: 'No database connection available' };

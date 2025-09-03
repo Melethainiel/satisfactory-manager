@@ -50,15 +50,28 @@ export interface MonitoringThresholds {
 }
 
 /**
- * Default monitoring thresholds
+ * Gets monitoring thresholds from environment variables or defaults
  */
-export const DEFAULT_MONITORING_THRESHOLDS: MonitoringThresholds = {
-	errorRateThreshold: 10, // Alert if error rate > 10%
-	cacheHitRateThreshold: 80, // Alert if cache hit rate < 80%
-	averageResponseTimeThreshold: 5000, // Alert if avg response time > 5 seconds
-	tokenExpiryWarningThreshold: 15, // Warn when token expires in < 15 minutes
-	consecutiveFailuresThreshold: 3 // Alert after 3 consecutive failures
-};
+function getMonitoringThresholds(): MonitoringThresholds {
+	return {
+		errorRateThreshold: parseInt(process.env.AUTH_MONITORING_ERROR_RATE_THRESHOLD || '10'),
+		cacheHitRateThreshold: parseInt(process.env.AUTH_MONITORING_CACHE_HIT_RATE_THRESHOLD || '80'),
+		averageResponseTimeThreshold: parseInt(
+			process.env.AUTH_MONITORING_AVG_RESPONSE_TIME_THRESHOLD || '5000'
+		),
+		tokenExpiryWarningThreshold: parseInt(
+			process.env.AUTH_MONITORING_TOKEN_EXPIRY_WARNING_THRESHOLD || '15'
+		),
+		consecutiveFailuresThreshold: parseInt(
+			process.env.AUTH_MONITORING_CONSECUTIVE_FAILURES_THRESHOLD || '3'
+		)
+	};
+}
+
+/**
+ * Default monitoring thresholds (configurable via environment variables)
+ */
+export const DEFAULT_MONITORING_THRESHOLDS: MonitoringThresholds = getMonitoringThresholds();
 
 /**
  * Monitoring state
@@ -85,7 +98,7 @@ let monitoringState: MonitoringState = {
  * Generates a unique alert ID
  */
 function generateAlertId(): string {
-	return `auth_alert_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+	return `auth_alert_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 }
 
 /**

@@ -9,6 +9,8 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { getDatabaseConfig, getDrizzleConfig } from '../../config/database.config.js';
 import { createAzureTokenProvider } from './auth.js';
+import { createEnhancedAzureTokenProvider } from './auth-enhanced.js';
+import { startMonitoring } from '../services/authMonitoringService.js';
 import * as schema from './schema.js';
 
 // Global connection instance
@@ -40,8 +42,8 @@ async function createConnection() {
 			url.password = ''; // Clear password as it will be provided by the password function
 			connectionUrl = url.toString();
 
-			// Create Azure token provider function
-			const tokenProvider = createAzureTokenProvider();
+			// Create enhanced Azure token provider function with monitoring
+			const tokenProvider = createEnhancedAzureTokenProvider();
 
 			// Create postgres instance with dynamic password function
 			// This will automatically request a new token for each new connection
@@ -61,8 +63,17 @@ async function createConnection() {
 			});
 
 			console.log(
-				'✅ Azure Managed Identity authentication configured with dynamic token provider'
+				'✅ Azure Managed Identity authentication configured with enhanced token provider'
 			);
+
+			// Start authentication monitoring for Azure environments
+			if (process.env.NODE_ENV === 'production') {
+				console.log('🔍 Starting enhanced authentication monitoring for production');
+				startMonitoring(5 * 60 * 1000); // 5-minute monitoring interval
+			} else {
+				console.log('🔍 Starting enhanced authentication monitoring for development');
+				startMonitoring(1 * 60 * 1000); // 1-minute monitoring interval for faster feedback
+			}
 		} catch (error) {
 			console.error('❌ Failed to configure Azure Managed Identity:', error);
 			throw new Error(
@@ -136,9 +147,19 @@ export async function closeDatabase() {
 }
 
 /**
+ * Database health check result interface
+ */
+interface DatabaseHealthResult {
+	healthy: boolean;
+	timestamp?: Date;
+	version?: string;
+	error?: string;
+}
+
+/**
  * Health check for the database connection
  */
-export async function checkDatabaseHealth(): Promise<{ healthy: boolean; error?: string }> {
+export async function checkDatabaseHealth(): Promise<DatabaseHealthResult> {
 	try {
 		if (!currentSql) {
 			await getDatabase(); // Initialize if not already done
@@ -150,7 +171,7 @@ export async function checkDatabaseHealth(): Promise<{ healthy: boolean; error?:
 				healthy: true,
 				timestamp: result[0]?.timestamp,
 				version: result[0]?.version
-			} as any;
+			};
 		}
 
 		return { healthy: false, error: 'No database connection available' };

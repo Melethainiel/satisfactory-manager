@@ -4,14 +4,14 @@ const API_USER_ACCESS_SCOPE =
 	'https://SatisfactoryManager.onmicrosoft.com/71d43619-ad3d-49d4-bae9-97e38ec57dc4/access_users';
 import { notificationService } from '$lib/services/notificationService.svelte';
 import {
-	type AuthenticationResult,
-	type Configuration,
-	type EndSessionRequest,
-	InteractionRequiredAuthError,
-	LogLevel,
 	PublicClientApplication,
+	type Configuration,
+	type AuthenticationResult,
 	type RedirectRequest,
-	type SilentRequest
+	type SilentRequest,
+	type EndSessionRequest,
+	LogLevel,
+	InteractionRequiredAuthError
 } from '@azure/msal-browser';
 
 // Types for Azure AD B2C configuration
@@ -68,6 +68,7 @@ class AuthStateClass implements AuthState {
 	// MSAL instance
 	private msalInstance: PublicClientApplication | null = null;
 	private msalConfig: Configuration;
+	private tokenRefreshInterval: ReturnType<typeof setInterval> | null = null;
 
 	constructor() {
 		// MSAL Configuration
@@ -80,7 +81,7 @@ class AuthStateClass implements AuthState {
 				postLogoutRedirectUri: defaultConfig.postLogoutRedirectUri
 			},
 			cache: {
-				cacheLocation: 'sessionStorage', // Use sessionStorage for better security
+				cacheLocation: 'localStorage', // Use localStorage to persist auth across browser sessions
 				storeAuthStateInCookie: false // Set to true if you have issues on IE11 or Edge
 			},
 			system: {
@@ -207,6 +208,9 @@ class AuthStateClass implements AuthState {
 		this.user = userInfo;
 		this.accessToken = authResult.accessToken || null; // May be empty string if only ID token was returned
 
+		// Start automatic token refresh
+		this.startTokenRefresh();
+
 		// Fire and forget ensure user exists in backend
 		if (userInfo.email) {
 			// Fire and forget ensure-user with bearer token if available
@@ -222,6 +226,60 @@ class AuthStateClass implements AuthState {
 					});
 				})
 				.catch((e) => console.warn('Failed to ensure user in DB', e));
+		}
+	};
+
+	// Start automatic token refresh every 45 minutes (tokens typically expire after 60 minutes)
+	private startTokenRefresh = (): void => {
+		// Clear any existing interval
+		this.stopTokenRefresh();
+
+		// Set up refresh interval (45 minutes = 2700000 ms)
+		this.tokenRefreshInterval = setInterval(
+			() => {
+				this.refreshTokenSilently();
+			},
+			45 * 60 * 1000
+		);
+	};
+
+	// Stop automatic token refresh
+	private stopTokenRefresh = (): void => {
+		if (this.tokenRefreshInterval) {
+			clearInterval(this.tokenRefreshInterval);
+			this.tokenRefreshInterval = null;
+		}
+	};
+
+	// Silently refresh the token
+	private refreshTokenSilently = async (): Promise<void> => {
+		if (!this.msalInstance || !this.isAuthenticated) {
+			return;
+		}
+
+		try {
+			const accounts = this.msalInstance.getAllAccounts();
+			if (accounts.length > 0) {
+				const silentRequest: SilentRequest = {
+					scopes: defaultConfig.scopes || ['openid'],
+					account: accounts[0],
+					forceRefresh: true // Force token refresh
+				};
+
+				const response = await this.msalInstance.acquireTokenSilent(silentRequest);
+				// Update the stored token
+				if (response.accessToken) {
+					this.accessToken = response.accessToken;
+				}
+				console.log('Token refreshed successfully');
+			}
+		} catch (error) {
+			if (error instanceof InteractionRequiredAuthError) {
+				console.log('User interaction required for token refresh');
+				// Could optionally trigger a sign-in here
+			} else {
+				console.error('Error refreshing token silently:', error);
+			}
 		}
 	};
 
@@ -257,6 +315,9 @@ class AuthStateClass implements AuthState {
 		}
 
 		try {
+			// Stop token refresh
+			this.stopTokenRefresh();
+
 			const accounts = this.msalInstance.getAllAccounts();
 			if (accounts.length > 0) {
 				const logoutRequest: EndSessionRequest = {

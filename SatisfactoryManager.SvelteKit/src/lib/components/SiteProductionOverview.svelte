@@ -420,7 +420,7 @@
 				in:fly={{ x: 20, duration: 400, delay: 300 }}
 			>
 				<Icon src={Plus} class="size-4" />
-				<span class="hidden xs:inline">{$t('productionInstances.add_recipe')}</span>
+				<span class="xs:inline hidden">{$t('productionInstances.add_recipe')}</span>
 			</button>
 		{/if}
 	</div>
@@ -472,10 +472,10 @@
 							<!-- Mobile view: Cards -->
 							<div class="grid grid-cols-1 gap-3 sm:hidden">
 								{#each balance.resources as resource (resource.itemId)}
-									<div class="card bg-base-50 border border-base-300">
+									<div class="bg-base-50 card border border-base-300">
 										<div class="card-body p-4">
-											<div class="flex items-center justify-between mb-3">
-												<h4 class="font-medium text-base">{resource.itemName}</h4>
+											<div class="mb-3 flex items-center justify-between">
+												<h4 class="text-base font-medium">{resource.itemName}</h4>
 												<div
 													class="badge {resource.type === 'overflow'
 														? 'badge-success'
@@ -492,7 +492,7 @@
 											</div>
 											<div class="grid grid-cols-2 gap-3 text-sm">
 												<div>
-													<div class="font-medium text-base-content/70 mb-1">
+													<div class="mb-1 font-medium text-base-content/70">
 														{$t('resourceBalance.production')}
 													</div>
 													<div class="font-mono">
@@ -500,7 +500,7 @@
 													</div>
 												</div>
 												<div>
-													<div class="font-medium text-base-content/70 mb-1">
+													<div class="mb-1 font-medium text-base-content/70">
 														{$t('resourceBalance.consumption')}
 													</div>
 													<div class="font-mono">
@@ -508,7 +508,7 @@
 													</div>
 												</div>
 											</div>
-											<div class="mt-3 pt-3 border-t border-base-300">
+											<div class="mt-3 border-t border-base-300 pt-3">
 												<div class="flex items-center justify-between">
 													<span class="font-medium text-base-content/70">
 														{$t('resourceBalance.net_balance')}
@@ -536,7 +536,7 @@
 							</div>
 
 							<!-- Desktop view: Table -->
-							<div class="hidden sm:block overflow-x-auto">
+							<div class="hidden overflow-x-auto sm:block">
 								<table class="table table-zebra">
 									<thead>
 										<tr>
@@ -648,9 +648,12 @@
 				{#if gameState.siteProductionInstances.length >= 1}
 					<div class="mb-6 space-y-4" in:fly={{ y: 20, duration: 400, delay: 800 }}>
 						<!-- Built Status Filter Buttons -->
-						<div class="flex gap-1 sm:gap-2 flex-wrap">
+						<div class="flex flex-wrap gap-1 sm:gap-2">
 							<button
-								class="btn btn-sm sm:btn-md whitespace-nowrap text-sm sm:text-base min-w-16 sm:min-w-20 {builtStatusFilter === 'all' ? 'btn-primary' : 'btn-outline'}"
+								class="btn min-w-16 text-sm whitespace-nowrap btn-sm sm:min-w-20 sm:text-base sm:btn-md {builtStatusFilter ===
+								'all'
+									? 'btn-primary'
+									: 'btn-outline'}"
 								style="white-space: nowrap !important;"
 								onclick={() => (builtStatusFilter = 'all')}
 							>
@@ -659,7 +662,10 @@
 								})}
 							</button>
 							<button
-								class="btn btn-sm sm:btn-md whitespace-nowrap text-sm sm:text-base min-w-16 sm:min-w-20 {builtStatusFilter === 'built' ? 'btn-success' : 'btn-outline'}"
+								class="btn min-w-16 text-sm whitespace-nowrap btn-sm sm:min-w-20 sm:text-base sm:btn-md {builtStatusFilter ===
+								'built'
+									? 'btn-success'
+									: 'btn-outline'}"
 								style="white-space: nowrap !important;"
 								onclick={() => (builtStatusFilter = 'built')}
 							>
@@ -670,7 +676,8 @@
 								})}
 							</button>
 							<button
-								class="btn btn-sm sm:btn-md whitespace-nowrap text-sm sm:text-base min-w-20 sm:min-w-24 {builtStatusFilter === 'not-built'
+								class="btn min-w-20 text-sm whitespace-nowrap btn-sm sm:min-w-24 sm:text-base sm:btn-md {builtStatusFilter ===
+								'not-built'
 									? 'btn-warning'
 									: 'btn-outline'}"
 								style="white-space: nowrap !important;"
@@ -742,7 +749,7 @@
 									{section.groups.length === 1 ? $t('ui.group') : $t('ui.groups')}
 								</span>
 							</h4>
-							<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+							<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
 								{#each section.groups as group, groupIndex (group.groupKey + group.buildingType)}
 									<div
 										animate:flip={{ duration: 300 }}

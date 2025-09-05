@@ -17,6 +17,8 @@ properties:
       targetPort: 5173
       transport: http
       allowInsecure: false
+      stickySessions:
+        affinity: sticky
       customDomains:
         - name: "{{ .Env.AZURE_DOMAIN_NAME }}"
           certificateId: "{{ .Env.MANAGED_CERTIFICATE_ID }}"
@@ -56,6 +58,14 @@ properties:
             secretRef: connectionstrings--satisfactory
     scale:
       minReplicas: 1
+      maxReplicas: 5
+      rules:
+        - name: http-scale
+          custom:
+            type: http
+            metadata:
+              concurrentRequests: "100"
+
 tags:
   azd-service-name: svelte
   aspire-resource-name: svelte

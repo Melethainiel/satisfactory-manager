@@ -76,21 +76,33 @@ export abstract class ApiError extends Error {
 
 	/**
 	 * Get a serializable representation of the error
+	 * Automatically sanitizes sensitive information in production
 	 */
 	toJSON(): Record<string, any> {
+		const isProduction = isProductionEnvironment();
+
 		return {
 			name: this.name,
-			message: this.message,
+			message: sanitizeErrorMessage(this, isProduction),
 			category: this.category,
 			severity: this.severity,
 			retryable: this.retryable,
-			context: {
-				...this.context,
-				timestamp: this.context.timestamp.toISOString()
-			},
+			context: isProduction
+				? {
+						url: this.context.url,
+						method: this.context.method,
+						requestId: this.context.requestId,
+						timestamp: this.context.timestamp.toISOString(),
+						attempt: this.context.attempt,
+						duration: this.context.duration
+					}
+				: {
+						...this.context,
+						timestamp: this.context.timestamp.toISOString()
+					},
 			statusCode: this.statusCode,
 			statusText: this.statusText,
-			stack: this.stack
+			stack: isProduction ? undefined : this.stack // Remove stack trace in production
 		};
 	}
 }
@@ -357,4 +369,84 @@ export function getRetryDelay(error: ApiError): number {
 		return error.retryAfter * 1000; // Convert to milliseconds
 	}
 	return 0; // Let the retry logic handle exponential backoff
+}
+
+/**
+ * Sanitize error message for production environment
+ * Removes potentially sensitive information while keeping the error useful for debugging
+ */
+export function sanitizeErrorMessage(error: ApiError, isProduction: boolean = false): string {
+	if (!isProduction) {
+		return error.message; // In development, show full error messages
+	}
+
+	// In production, provide generic messages based on error category
+	switch (error.category) {
+		case ErrorCategory.AUTHENTICATION:
+			return 'Authentification requise. Veuillez vous connecter à nouveau.';
+		case ErrorCategory.AUTHORIZATION:
+			return "Vous n'avez pas les permissions nécessaires pour cette opération.";
+		case ErrorCategory.VALIDATION:
+			// For validation errors, we can show more details since they don't contain sensitive info
+			if (error instanceof ValidationError && error.validationErrors) {
+				const fieldCount = Object.keys(error.validationErrors).length;
+				return `Données invalides (${fieldCount} champ(s) en erreur).`;
+			}
+			return 'Les données fournies ne sont pas valides.';
+		case ErrorCategory.SERVER:
+			return 'Erreur interne du serveur. Veuillez réessayer plus tard.';
+		case ErrorCategory.NETWORK:
+			return 'Problème de connexion réseau. Vérifiez votre connexion internet.';
+		case ErrorCategory.TIMEOUT:
+			return 'La requête a pris trop de temps à aboutir. Veuillez réessayer.';
+		case ErrorCategory.RATE_LIMIT:
+			if (error instanceof RateLimitError && error.retryAfter) {
+				return `Trop de requêtes. Veuillez patienter ${error.retryAfter} secondes.`;
+			}
+			return 'Trop de requêtes. Veuillez patienter avant de réessayer.';
+		case ErrorCategory.UNKNOWN:
+		default:
+			return "Une erreur inattendue s'est produite. Veuillez réessayer.";
+	}
+}
+
+/**
+ * Sanitize error details for logging in production
+ * Removes sensitive information while preserving debugging context
+ */
+export function sanitizeErrorForLogging(
+	error: ApiError,
+	isProduction: boolean = false
+): Partial<ApiError> {
+	if (!isProduction) {
+		return error; // In development, log everything
+	}
+
+	// In production, remove potentially sensitive fields
+	return {
+		name: error.name,
+		message: sanitizeErrorMessage(error, true),
+		category: error.category,
+		severity: error.severity,
+		retryable: error.retryable,
+		statusCode: error.statusCode,
+		statusText: error.statusText,
+		context: {
+			url: error.context.url,
+			method: error.context.method,
+			requestId: error.context.requestId,
+			timestamp: error.context.timestamp,
+			attempt: error.context.attempt,
+			duration: error.context.duration
+			// Exclude: headers, body, userId (potentially sensitive)
+		}
+		// Exclude: stack trace in production for security
+	};
+}
+
+/**
+ * Check if we're in production environment
+ */
+export function isProductionEnvironment(): boolean {
+	return typeof process !== 'undefined' && process.env.NODE_ENV === 'production';
 }

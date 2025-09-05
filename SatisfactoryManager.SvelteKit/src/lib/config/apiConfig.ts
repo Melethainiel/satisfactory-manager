@@ -16,6 +16,7 @@ export interface RetryConfig {
 export interface CircuitBreakerConfig {
 	failureThreshold: number; // number of failures before opening
 	recoveryTimeout: number; // milliseconds to wait in open state
+	successThreshold: number; // number of consecutive successes to close from half-open
 	monitoringPeriod: number; // milliseconds to track failure rate
 	minimumRequests: number; // minimum requests before circuit can trip
 }
@@ -56,6 +57,7 @@ export const DEFAULT_API_CONFIG: ApiServiceConfig = {
 	circuitBreaker: {
 		failureThreshold: 5, // 5 consecutive failures
 		recoveryTimeout: 30000, // 30 seconds
+		successThreshold: 3, // 3 consecutive successes to close from half-open
 		monitoringPeriod: 60000, // 1 minute rolling window
 		minimumRequests: 10 // at least 10 requests to consider circuit tripping
 	},

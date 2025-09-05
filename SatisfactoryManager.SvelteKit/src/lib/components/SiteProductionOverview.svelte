@@ -420,7 +420,7 @@
 				in:fly={{ x: 20, duration: 400, delay: 300 }}
 			>
 				<Icon src={Plus} class="size-4" />
-				{$t('productionInstances.add_recipe')}
+				<span class="hidden xs:inline">{$t('productionInstances.add_recipe')}</span>
 			</button>
 		{/if}
 	</div>
@@ -469,7 +469,74 @@
 								</p>
 							</div>
 						{:else if balance?.resources}
-							<div class="overflow-x-auto">
+							<!-- Mobile view: Cards -->
+							<div class="grid grid-cols-1 gap-3 sm:hidden">
+								{#each balance.resources as resource (resource.itemId)}
+									<div class="card bg-base-50 border border-base-300">
+										<div class="card-body p-4">
+											<div class="flex items-center justify-between mb-3">
+												<h4 class="font-medium text-base">{resource.itemName}</h4>
+												<div
+													class="badge {resource.type === 'overflow'
+														? 'badge-success'
+														: resource.type === 'underflow'
+															? 'badge-error'
+															: 'badge-warning'}"
+												>
+													{resource.type === 'overflow'
+														? $t('resourceBalance.overflow')
+														: resource.type === 'underflow'
+															? $t('resourceBalance.underflow')
+															: $t('resourceBalance.balanced')}
+												</div>
+											</div>
+											<div class="grid grid-cols-2 gap-3 text-sm">
+												<div>
+													<div class="font-medium text-base-content/70 mb-1">
+														{$t('resourceBalance.production')}
+													</div>
+													<div class="font-mono">
+														{formatRate(resource.productionRate)}{$t('resourceBalance.per_minute')}
+													</div>
+												</div>
+												<div>
+													<div class="font-medium text-base-content/70 mb-1">
+														{$t('resourceBalance.consumption')}
+													</div>
+													<div class="font-mono">
+														{formatRate(resource.consumptionRate)}{$t('resourceBalance.per_minute')}
+													</div>
+												</div>
+											</div>
+											<div class="mt-3 pt-3 border-t border-base-300">
+												<div class="flex items-center justify-between">
+													<span class="font-medium text-base-content/70">
+														{$t('resourceBalance.net_balance')}
+													</span>
+													<span
+														class="font-mono font-semibold {resource.type === 'overflow'
+															? 'text-success'
+															: resource.type === 'underflow'
+																? 'text-error'
+																: 'text-warning'}"
+													>
+														{resource.type === 'overflow'
+															? '+'
+															: resource.type === 'underflow'
+																? '-'
+																: '±'}{formatRate(resource.absBalance)}{$t(
+															'resourceBalance.per_minute'
+														)}
+													</span>
+												</div>
+											</div>
+										</div>
+									</div>
+								{/each}
+							</div>
+
+							<!-- Desktop view: Table -->
+							<div class="hidden sm:block overflow-x-auto">
 								<table class="table table-zebra">
 									<thead>
 										<tr>
@@ -581,9 +648,10 @@
 				{#if gameState.siteProductionInstances.length >= 1}
 					<div class="mb-6 space-y-4" in:fly={{ y: 20, duration: 400, delay: 800 }}>
 						<!-- Built Status Filter Buttons -->
-						<div class="flex gap-2">
+						<div class="flex gap-1 sm:gap-2 flex-wrap">
 							<button
-								class="btn btn-sm {builtStatusFilter === 'all' ? 'btn-primary' : 'btn-outline'}"
+								class="btn btn-sm sm:btn-md whitespace-nowrap text-sm sm:text-base min-w-16 sm:min-w-20 {builtStatusFilter === 'all' ? 'btn-primary' : 'btn-outline'}"
+								style="white-space: nowrap !important;"
 								onclick={() => (builtStatusFilter = 'all')}
 							>
 								{$t('ui.all_filter', {
@@ -591,7 +659,8 @@
 								})}
 							</button>
 							<button
-								class="btn btn-sm {builtStatusFilter === 'built' ? 'btn-success' : 'btn-outline'}"
+								class="btn btn-sm sm:btn-md whitespace-nowrap text-sm sm:text-base min-w-16 sm:min-w-20 {builtStatusFilter === 'built' ? 'btn-success' : 'btn-outline'}"
+								style="white-space: nowrap !important;"
 								onclick={() => (builtStatusFilter = 'built')}
 							>
 								{$t('ui.built_filter', {
@@ -601,9 +670,10 @@
 								})}
 							</button>
 							<button
-								class="btn btn-sm {builtStatusFilter === 'not-built'
+								class="btn btn-sm sm:btn-md whitespace-nowrap text-sm sm:text-base min-w-20 sm:min-w-24 {builtStatusFilter === 'not-built'
 									? 'btn-warning'
 									: 'btn-outline'}"
+								style="white-space: nowrap !important;"
 								onclick={() => (builtStatusFilter = 'not-built')}
 							>
 								{$t('ui.not_built_filter', {
@@ -624,7 +694,7 @@
 								type="text"
 								bind:value={searchTerm}
 								placeholder={$t('productionInstances.search_instances')}
-								class="input-bordered input w-full pr-10 pl-10"
+								class="input-bordered input w-full pr-12 pl-10 text-base"
 							/>
 							{#if searchTerm}
 								<button
@@ -634,7 +704,7 @@
 									in:fade={{ duration: 150 }}
 									out:fade={{ duration: 100 }}
 								>
-									<Icon src={XMark} class="size-3" />
+									<Icon src={XMark} class="size-3.5 sm:size-3" />
 								</button>
 							{/if}
 						</div>
@@ -672,7 +742,7 @@
 									{section.groups.length === 1 ? $t('ui.group') : $t('ui.groups')}
 								</span>
 							</h4>
-							<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+							<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
 								{#each section.groups as group, groupIndex (group.groupKey + group.buildingType)}
 									<div
 										animate:flip={{ duration: 300 }}

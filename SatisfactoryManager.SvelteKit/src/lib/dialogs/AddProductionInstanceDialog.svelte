@@ -351,7 +351,7 @@
 </script>
 
 <dialog bind:this={dialog} id="add_recipe_instance_modal" class="modal">
-	<div class="modal-box w-11/12 max-w-2xl">
+	<div class="modal-box">
 		<h3 class="mb-4 text-lg font-bold">{$t('production.add_production_instance')}</h3>
 
 		<form onsubmit={handleSubmit} class="flex flex-col gap-4">
@@ -366,7 +366,7 @@
 					<input
 						id="item-search"
 						type="text"
-						class="input-bordered input w-full"
+						class="input-bordered input w-full text-base"
 						placeholder={$t('production.item_search_placeholder')}
 						bind:value={searchQuery}
 						oninput={handleSearchInput}
@@ -568,7 +568,7 @@
 					</label>
 					<select
 						id="building-select"
-						class="select-bordered select w-full"
+						class="select-bordered select w-full text-base"
 						bind:value={selectedBuildingId}
 						disabled={itemState.availableBuildings.length === 0}
 						required
@@ -646,7 +646,7 @@
 					<input
 						id="desired-rate"
 						type="number"
-						class="input-bordered input w-full"
+						class="input-bordered input w-full text-base"
 						bind:value={desiredItemsPerMin}
 						min="0.1"
 						step="0.1"
@@ -674,7 +674,7 @@
 					<input
 						id="building-count"
 						type="number"
-						class="input-bordered input w-full"
+						class="input-bordered input w-full text-base"
 						class:input-disabled={autoCalculateMode}
 						bind:value={buildingCount}
 						min="1"
@@ -698,7 +698,7 @@
 					<input
 						id="efficiency-ratio"
 						type="number"
-						class="input-bordered input w-full"
+						class="input-bordered input w-full text-base"
 						bind:value={efficiencyRatio}
 						min="0.1"
 						max="2.5"
@@ -737,10 +737,10 @@
 				</div>
 			</div>
 
-			<div class="modal-action">
+			<div class="modal-action gap-2 flex-col sm:flex-row">
 				<button
 					type="button"
-					class="btn"
+					class="btn order-2 sm:order-1"
 					onclick={() => {
 						fullReset();
 						dialog?.close();
@@ -750,7 +750,7 @@
 				</button>
 				<button
 					type="submit"
-					class="btn btn-primary"
+					class="btn btn-primary order-1 sm:order-2"
 					disabled={gameState.isLoading ||
 						!itemState.selectedItem ||
 						!itemState.selectedProductionType ||

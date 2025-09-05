@@ -47,7 +47,7 @@
 		try {
 			const data = await apiService.post('/api/modules/yaml-preview', {
 				manifestUrl: manifestUrl.trim()
-			});
+			}) as any;
 			manifestPreview = data.manifest;
 
 			// Auto-populate fields with preview data
@@ -81,7 +81,7 @@
 		try {
 			const data = await apiService.post('/api/modules/github-preview', {
 				githubUrl: githubRepo.trim()
-			});
+			}) as any;
 			previewVersions = data.versions || [];
 		} catch (e: any) {
 			error = e?.message ?? 'Failed to preview GitHub versions';
@@ -145,7 +145,7 @@
 							githubRepo: githubRepo.trim() || null
 						};
 
-			const createdModule = await apiService.post('/api/modules', requestBody);
+			const createdModule = await apiService.post('/api/modules', requestBody) as any;
 
 			// Call the callback with the created module
 			if (onCreateCallback) {

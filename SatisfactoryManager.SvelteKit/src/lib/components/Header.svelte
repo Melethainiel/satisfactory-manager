@@ -56,7 +56,7 @@
 </script>
 
 <header
-	class="sticky top-0 z-40 navbar min-h-16 sm:min-h-20 border-b border-base-200 bg-base-100/80 px-3 sm:px-4 shadow-lg backdrop-blur transition-colors supports-[backdrop-filter]:bg-base-100/70"
+	class="sticky top-0 z-40 navbar min-h-16 border-b border-base-200 bg-base-100/80 px-3 shadow-lg backdrop-blur transition-colors supports-[backdrop-filter]:bg-base-100/70 sm:min-h-20 sm:px-4"
 >
 	<!-- Left side: Logo and Title -->
 	<div class="navbar-start items-center gap-2 sm:gap-4">
@@ -81,17 +81,17 @@
 				/>
 			</svg>
 		</button>
-		<a href="/" class="flex items-center text-lg sm:text-xl font-bold">
+		<a href="/" class="flex items-center text-lg font-bold sm:text-xl">
 			<!-- Logo -->
 			<img
 				src="/logo-256.png"
 				alt={$t('app.logo_alt')}
-				class="mr-1.5 sm:mr-2 h-6 w-6 sm:h-8 sm:w-8 rounded-lg object-contain"
+				class="mr-1.5 h-6 w-6 rounded-lg object-contain sm:mr-2 sm:h-8 sm:w-8"
 				width="32"
 				height="32"
 				loading="lazy"
 			/>
-			<span class="hidden xs:inline">{$t('app.name')}</span>
+			<span class="xs:inline hidden">{$t('app.name')}</span>
 		</a>
 	</div>
 
@@ -107,7 +107,12 @@
 		<!-- Language selector -->
 		<div class="dropdown dropdown-end">
 			<button class="btn btn-ghost btn-sm" tabindex="0" aria-label={$t('ui.change_language')}>
-				<svg class="h-3.5 w-3.5 sm:h-4 sm:w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<svg
+					class="h-3.5 w-3.5 sm:h-4 sm:w-4"
+					fill="none"
+					stroke="currentColor"
+					viewBox="0 0 24 24"
+				>
 					<path
 						stroke-linecap="round"
 						stroke-linejoin="round"
@@ -153,7 +158,7 @@
 					<div class="flex items-center gap-x-1">
 						<div class="relative">
 							<img
-								class="h-8 w-8 sm:h-10 sm:w-10 rounded-full object-cover ring-2 {isConnected()
+								class="h-8 w-8 rounded-full object-cover ring-2 sm:h-10 sm:w-10 {isConnected()
 									? 'ring-success'
 									: 'ring-error'} {avatarLoading
 									? 'opacity-70'
@@ -169,14 +174,21 @@
 							{/if}
 						</div>
 						<div class="hidden text-left lg:block">
-							<h1 class="text-sm sm:text-base font-semibold text-gray-700 capitalize dark:text-white">
+							<h1
+								class="text-sm font-semibold text-gray-700 capitalize sm:text-base dark:text-white"
+							>
 								{authState.user.displayName || $t('auth.user')}
 							</h1>
-							<p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate max-w-32">
+							<p class="max-w-32 truncate text-xs text-gray-500 sm:text-sm dark:text-gray-400">
 								{authState.user.email || $t('auth.no_email')}
 							</p>
 						</div>
-						<svg class="ml-1 h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<svg
+							class="ml-1 h-3 w-3 flex-shrink-0 sm:h-4 sm:w-4"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+						>
 							<path
 								stroke-linecap="round"
 								stroke-linejoin="round"
@@ -187,11 +199,14 @@
 					</div>
 				</button>
 				<ul
-					class="dropdown-content menu z-[1] min-w-56 max-w-80 w-max rounded-box border bg-base-100 p-2 shadow-lg right-0"
+					class="dropdown-content menu right-0 z-[1] w-max max-w-80 min-w-56 rounded-box border bg-base-100 p-2 shadow-lg"
 					tabindex="0"
 				>
 					<li class="menu-title px-4 py-2" role="presentation">
-						<span class="text-xs text-base-content/60 block text-center whitespace-nowrap" role="none">
+						<span
+							class="block text-center text-xs whitespace-nowrap text-base-content/60"
+							role="none"
+						>
 							{authState.user.email || $t('auth.no_email')}
 						</span>
 					</li>
@@ -206,7 +221,7 @@
 					{/if}
 					<div class="divider my-1"></div>
 					<li>
-						<button class="text-error w-full justify-start" onclick={handleLogout}>
+						<button class="w-full justify-start text-error" onclick={handleLogout}>
 							{$t('auth.logout')}
 						</button>
 					</li>
@@ -214,8 +229,13 @@
 			</div>
 		{:else}
 			<!-- User is not logged in - show login button -->
-			<button class="btn btn-primary btn-sm sm:btn-md" onclick={handleLogin}>
-				<svg class="h-3.5 w-3.5 sm:h-4 sm:w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+			<button class="btn btn-sm btn-primary sm:btn-md" onclick={handleLogin}>
+				<svg
+					class="h-3.5 w-3.5 sm:h-4 sm:w-4"
+					fill="none"
+					stroke="currentColor"
+					viewBox="0 0 24 24"
+				>
 					<path
 						stroke-linecap="round"
 						stroke-linejoin="round"
@@ -223,7 +243,7 @@
 						d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
 					></path>
 				</svg>
-				<span class="hidden xs:inline">{$t('auth.login')}</span>
+				<span class="xs:inline hidden">{$t('auth.login')}</span>
 			</button>
 		{/if}
 	</div>

@@ -196,22 +196,22 @@
 						<div class="card-body p-3 sm:p-4 lg:p-6">
 							<!-- Main Item Info -->
 							<div class="flex items-start justify-between gap-3">
-								<div class="flex-1 min-w-0">
-									<h3 class="font-medium truncate">{item.itemName}</h3>
+								<div class="min-w-0 flex-1">
+									<h3 class="truncate font-medium">{item.itemName}</h3>
 									<div class="mt-1 flex flex-wrap gap-2 text-xs">
 										{#if item.totalProduction > 0}
-											<span class="badge badge-success badge-sm">
+											<span class="badge badge-sm badge-success">
 												+{formatRate(item.totalProduction)}/min
 											</span>
 										{/if}
 										{#if item.totalConsumption > 0}
-											<span class="badge badge-error badge-sm">
+											<span class="badge badge-sm badge-error">
 												-{formatRate(item.totalConsumption)}/min
 											</span>
 										{/if}
 									</div>
 								</div>
-								
+
 								<div class="flex items-center gap-2">
 									<span class="text-sm font-medium {getBalanceColor(item.netBalance)}">
 										{#if item.netBalance > 0}
@@ -222,7 +222,7 @@
 											0
 										{/if}
 									</span>
-									
+
 									{#if item.productionSites.length > 0 || item.consumptionSites.length > 0}
 										<button
 											class="btn btn-square btn-ghost btn-xs"
@@ -237,7 +237,7 @@
 									{/if}
 								</div>
 							</div>
-							
+
 							<!-- Sites Count -->
 							<div class="mt-2 text-xs text-base-content/70">
 								{new Set([
@@ -257,9 +257,13 @@
 											</h4>
 											<div class="space-y-1">
 												{#each item.productionSites as site}
-													<div class="bg-base-50 flex items-center justify-between rounded p-2 text-sm">
+													<div
+														class="bg-base-50 flex items-center justify-between rounded p-2 text-sm"
+													>
 														<span class="truncate">{site.siteName}</span>
-														<span class="font-medium whitespace-nowrap ml-2">+{formatRate(site.rate)}/min</span>
+														<span class="ml-2 font-medium whitespace-nowrap"
+															>+{formatRate(site.rate)}/min</span
+														>
 													</div>
 												{/each}
 											</div>
@@ -274,9 +278,13 @@
 											</h4>
 											<div class="space-y-1">
 												{#each item.consumptionSites as site}
-													<div class="bg-base-50 flex items-center justify-between rounded p-2 text-sm">
+													<div
+														class="bg-base-50 flex items-center justify-between rounded p-2 text-sm"
+													>
 														<span class="truncate">{site.siteName}</span>
-														<span class="font-medium whitespace-nowrap ml-2">-{formatRate(site.rate)}/min</span>
+														<span class="ml-2 font-medium whitespace-nowrap"
+															>-{formatRate(site.rate)}/min</span
+														>
 													</div>
 												{/each}
 											</div>

@@ -366,7 +366,7 @@
 					<input
 						id="item-search"
 						type="text"
-						class="input-bordered input w-full text-base mobile-text-scale"
+						class="input-bordered input w-full text-base"
 						placeholder={$t('production.item_search_placeholder')}
 						bind:value={searchQuery}
 						oninput={handleSearchInput}
@@ -568,7 +568,7 @@
 					</label>
 					<select
 						id="building-select"
-						class="select-bordered select w-full text-base mobile-text-scale"
+						class="select-bordered select w-full text-base"
 						bind:value={selectedBuildingId}
 						disabled={itemState.availableBuildings.length === 0}
 						required
@@ -646,7 +646,7 @@
 					<input
 						id="desired-rate"
 						type="number"
-						class="input-bordered input w-full text-base mobile-text-scale"
+						class="input-bordered input w-full text-base"
 						bind:value={desiredItemsPerMin}
 						min="0.1"
 						step="0.1"
@@ -674,7 +674,7 @@
 					<input
 						id="building-count"
 						type="number"
-						class="input-bordered input w-full text-base mobile-text-scale"
+						class="input-bordered input w-full text-base"
 						class:input-disabled={autoCalculateMode}
 						bind:value={buildingCount}
 						min="1"
@@ -698,7 +698,7 @@
 					<input
 						id="efficiency-ratio"
 						type="number"
-						class="input-bordered input w-full text-base mobile-text-scale"
+						class="input-bordered input w-full text-base"
 						bind:value={efficiencyRatio}
 						min="0.1"
 						max="2.5"

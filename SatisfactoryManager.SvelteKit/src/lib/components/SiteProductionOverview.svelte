@@ -650,7 +650,7 @@
 						<!-- Built Status Filter Buttons -->
 						<div class="flex gap-1 sm:gap-2 flex-wrap">
 							<button
-								class="btn btn-sm sm:btn-md touch-target whitespace-nowrap text-sm sm:text-base min-w-16 sm:min-w-20 {builtStatusFilter === 'all' ? 'btn-primary' : 'btn-outline'}"
+								class="btn btn-sm sm:btn-md whitespace-nowrap text-sm sm:text-base min-w-16 sm:min-w-20 {builtStatusFilter === 'all' ? 'btn-primary' : 'btn-outline'}"
 								style="white-space: nowrap !important;"
 								onclick={() => (builtStatusFilter = 'all')}
 							>
@@ -659,7 +659,7 @@
 								})}
 							</button>
 							<button
-								class="btn btn-sm sm:btn-md touch-target whitespace-nowrap text-sm sm:text-base min-w-16 sm:min-w-20 {builtStatusFilter === 'built' ? 'btn-success' : 'btn-outline'}"
+								class="btn btn-sm sm:btn-md whitespace-nowrap text-sm sm:text-base min-w-16 sm:min-w-20 {builtStatusFilter === 'built' ? 'btn-success' : 'btn-outline'}"
 								style="white-space: nowrap !important;"
 								onclick={() => (builtStatusFilter = 'built')}
 							>
@@ -670,7 +670,7 @@
 								})}
 							</button>
 							<button
-								class="btn btn-sm sm:btn-md touch-target whitespace-nowrap text-sm sm:text-base min-w-20 sm:min-w-24 {builtStatusFilter === 'not-built'
+								class="btn btn-sm sm:btn-md whitespace-nowrap text-sm sm:text-base min-w-20 sm:min-w-24 {builtStatusFilter === 'not-built'
 									? 'btn-warning'
 									: 'btn-outline'}"
 								style="white-space: nowrap !important;"
@@ -694,12 +694,12 @@
 								type="text"
 								bind:value={searchTerm}
 								placeholder={$t('productionInstances.search_instances')}
-								class="input-bordered input w-full pr-12 pl-10 text-base mobile-text-scale"
+								class="input-bordered input w-full pr-12 pl-10 text-base"
 							/>
 							{#if searchTerm}
 								<button
 									onclick={clearSearch}
-									class="btn absolute top-1/2 right-1 btn-circle -translate-y-1/2 btn-ghost btn-sm hover:bg-base-300 touch-target"
+									class="btn absolute top-1/2 right-1 btn-circle -translate-y-1/2 btn-ghost btn-sm hover:bg-base-300"
 									title={$t('productionInstances.clear_search')}
 									in:fade={{ duration: 150 }}
 									out:fade={{ duration: 100 }}

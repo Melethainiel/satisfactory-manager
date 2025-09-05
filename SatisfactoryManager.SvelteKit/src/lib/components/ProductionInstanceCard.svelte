@@ -205,7 +205,7 @@
 					{/if}
 					{#if canEdit()}
 						<button
-							class="btn btn-ghost btn-xs touch-target"
+							class="btn btn-ghost btn-xs"
 							class:loading={isTogglingBuilt}
 							onclick={handleToggleBuiltStatus}
 							disabled={isTogglingBuilt}
@@ -224,14 +224,14 @@
 			{#if canEdit()}
 				<div class="flex gap-1">
 					<button
-						class="btn btn-square btn-ghost btn-xs touch-target"
+						class="btn btn-square btn-ghost btn-xs"
 						onclick={handleEdit}
 						title={$t('productionInstances.edit_instance')}
 					>
 						<Icon src={PencilSquare} class="size-3.5 sm:size-3" />
 					</button>
 					<button
-						class="btn btn-square text-error btn-ghost btn-xs hover:bg-error hover:text-error-content touch-target"
+						class="btn btn-square text-error btn-ghost btn-xs hover:bg-error hover:text-error-content"
 						onclick={handleDelete}
 						title={$t('productionInstances.delete_instance')}
 					>

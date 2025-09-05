@@ -225,7 +225,7 @@
 									
 									{#if item.productionSites.length > 0 || item.consumptionSites.length > 0}
 										<button
-											class="btn btn-square btn-ghost btn-xs touch-target"
+											class="btn btn-square btn-ghost btn-xs"
 											onclick={() => toggleExpanded(item.itemId)}
 										>
 											{#if expandedItems.has(item.itemId)}

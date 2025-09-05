@@ -62,7 +62,7 @@
 	<div class="navbar-start items-center gap-2 sm:gap-4">
 		<!-- Mobile nav toggle -->
 		<button
-			class="btn btn-square btn-ghost lg:hidden touch-target"
+			class="btn btn-square btn-ghost lg:hidden"
 			aria-label={$t('nav.toggle_nav')}
 			onclick={() => toggleNav?.()}
 		>
@@ -106,7 +106,7 @@
 
 		<!-- Language selector -->
 		<div class="dropdown dropdown-end">
-			<button class="btn btn-ghost btn-sm touch-target" tabindex="0" aria-label={$t('ui.change_language')}>
+			<button class="btn btn-ghost btn-sm" tabindex="0" aria-label={$t('ui.change_language')}>
 				<svg class="h-3.5 w-3.5 sm:h-4 sm:w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path
 						stroke-linecap="round"
@@ -120,7 +120,7 @@
 			<ul class="dropdown-content menu z-[1] w-24 rounded-box border bg-base-100 p-2 shadow">
 				<li>
 					<button
-						class="btn justify-start btn-ghost btn-sm touch-target"
+						class="btn justify-start btn-ghost btn-sm"
 						class:btn-active={$locale === 'en'}
 						onclick={() => setLocale('en')}
 					>
@@ -129,7 +129,7 @@
 				</li>
 				<li>
 					<button
-						class="btn justify-start btn-ghost btn-sm touch-target"
+						class="btn justify-start btn-ghost btn-sm"
 						class:btn-active={$locale === 'fr'}
 						onclick={() => setLocale('fr')}
 					>
@@ -146,7 +146,7 @@
 			<!-- User is logged in - show user info with dropdown -->
 			<div class="dropdown dropdown-end">
 				<button
-					class="btn h-auto min-h-0 gap-1 px-1 py-1 normal-case btn-ghost touch-target"
+					class="btn h-auto min-h-0 gap-1 px-1 py-1 normal-case btn-ghost"
 					tabindex="0"
 					aria-label={$t('ui.user_menu')}
 				>
@@ -197,16 +197,16 @@
 					</li>
 					<div class="divider my-1"></div>
 					<li>
-						<a href="/profile" class="touch-target">{$t('auth.profile')}</a>
+						<a href="/profile">{$t('auth.profile')}</a>
 					</li>
 					{#if permissionState.canAccessSettings() && gameState.selectedGameId}
 						<li>
-							<a href="/games/{gameState.selectedGameId}/settings" class="touch-target">{$t('auth.settings')}</a>
+							<a href="/games/{gameState.selectedGameId}/settings">{$t('auth.settings')}</a>
 						</li>
 					{/if}
 					<div class="divider my-1"></div>
 					<li>
-						<button class="text-error touch-target w-full justify-start" onclick={handleLogout}>
+						<button class="text-error w-full justify-start" onclick={handleLogout}>
 							{$t('auth.logout')}
 						</button>
 					</li>
@@ -214,7 +214,7 @@
 			</div>
 		{:else}
 			<!-- User is not logged in - show login button -->
-			<button class="btn btn-primary btn-sm sm:btn-md touch-target" onclick={handleLogin}>
+			<button class="btn btn-primary btn-sm sm:btn-md" onclick={handleLogin}>
 				<svg class="h-3.5 w-3.5 sm:h-4 sm:w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path
 						stroke-linecap="round"

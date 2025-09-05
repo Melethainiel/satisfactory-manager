@@ -81,7 +81,7 @@
 
 	<div class="flex flex-1 flex-col">
 		<Header {toggleNav} />
-		<main class="flex-1 lg:ml-64">
+		<main class="flex-1 lg:ml-64 pt-16 sm:pt-20">
 			<div class="container mx-auto">
 				{@render children()}
 			</div>

@@ -56,7 +56,7 @@
 </script>
 
 <header
-	class="sticky top-0 z-40 navbar min-h-16 sm:min-h-20 border-b border-base-200 bg-base-100/80 px-3 sm:px-4 shadow-lg backdrop-blur transition-colors supports-[backdrop-filter]:bg-base-100/70"
+	class="fixed top-0 left-0 right-0 z-40 navbar min-h-16 sm:min-h-20 border-b border-base-200 bg-base-100/80 px-3 sm:px-4 shadow-lg backdrop-blur transition-colors supports-[backdrop-filter]:bg-base-100/70"
 >
 	<!-- Left side: Logo and Title -->
 	<div class="navbar-start items-center gap-2 sm:gap-4">

@@ -79,8 +79,8 @@
 		</div>
 
 		<!-- Overall Power Status -->
-		<div class="mb-6 grid gap-4 md:grid-cols-3">
-			<div class="bg-base-50 stat rounded-lg p-4">
+		<div class="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+			<div class="bg-base-50 stat rounded-lg p-3 sm:p-4 lg:p-6">
 				<div class="stat-figure text-success">
 					<Icon src={Bolt} class="size-6" />
 				</div>
@@ -90,7 +90,7 @@
 				</div>
 			</div>
 
-			<div class="bg-base-50 stat rounded-lg p-4">
+			<div class="bg-base-50 stat rounded-lg p-3 sm:p-4 lg:p-6">
 				<div class="stat-figure text-error">
 					<Icon src={Bolt} class="size-6" />
 				</div>
@@ -100,7 +100,7 @@
 				</div>
 			</div>
 
-			<div class="bg-base-50 stat rounded-lg p-4">
+			<div class="bg-base-50 stat rounded-lg p-3 sm:p-4 lg:p-6">
 				<div class="stat-figure {getPowerStatusColor(aggregated.netPowerBalance)}">
 					<Icon src={Bolt} class="size-6" />
 				</div>
@@ -123,7 +123,7 @@
 					<h3 class="mb-3 font-semibold">{$t('dashboard.power_efficiency_by_site')}</h3>
 					<div class="space-y-2">
 						{#each sortedSitesByEfficiency.slice(0, 5) as item}
-							<div class="bg-base-50 flex items-center justify-between rounded p-3">
+							<div class="bg-base-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 rounded px-3 py-4 sm:px-4 sm:py-6 lg:px-6">
 								<div class="flex items-center gap-3">
 									<span class="font-medium">{item.siteName}</span>
 									<span class="text-xs text-base-content/70">
@@ -154,7 +154,7 @@
 					<h3 class="mb-3 font-semibold">{$t('dashboard.top_power_consumers')}</h3>
 					<div class="space-y-2">
 						{#each sortedSitesByConsumption.slice(0, 5) as site}
-							<div class="bg-base-50 flex items-center justify-between rounded p-3">
+							<div class="bg-base-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 rounded px-3 py-4 sm:px-4 sm:py-6 lg:px-6">
 								<div class="flex items-center gap-3">
 									<span class="font-medium">{site.siteName}</span>
 									<span class="text-xs text-base-content/70">
@@ -188,7 +188,7 @@
 					<h3 class="mb-3 font-semibold">{$t('dashboard.top_power_producers')}</h3>
 					<div class="space-y-2">
 						{#each sortedSitesByProduction.slice(0, 5) as site}
-							<div class="bg-base-50 flex items-center justify-between rounded p-3">
+							<div class="bg-base-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 rounded px-3 py-4 sm:px-4 sm:py-6 lg:px-6">
 								<div class="flex items-center gap-3">
 									<span class="font-medium">{site.siteName}</span>
 									<span class="text-xs text-base-content/70">

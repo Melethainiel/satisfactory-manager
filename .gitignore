@@ -83,6 +83,6 @@ build
 # SvelteKit output directory
 dist
 .copilot/*
-
+.playwright-mcp/*
 #DevDB
 .devdbrc

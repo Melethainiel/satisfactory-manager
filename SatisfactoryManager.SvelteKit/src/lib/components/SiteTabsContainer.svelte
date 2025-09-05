@@ -81,12 +81,12 @@
 		</div>
 
 		<!-- Radio Tab Navigation -->
-		<div class="tabs tabs-box">
+		<div class="tabs tabs-box overflow-x-auto">
 			{#each gameState.gameSites as site, index (site.id)}
 				<input
 					type="radio"
 					name={tabGroupName()}
-					class="tab transition-all duration-200 ease-in-out hover:bg-base-200"
+					class="tab transition-all duration-200 ease-in-out hover:bg-base-200 whitespace-nowrap text-ellipsis flex-shrink-0"
 					aria-label={site.name}
 					checked={gameState.selectedSiteId === site.id}
 					onchange={() => handleSiteSelect(site.id)}

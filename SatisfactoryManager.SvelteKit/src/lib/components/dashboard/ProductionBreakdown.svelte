@@ -187,163 +187,278 @@
 			</div>
 		</div>
 
-		<!-- Table -->
-		<div class="overflow-x-auto">
-			<table class="table table-sm">
-				<thead>
-					<tr class="border-base-300">
-						<th class="w-8"></th>
-						<th>
-							<button
-								class="btn h-auto min-h-0 justify-start p-0 btn-ghost btn-sm"
-								onclick={() => handleSort('itemName')}
-							>
-								{$t('dashboard.item_name')}
-								{getSortIcon('itemName')}
-							</button>
-						</th>
-						<th class="text-center">
-							<button
-								class="btn h-auto min-h-0 justify-center p-0 btn-ghost btn-sm"
-								onclick={() => handleSort('totalRate')}
-							>
-								{$t('dashboard.total_rate')}
-								{getSortIcon('totalRate')}
-							</button>
-						</th>
-						<th class="text-center">
-							<button
-								class="btn h-auto min-h-0 justify-center p-0 btn-ghost btn-sm"
-								onclick={() => handleSort('siteCount')}
-							>
-								{$t('dashboard.sites_count')}
-								{getSortIcon('siteCount')}
-							</button>
-						</th>
-						<th class="text-center">{$t('dashboard.balance')}</th>
-					</tr>
-				</thead>
-				<tbody>
-					{#each filteredAndSortedItems as item (item.itemId)}
-						<tr class="border-base-300">
-							<!-- Expand/Collapse -->
-							<td>
-								{#if item.productionSites.length > 0 || item.consumptionSites.length > 0}
-									<button
-										class="btn btn-square btn-ghost btn-xs"
-										onclick={() => toggleExpanded(item.itemId)}
-									>
-										{#if expandedItems.has(item.itemId)}
-											<Icon src={ChevronDown} class="size-4" />
-										{:else}
-											<Icon src={ChevronRight} class="size-4" />
+		<!-- Mobile Cards / Desktop Table -->
+		<div class="block lg:hidden">
+			<!-- Mobile Card View -->
+			<div class="space-y-3">
+				{#each filteredAndSortedItems as item (item.itemId)}
+					<div class="card border border-base-300 bg-base-100 shadow-sm">
+						<div class="card-body p-3 sm:p-4 lg:p-6">
+							<!-- Main Item Info -->
+							<div class="flex items-start justify-between gap-3">
+								<div class="flex-1 min-w-0">
+									<h3 class="font-medium truncate">{item.itemName}</h3>
+									<div class="mt-1 flex flex-wrap gap-2 text-xs">
+										{#if item.totalProduction > 0}
+											<span class="badge badge-success badge-sm">
+												+{formatRate(item.totalProduction)}/min
+											</span>
 										{/if}
-									</button>
-								{/if}
-							</td>
-
-							<!-- Item Name -->
-							<td class="font-medium">{item.itemName}</td>
-
-							<!-- Total Rate -->
-							<td class="text-center">
-								<div class="flex flex-col gap-1">
-									{#if item.totalProduction > 0}
-										<span class="text-xs text-success">
-											+{formatRate(item.totalProduction)}/min
-										</span>
-									{/if}
-									{#if item.totalConsumption > 0}
-										<span class="text-xs text-error">
-											-{formatRate(item.totalConsumption)}/min
-										</span>
+										{#if item.totalConsumption > 0}
+											<span class="badge badge-error badge-sm">
+												-{formatRate(item.totalConsumption)}/min
+											</span>
+										{/if}
+									</div>
+								</div>
+								
+								<div class="flex items-center gap-2">
+									<span class="text-sm font-medium {getBalanceColor(item.netBalance)}">
+										{#if item.netBalance > 0}
+											+{formatRate(item.netBalance)}
+										{:else if item.netBalance < 0}
+											{formatRate(item.netBalance)}
+										{:else}
+											0
+										{/if}
+									</span>
+									
+									{#if item.productionSites.length > 0 || item.consumptionSites.length > 0}
+										<button
+											class="btn btn-square btn-ghost btn-xs touch-target"
+											onclick={() => toggleExpanded(item.itemId)}
+										>
+											{#if expandedItems.has(item.itemId)}
+												<Icon src={ChevronDown} class="size-4" />
+											{:else}
+												<Icon src={ChevronRight} class="size-4" />
+											{/if}
+										</button>
 									{/if}
 								</div>
-							</td>
-
+							</div>
+							
 							<!-- Sites Count -->
-							<td class="text-center">
-								<span class="text-xs">
-									{new Set([
-										...item.productionSites.map((s) => s.siteId),
-										...item.consumptionSites.map((s) => s.siteId)
-									]).size}
-								</span>
-							</td>
+							<div class="mt-2 text-xs text-base-content/70">
+								{new Set([
+									...item.productionSites.map((s) => s.siteId),
+									...item.consumptionSites.map((s) => s.siteId)
+								]).size} sites
+							</div>
 
-							<!-- Balance -->
-							<td class="text-center">
-								<span class="text-sm font-medium {getBalanceColor(item.netBalance)}">
-									{#if item.netBalance > 0}
-										+{formatRate(item.netBalance)}
-									{:else if item.netBalance < 0}
-										{formatRate(item.netBalance)}
-									{:else}
-										0
+							<!-- Expanded Details for Mobile -->
+							{#if expandedItems.has(item.itemId)}
+								<div class="mt-4 space-y-3 border-t border-base-300 pt-4">
+									<!-- Production Sites -->
+									{#if item.productionSites.length > 0}
+										<div>
+											<h4 class="mb-2 text-sm font-medium text-success">
+												{$t('dashboard.production_sites')} ({item.productionSites.length})
+											</h4>
+											<div class="space-y-1">
+												{#each item.productionSites as site}
+													<div class="bg-base-50 flex items-center justify-between rounded p-2 text-sm">
+														<span class="truncate">{site.siteName}</span>
+														<span class="font-medium whitespace-nowrap ml-2">+{formatRate(site.rate)}/min</span>
+													</div>
+												{/each}
+											</div>
+										</div>
 									{/if}
-								</span>
-							</td>
+
+									<!-- Consumption Sites -->
+									{#if item.consumptionSites.length > 0}
+										<div>
+											<h4 class="mb-2 text-sm font-medium text-error">
+												{$t('dashboard.consumption_sites')} ({item.consumptionSites.length})
+											</h4>
+											<div class="space-y-1">
+												{#each item.consumptionSites as site}
+													<div class="bg-base-50 flex items-center justify-between rounded p-2 text-sm">
+														<span class="truncate">{site.siteName}</span>
+														<span class="font-medium whitespace-nowrap ml-2">-{formatRate(site.rate)}/min</span>
+													</div>
+												{/each}
+											</div>
+										</div>
+									{/if}
+								</div>
+							{/if}
+						</div>
+					</div>
+				{/each}
+
+				{#if filteredAndSortedItems.length === 0}
+					<div class="py-8 text-center text-base-content/70">
+						{#if searchTerm}
+							{$t('dashboard.no_items_found')}
+						{:else}
+							{$t('dashboard.no_production_data')}
+						{/if}
+					</div>
+				{/if}
+			</div>
+		</div>
+
+		<!-- Desktop Table View -->
+		<div class="hidden lg:block">
+			<div class="overflow-x-auto">
+				<table class="table table-sm">
+					<thead>
+						<tr class="border-base-300">
+							<th class="w-8"></th>
+							<th>
+								<button
+									class="btn h-auto min-h-0 justify-start p-0 btn-ghost btn-sm"
+									onclick={() => handleSort('itemName')}
+								>
+									{$t('dashboard.item_name')}
+									{getSortIcon('itemName')}
+								</button>
+							</th>
+							<th class="text-center">
+								<button
+									class="btn h-auto min-h-0 justify-center p-0 btn-ghost btn-sm"
+									onclick={() => handleSort('totalRate')}
+								>
+									{$t('dashboard.total_rate')}
+									{getSortIcon('totalRate')}
+								</button>
+							</th>
+							<th class="text-center">
+								<button
+									class="btn h-auto min-h-0 justify-center p-0 btn-ghost btn-sm"
+									onclick={() => handleSort('siteCount')}
+								>
+									{$t('dashboard.sites_count')}
+									{getSortIcon('siteCount')}
+								</button>
+							</th>
+							<th class="text-center">{$t('dashboard.balance')}</th>
 						</tr>
-
-						<!-- Expanded Details -->
-						{#if expandedItems.has(item.itemId)}
+					</thead>
+					<tbody>
+						{#each filteredAndSortedItems as item (item.itemId)}
 							<tr class="border-base-300">
-								<td colspan="5" class="bg-base-50 p-4">
-									<div class="grid gap-4 md:grid-cols-2">
-										<!-- Production Sites -->
-										{#if item.productionSites.length > 0}
-											<div>
-												<h4 class="mb-2 font-medium text-success">
-													{$t('dashboard.production_sites')} ({item.productionSites.length})
-												</h4>
-												<div class="space-y-1">
-													{#each item.productionSites as site}
-														<div
-															class="flex items-center justify-between rounded bg-base-100 p-2 text-sm"
-														>
-															<span>{site.siteName}</span>
-															<span class="font-medium">+{formatRate(site.rate)}/min</span>
-														</div>
-													{/each}
-												</div>
-											</div>
-										{/if}
+								<!-- Expand/Collapse -->
+								<td>
+									{#if item.productionSites.length > 0 || item.consumptionSites.length > 0}
+										<button
+											class="btn btn-square btn-ghost btn-xs"
+											onclick={() => toggleExpanded(item.itemId)}
+										>
+											{#if expandedItems.has(item.itemId)}
+												<Icon src={ChevronDown} class="size-4" />
+											{:else}
+												<Icon src={ChevronRight} class="size-4" />
+											{/if}
+										</button>
+									{/if}
+								</td>
 
-										<!-- Consumption Sites -->
-										{#if item.consumptionSites.length > 0}
-											<div>
-												<h4 class="mb-2 font-medium text-error">
-													{$t('dashboard.consumption_sites')} ({item.consumptionSites.length})
-												</h4>
-												<div class="space-y-1">
-													{#each item.consumptionSites as site}
-														<div
-															class="flex items-center justify-between rounded bg-base-100 p-2 text-sm"
-														>
-															<span>{site.siteName}</span>
-															<span class="font-medium">-{formatRate(site.rate)}/min</span>
-														</div>
-													{/each}
-												</div>
-											</div>
+								<!-- Item Name -->
+								<td class="font-medium">{item.itemName}</td>
+
+								<!-- Total Rate -->
+								<td class="text-center">
+									<div class="flex flex-col gap-1">
+										{#if item.totalProduction > 0}
+											<span class="text-xs text-success">
+												+{formatRate(item.totalProduction)}/min
+											</span>
+										{/if}
+										{#if item.totalConsumption > 0}
+											<span class="text-xs text-error">
+												-{formatRate(item.totalConsumption)}/min
+											</span>
 										{/if}
 									</div>
 								</td>
-							</tr>
-						{/if}
-					{/each}
-				</tbody>
-			</table>
 
-			{#if filteredAndSortedItems.length === 0}
-				<div class="py-8 text-center text-base-content/70">
-					{#if searchTerm}
-						{$t('dashboard.no_items_found')}
-					{:else}
-						{$t('dashboard.no_production_data')}
-					{/if}
-				</div>
-			{/if}
+								<!-- Sites Count -->
+								<td class="text-center">
+									<span class="text-xs">
+										{new Set([
+											...item.productionSites.map((s) => s.siteId),
+											...item.consumptionSites.map((s) => s.siteId)
+										]).size}
+									</span>
+								</td>
+
+								<!-- Balance -->
+								<td class="text-center">
+									<span class="text-sm font-medium {getBalanceColor(item.netBalance)}">
+										{#if item.netBalance > 0}
+											+{formatRate(item.netBalance)}
+										{:else if item.netBalance < 0}
+											{formatRate(item.netBalance)}
+										{:else}
+											0
+										{/if}
+									</span>
+								</td>
+							</tr>
+
+							<!-- Expanded Details -->
+							{#if expandedItems.has(item.itemId)}
+								<tr class="border-base-300">
+									<td colspan="5" class="bg-base-50 p-4">
+										<div class="grid gap-4 md:grid-cols-2">
+											<!-- Production Sites -->
+											{#if item.productionSites.length > 0}
+												<div>
+													<h4 class="mb-2 font-medium text-success">
+														{$t('dashboard.production_sites')} ({item.productionSites.length})
+													</h4>
+													<div class="space-y-1">
+														{#each item.productionSites as site}
+															<div
+																class="flex items-center justify-between rounded bg-base-100 p-2 text-sm"
+															>
+																<span>{site.siteName}</span>
+																<span class="font-medium">+{formatRate(site.rate)}/min</span>
+															</div>
+														{/each}
+													</div>
+												</div>
+											{/if}
+
+											<!-- Consumption Sites -->
+											{#if item.consumptionSites.length > 0}
+												<div>
+													<h4 class="mb-2 font-medium text-error">
+														{$t('dashboard.consumption_sites')} ({item.consumptionSites.length})
+													</h4>
+													<div class="space-y-1">
+														{#each item.consumptionSites as site}
+															<div
+																class="flex items-center justify-between rounded bg-base-100 p-2 text-sm"
+															>
+																<span>{site.siteName}</span>
+																<span class="font-medium">-{formatRate(site.rate)}/min</span>
+															</div>
+														{/each}
+													</div>
+												</div>
+											{/if}
+										</div>
+									</td>
+								</tr>
+							{/if}
+						{/each}
+					</tbody>
+				</table>
+
+				{#if filteredAndSortedItems.length === 0}
+					<div class="py-8 text-center text-base-content/70">
+						{#if searchTerm}
+							{$t('dashboard.no_items_found')}
+						{:else}
+							{$t('dashboard.no_production_data')}
+						{/if}
+					</div>
+				{/if}
+			</div>
 		</div>
 	</div>
 </div>

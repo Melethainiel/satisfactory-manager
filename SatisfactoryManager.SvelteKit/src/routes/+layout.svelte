@@ -81,7 +81,7 @@
 
 	<div class="flex flex-1 flex-col">
 		<Header {toggleNav} />
-		<main class="flex-1 px-4 py-6 lg:ml-64">
+		<main class="flex-1 mobile-spacing lg:ml-64">
 			<div class="container mx-auto">
 				{@render children()}
 			</div>

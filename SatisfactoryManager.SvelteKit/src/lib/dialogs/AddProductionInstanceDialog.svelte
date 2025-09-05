@@ -351,7 +351,7 @@
 </script>
 
 <dialog bind:this={dialog} id="add_recipe_instance_modal" class="modal">
-	<div class="modal-box mobile-modal">
+	<div class="modal-box">
 		<h3 class="mb-4 text-lg font-bold">{$t('production.add_production_instance')}</h3>
 
 		<form onsubmit={handleSubmit} class="flex flex-col gap-4">
@@ -740,7 +740,7 @@
 			<div class="modal-action gap-2 flex-col sm:flex-row">
 				<button
 					type="button"
-					class="btn mobile-btn order-2 sm:order-1"
+					class="btn order-2 sm:order-1"
 					onclick={() => {
 						fullReset();
 						dialog?.close();
@@ -750,7 +750,7 @@
 				</button>
 				<button
 					type="submit"
-					class="btn btn-primary mobile-btn order-1 sm:order-2"
+					class="btn btn-primary order-1 sm:order-2"
 					disabled={gameState.isLoading ||
 						!itemState.selectedItem ||
 						!itemState.selectedProductionType ||

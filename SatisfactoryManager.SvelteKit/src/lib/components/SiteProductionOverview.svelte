@@ -411,7 +411,7 @@
 
 		{#if canManage()}
 			<button
-				class="btn transition-transform btn-primary hover:scale-105 mobile-btn"
+				class="btn transition-transform btn-primary hover:scale-105"
 				onclick={() => {
 					console.log('🔍 Add Recipe button clicked');
 					handleAddRecipe();

@@ -90,7 +90,7 @@
 </script>
 
 <dialog bind:this={dialogEl} class="modal" onclose={onClose}>
-	<div class="modal-box mobile-modal">
+	<div class="modal-box">
 		<h3 class="text-lg font-bold {getTitleClass(options.type)}">{options.title}</h3>
 		<p class="py-4">{options.message}</p>
 
@@ -102,12 +102,12 @@
 		{/if}
 
 		<div class="modal-action gap-2 flex-col sm:flex-row">
-			<button type="button" class="btn mobile-btn order-2 sm:order-1" onclick={handleCancel} disabled={isLoading}>
+			<button type="button" class="btn order-2 sm:order-1" onclick={handleCancel} disabled={isLoading}>
 				{options.cancelText}
 			</button>
 			<button
 				type="button"
-				class="btn {getButtonClass(options.type)} mobile-btn order-1 sm:order-2"
+				class="btn {getButtonClass(options.type)} order-1 sm:order-2"
 				onclick={handleConfirm}
 				disabled={isLoading}
 			>

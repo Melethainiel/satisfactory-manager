@@ -204,7 +204,7 @@
 					</div>
 
 					<!-- Two-column layout for desktop, stacked for mobile -->
-					<div class="grid gap-6 grid-cols-1 lg:grid-cols-2">
+					<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
 						<!-- Energy Dashboard -->
 						<EnergyDashboard
 							sites={gameState.gameDashboard.sites}

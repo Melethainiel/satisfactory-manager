@@ -178,9 +178,9 @@
 </script>
 
 <div
-	class="card-compact card flex h-full flex-col border border-base-300 bg-base-100 shadow-sm transition-shadow hover:shadow-md mobile-card"
+	class="card-compact mobile-card card flex h-full flex-col border border-base-300 bg-base-100 shadow-sm transition-shadow hover:shadow-md"
 >
-	<div class="card-body flex flex-1 flex-col mobile-card">
+	<div class="mobile-card card-body flex flex-1 flex-col">
 		<!-- Header with Recipe Name and Actions -->
 		<div class="flex items-start justify-between gap-2">
 			<div class="min-w-0 flex-1">

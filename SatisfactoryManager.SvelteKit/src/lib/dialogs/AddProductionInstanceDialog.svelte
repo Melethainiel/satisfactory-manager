@@ -737,7 +737,7 @@
 				</div>
 			</div>
 
-			<div class="modal-action gap-2 flex-col sm:flex-row">
+			<div class="modal-action flex-col gap-2 sm:flex-row">
 				<button
 					type="button"
 					class="btn order-2 sm:order-1"
@@ -750,7 +750,7 @@
 				</button>
 				<button
 					type="submit"
-					class="btn btn-primary order-1 sm:order-2"
+					class="btn order-1 btn-primary sm:order-2"
 					disabled={gameState.isLoading ||
 						!itemState.selectedItem ||
 						!itemState.selectedProductionType ||

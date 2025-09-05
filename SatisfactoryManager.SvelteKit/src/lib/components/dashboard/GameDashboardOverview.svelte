@@ -30,9 +30,9 @@
 	}
 </script>
 
-<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
 	<!-- Total Production -->
-	<div class="stat rounded-lg border border-base-300 bg-base-100 p-4 shadow-sm">
+	<div class="stat rounded-lg border border-base-300 bg-base-100 p-3 shadow-sm sm:p-4 lg:p-6">
 		<div class="stat-figure text-primary">
 			<Icon src={ChartBar} class="size-8" />
 		</div>
@@ -47,7 +47,7 @@
 	</div>
 
 	<!-- Power Status -->
-	<div class="stat rounded-lg border border-base-300 bg-base-100 p-4 shadow-sm">
+	<div class="stat rounded-lg border border-base-300 bg-base-100 p-3 shadow-sm sm:p-4 lg:p-6">
 		<div class="stat-figure {powerStatus().color}">
 			{#if powerStatus().status === 'surplus'}
 				<Icon src={Bolt} class="size-8" />
@@ -72,7 +72,7 @@
 	</div>
 
 	<!-- Factory Status -->
-	<div class="stat rounded-lg border border-base-300 bg-base-100 p-4 shadow-sm">
+	<div class="stat rounded-lg border border-base-300 bg-base-100 p-3 shadow-sm sm:p-4 lg:p-6">
 		<div class="stat-figure text-accent">
 			<Icon src={CubeTransparent} class="size-8" />
 		</div>

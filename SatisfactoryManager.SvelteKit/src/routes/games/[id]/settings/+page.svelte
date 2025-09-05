@@ -255,7 +255,7 @@
 		</button>
 	</div>
 {:else}
-	<div class="container mx-auto">
+	<div class="container mx-auto px-4 sm:px-6 lg:px-8">
 		<!-- Header -->
 		<div class="mb-8">
 			<h1 class="mb-4 flex items-center gap-3 text-3xl font-bold">
@@ -334,21 +334,23 @@
 				{:else}
 					<ul class="divide-y divide-base-200">
 						{#each gameState.gameUsers as u}
-							<li class="flex items-center gap-4 py-2">
-								<div class="flex-1">
-									<p class="leading-tight font-medium">{u.displayName}</p>
-									<p class="text-xs opacity-70">{u.email}</p>
+							<li class="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:gap-4 sm:py-2">
+								<div class="min-w-0 flex-1">
+									<p class="truncate font-medium">{u.displayName}</p>
+									<p class="truncate text-xs text-base-content/70">{u.email}</p>
 								</div>
-								<button
-									class="badge cursor-pointer badge-soft text-xs"
-									onclick={() => selectAuthLevelDialogRef?.open(u.email, u.role)}>{u.role}</button
-								>
-								<button
-									class="btn btn-circle btn-ghost btn-xs btn-error"
-									onclick={() => removeGameUser(u.email)}
-								>
-									<Icon src={Trash} class="size-4" />
-								</button>
+								<div class="ml-auto flex items-center gap-2 sm:ml-0">
+									<button
+										class="badge min-h-[44px] min-w-[44px] cursor-pointer badge-soft text-xs"
+										onclick={() => selectAuthLevelDialogRef?.open(u.email, u.role)}>{u.role}</button
+									>
+									<button
+										class="btn btn-circle min-h-[44px] min-w-[44px] btn-ghost btn-xs btn-error"
+										onclick={() => removeGameUser(u.email)}
+									>
+										<Icon src={Trash} class="size-4" />
+									</button>
+								</div>
 							</li>
 						{/each}
 					</ul>
@@ -384,27 +386,29 @@
 				{:else}
 					<ul class="divide-y divide-base-200">
 						{#each gameState.gameModules as mod}
-							<li class="flex items-center gap-4 py-2">
-								<div class="flex-1">
-									<p class="leading-tight font-medium">{mod.name}</p>
+							<li class="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:gap-4 sm:py-2">
+								<div class="min-w-0 flex-1">
+									<p class="truncate font-medium">{mod.name}</p>
 									{#if mod.githubRepo}
-										<p class="text-xs opacity-70">{mod.githubRepo}</p>
+										<p class="truncate text-xs break-all text-base-content/70">{mod.githubRepo}</p>
 									{/if}
 								</div>
-								<button
-									class="badge cursor-pointer badge-soft text-xs"
-									onclick={() => moduleVersionDialogRef?.open(mod)}
-									class:badge-warning={mod.selectedVersion &&
-										mod.selectedVersion !== mod.currentVersion}
-								>
-									{mod.selectedVersion || mod.currentVersion || 'No version'}
-								</button>
-								<button
-									class="btn btn-circle btn-ghost btn-xs btn-error"
-									onclick={() => removeGameModule(mod.id, mod.name)}
-								>
-									<Icon src={Trash} class="size-4" />
-								</button>
+								<div class="ml-auto flex items-center gap-2 sm:ml-0">
+									<button
+										class="badge min-h-[44px] min-w-[44px] cursor-pointer badge-soft text-xs"
+										onclick={() => moduleVersionDialogRef?.open(mod)}
+										class:badge-warning={mod.selectedVersion &&
+											mod.selectedVersion !== mod.currentVersion}
+									>
+										{mod.selectedVersion || mod.currentVersion || 'No version'}
+									</button>
+									<button
+										class="btn btn-circle min-h-[44px] min-w-[44px] btn-ghost btn-xs btn-error"
+										onclick={() => removeGameModule(mod.id, mod.name)}
+									>
+										<Icon src={Trash} class="size-4" />
+									</button>
+								</div>
 							</li>
 						{/each}
 					</ul>
@@ -442,24 +446,26 @@
 				{:else if gameState.gameSites.length === 0}
 					<p class="text-base-content/70">{$t('sites.no_sites')}</p>
 				{:else}
-					<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+					<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
 						{#each gameState.gameSites as site}
 							<div class="card bg-base-200 shadow-sm">
-								<div class="card-body p-4">
-									<h3 class="card-title text-base">{site.name}</h3>
-									<div class="card-actions justify-end">
-										<button
-											class="btn btn-ghost btn-xs"
-											onclick={() => renameSiteDialogRef?.open(site.id, site.name)}
-										>
-											<Icon src={PencilSquare} class="size-3" />
-										</button>
-										<button
-											class="btn text-error btn-ghost btn-xs"
-											onclick={() => removeSite(site.id, site.name)}
-										>
-											<Icon src={Trash} class="size-3" />
-										</button>
+								<div class="card-body p-3 sm:p-4 lg:p-6">
+									<div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+										<h3 class="card-title min-w-0 flex-1 truncate text-base">{site.name}</h3>
+										<div class="ml-auto card-actions gap-1 sm:ml-0">
+											<button
+												class="btn min-h-[44px] min-w-[44px] btn-ghost btn-xs"
+												onclick={() => renameSiteDialogRef?.open(site.id, site.name)}
+											>
+												<Icon src={PencilSquare} class="size-3" />
+											</button>
+											<button
+												class="btn min-h-[44px] min-w-[44px] text-error btn-ghost btn-xs"
+												onclick={() => removeSite(site.id, site.name)}
+											>
+												<Icon src={Trash} class="size-3" />
+											</button>
+										</div>
 									</div>
 								</div>
 							</div>

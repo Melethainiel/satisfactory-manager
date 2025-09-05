@@ -178,9 +178,9 @@
 </script>
 
 <div
-	class="card-compact card flex h-full flex-col border border-base-300 bg-base-100 shadow-sm transition-shadow hover:shadow-md"
+	class="card-compact mobile-card card flex h-full flex-col border border-base-300 bg-base-100 shadow-sm transition-shadow hover:shadow-md"
 >
-	<div class="card-body flex flex-1 flex-col">
+	<div class="mobile-card card-body flex flex-1 flex-col">
 		<!-- Header with Recipe Name and Actions -->
 		<div class="flex items-start justify-between gap-2">
 			<div class="min-w-0 flex-1">
@@ -228,14 +228,14 @@
 						onclick={handleEdit}
 						title={$t('productionInstances.edit_instance')}
 					>
-						<Icon src={PencilSquare} class="size-3" />
+						<Icon src={PencilSquare} class="size-3.5 sm:size-3" />
 					</button>
 					<button
 						class="btn btn-square text-error btn-ghost btn-xs hover:bg-error hover:text-error-content"
 						onclick={handleDelete}
 						title={$t('productionInstances.delete_instance')}
 					>
-						<Icon src={Trash} class="size-3" />
+						<Icon src={Trash} class="size-3.5 sm:size-3" />
 					</button>
 				</div>
 			{/if}
@@ -246,7 +246,7 @@
 			{#if getInstanceType(instance) === 'craft'}
 				<!-- CRAFT: Show primary production + ingredients/products totals + power consumption -->
 				{#if productionInfo}
-					<div class="mt-3 grid grid-cols-1 gap-3">
+					<div class="mt-3 grid grid-cols-1 gap-2 sm:gap-3">
 						<!-- Primary Production -->
 						<div class="rounded bg-base-200 p-3">
 							<div class="mb-1 text-xs font-medium opacity-70">
@@ -311,7 +311,7 @@
 						{/if}
 
 						<!-- Building Details -->
-						<div class="grid grid-cols-2 gap-3">
+						<div class="grid grid-cols-2 gap-2 sm:gap-3">
 							<div>
 								<div class="text-xs font-medium opacity-70">
 									{$t('productionInstances.building_count')}
@@ -334,7 +334,7 @@
 			{:else if getInstanceType(instance) === 'extract'}
 				<!-- EXTRACT: Show extraction rate + power consumption -->
 				{#if productionInfo}
-					<div class="mt-3 grid grid-cols-1 gap-3">
+					<div class="mt-3 grid grid-cols-1 gap-2 sm:gap-3">
 						<!-- Extraction Rate -->
 						<div class="rounded bg-base-200 p-3">
 							<div class="mb-1 text-xs font-medium opacity-70">
@@ -374,7 +374,7 @@
 						{/if}
 
 						<!-- Building Details -->
-						<div class="grid grid-cols-2 gap-3">
+						<div class="grid grid-cols-2 gap-2 sm:gap-3">
 							<div>
 								<div class="text-xs font-medium opacity-70">
 									{$t('productionInstances.building_count')}

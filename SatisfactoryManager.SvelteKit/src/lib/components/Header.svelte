@@ -42,18 +42,10 @@
 		}
 	});
 
-	// Popover helpers
-	const popoverId = 'user-menu-popover';
-	const anchorName = '--user-menu-anchor';
-
-	function hideUserMenu() {
-		const el = document.getElementById(popoverId) as any;
-		el?.hidePopover?.();
-	}
+	// No popover helpers needed for dropdown
 
 	// Handle logout
 	async function handleLogout() {
-		hideUserMenu();
 		await authState.signOut();
 	}
 
@@ -64,10 +56,10 @@
 </script>
 
 <header
-	class="sticky top-0 z-40 navbar min-h-20 border-b border-base-200 bg-base-100/80 px-4 shadow-lg backdrop-blur transition-colors supports-[backdrop-filter]:bg-base-100/70"
+	class="fixed top-0 left-0 right-0 z-40 navbar min-h-16 sm:min-h-20 border-b border-base-200 bg-base-100/80 px-3 sm:px-4 shadow-lg backdrop-blur transition-colors supports-[backdrop-filter]:bg-base-100/70"
 >
 	<!-- Left side: Logo and Title -->
-	<div class="navbar-start items-center gap-4">
+	<div class="navbar-start items-center gap-2 sm:gap-4">
 		<!-- Mobile nav toggle -->
 		<button
 			class="btn btn-square btn-ghost lg:hidden"
@@ -76,7 +68,7 @@
 		>
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
-				class="h-6 w-6"
+				class="h-5 w-5 sm:h-6 sm:w-6"
 				fill="none"
 				viewBox="0 0 24 24"
 				stroke="currentColor"
@@ -89,22 +81,22 @@
 				/>
 			</svg>
 		</button>
-		<a href="/" class="flex text-xl font-bold">
+		<a href="/" class="flex items-center text-lg font-bold sm:text-xl">
 			<!-- Logo -->
 			<img
 				src="/logo-256.png"
 				alt={$t('app.logo_alt')}
-				class="mr-2 h-8 w-8 rounded-lg object-contain"
+				class="mr-1.5 h-6 w-6 rounded-lg object-contain sm:mr-2 sm:h-8 sm:w-8"
 				width="32"
 				height="32"
 				loading="lazy"
 			/>
-			{$t('app.name')}
+			<span class="xs:inline hidden">{$t('app.name')}</span>
 		</a>
 	</div>
 
 	<!-- Right side: Online users, Language selector and Authentication -->
-	<div class="navbar-end gap-4">
+	<div class="navbar-end gap-1 sm:gap-2">
 		<!-- Online users indicator (only show if authenticated and in a game) -->
 		{#if authState.isAuthenticated && gameState.selectedGameId}
 			<div class="hidden lg:block">
@@ -115,7 +107,12 @@
 		<!-- Language selector -->
 		<div class="dropdown dropdown-end">
 			<button class="btn btn-ghost btn-sm" tabindex="0" aria-label={$t('ui.change_language')}>
-				<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<svg
+					class="h-3.5 w-3.5 sm:h-4 sm:w-4"
+					fill="none"
+					stroke="currentColor"
+					viewBox="0 0 24 24"
+				>
 					<path
 						stroke-linecap="round"
 						stroke-linejoin="round"
@@ -123,7 +120,7 @@
 						d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
 					></path>
 				</svg>
-				{$locale?.toUpperCase() || 'EN'}
+				<span class="text-xs sm:text-sm">{$locale?.toUpperCase() || 'EN'}</span>
 			</button>
 			<ul class="dropdown-content menu z-[1] w-24 rounded-box border bg-base-100 p-2 shadow">
 				<li>
@@ -152,19 +149,16 @@
 			<div class="loading loading-sm loading-spinner"></div>
 		{:else if authState.isAuthenticated && authState.user}
 			<!-- User is logged in - show user info with dropdown -->
-			<div class="user-menu-container">
+			<div class="dropdown dropdown-end">
 				<button
-					class="btn h-auto min-h-0 gap-2 px-2 py-1 normal-case btn-ghost"
-					popovertarget={popoverId}
-					style={`anchor-name:${anchorName}`}
-					aria-haspopup="menu"
-					aria-controls={popoverId}
+					class="btn h-auto min-h-0 gap-1 px-1 py-1 normal-case btn-ghost"
+					tabindex="0"
 					aria-label={$t('ui.user_menu')}
 				>
-					<div class="flex items-center gap-x-2">
+					<div class="flex items-center gap-x-1">
 						<div class="relative">
 							<img
-								class="h-10 w-10 rounded-full object-cover ring-2 {isConnected()
+								class="h-8 w-8 rounded-full object-cover ring-2 sm:h-10 sm:w-10 {isConnected()
 									? 'ring-success'
 									: 'ring-error'} {avatarLoading
 									? 'opacity-70'
@@ -179,15 +173,22 @@
 								</div>
 							{/if}
 						</div>
-						<div class="hidden text-left md:block">
-							<h1 class="text-lg font-semibold text-gray-700 capitalize dark:text-white">
+						<div class="hidden text-left lg:block">
+							<h1
+								class="text-sm font-semibold text-gray-700 capitalize sm:text-base dark:text-white"
+							>
 								{authState.user.displayName || $t('auth.user')}
 							</h1>
-							<p class="text-sm text-gray-500 dark:text-gray-400">
+							<p class="max-w-32 truncate text-xs text-gray-500 sm:text-sm dark:text-gray-400">
 								{authState.user.email || $t('auth.no_email')}
 							</p>
 						</div>
-						<svg class="ml-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<svg
+							class="ml-1 h-3 w-3 flex-shrink-0 sm:h-4 sm:w-4"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+						>
 							<path
 								stroke-linecap="round"
 								stroke-linejoin="round"
@@ -198,42 +199,43 @@
 					</div>
 				</button>
 				<ul
-					id={popoverId}
-					popover
-					class="menu dropdown w-fit rounded-box border bg-base-100 p-2 shadow-lg"
-					style={`position-anchor:${anchorName}`}
-					role="menu"
+					class="dropdown-content menu right-0 z-[1] w-max max-w-80 min-w-56 rounded-box border bg-base-100 p-2 shadow-lg"
+					tabindex="0"
 				>
-					<li class="menu-title" role="presentation">
-						<span class="text-xs text-base-content/60" role="none">
+					<li class="menu-title px-4 py-2" role="presentation">
+						<span
+							class="block text-center text-xs whitespace-nowrap text-base-content/60"
+							role="none"
+						>
 							{authState.user.email || $t('auth.no_email')}
 						</span>
 					</li>
 					<div class="divider my-1"></div>
 					<li>
-						<a href="/profile" role="menuitem" onclick={hideUserMenu}>{$t('auth.profile')}</a>
+						<a href="/profile">{$t('auth.profile')}</a>
 					</li>
 					{#if permissionState.canAccessSettings() && gameState.selectedGameId}
 						<li>
-							<a
-								href="/games/{gameState.selectedGameId}/settings"
-								role="menuitem"
-								onclick={hideUserMenu}>{$t('auth.settings')}</a
-							>
+							<a href="/games/{gameState.selectedGameId}/settings">{$t('auth.settings')}</a>
 						</li>
 					{/if}
 					<div class="divider my-1"></div>
 					<li>
-						<button role="menuitem" class="text-error" onclick={handleLogout}
-							>{$t('auth.logout')}</button
-						>
+						<button class="w-full justify-start text-error" onclick={handleLogout}>
+							{$t('auth.logout')}
+						</button>
 					</li>
 				</ul>
 			</div>
 		{:else}
 			<!-- User is not logged in - show login button -->
-			<button class="btn btn-primary" onclick={handleLogin}>
-				<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+			<button class="btn btn-sm btn-primary sm:btn-md" onclick={handleLogin}>
+				<svg
+					class="h-3.5 w-3.5 sm:h-4 sm:w-4"
+					fill="none"
+					stroke="currentColor"
+					viewBox="0 0 24 24"
+				>
 					<path
 						stroke-linecap="round"
 						stroke-linejoin="round"
@@ -241,7 +243,7 @@
 						d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
 					></path>
 				</svg>
-				{$t('auth.login')}
+				<span class="xs:inline hidden">{$t('auth.login')}</span>
 			</button>
 		{/if}
 	</div>

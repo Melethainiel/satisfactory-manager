@@ -66,7 +66,7 @@
 			// Use batch endpoint for better performance
 			const batchData = await apiService.get(`/api/modules/${module.id}/versions/content-status`, {
 				showErrorNotification: false
-			});
+			}) as any;
 
 			if (batchData.contentStatus) {
 				// Update the status record with batch results
@@ -90,7 +90,7 @@
 					const statusData = await apiService.get(
 						`/api/modules/${module.id}/versions/${version.id}/content-status`,
 						{ showErrorNotification: false }
-					);
+					) as any;
 					return {
 						versionId: version.id,
 						hasContent: statusData.hasContent,
@@ -174,7 +174,7 @@
 		try {
 			const importResult = await apiService.post(
 				`/api/modules/${module.id}/versions/${versionId}/import`
-			);
+			) as any;
 
 			// Update content status for this version
 			versionContentStatus = {
@@ -188,7 +188,7 @@
 			// Store import results for display
 			importResults = {
 				...importResults,
-				[versionId]: importResult
+				[versionId]: { importResult }
 			};
 			console.log('Version content imported successfully:', importResult);
 		} catch (e: unknown) {

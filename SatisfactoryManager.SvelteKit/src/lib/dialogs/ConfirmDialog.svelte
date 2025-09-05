@@ -101,13 +101,18 @@
 			</div>
 		{/if}
 
-		<div class="modal-action">
-			<button type="button" class="btn" onclick={handleCancel} disabled={isLoading}>
+		<div class="modal-action flex-col gap-2 sm:flex-row">
+			<button
+				type="button"
+				class="btn order-2 sm:order-1"
+				onclick={handleCancel}
+				disabled={isLoading}
+			>
 				{options.cancelText}
 			</button>
 			<button
 				type="button"
-				class="btn {getButtonClass(options.type)}"
+				class="btn {getButtonClass(options.type)} order-1 sm:order-2"
 				onclick={handleConfirm}
 				disabled={isLoading}
 			>

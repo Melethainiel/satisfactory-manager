@@ -468,8 +468,8 @@ class GameStateClass implements GameState {
 			});
 
 			// Show migration results if any
-			if (result.migrationResult) {
-				const migration = result.migrationResult;
+			if (result && typeof result === 'object' && 'migrationResult' in result && result.migrationResult) {
+				const migration = result.migrationResult as any;
 				if (migration.success) {
 					if (migration.migratedInstancesCount > 0) {
 						notificationService.success(
@@ -591,7 +591,7 @@ class GameStateClass implements GameState {
 		this.isLoading = true;
 		try {
 			const url = `/api/sites/${siteId}/production-summary${fresh ? '?fresh=true' : ''}`;
-			const data = await apiService.get(url);
+			const data = await apiService.get(url) as any;
 			if (data.success) {
 				// Convert string dates to Date objects in the data
 				const summary = data.data as ProductionSummary;
@@ -627,7 +627,7 @@ class GameStateClass implements GameState {
 
 		this.isLoading = true;
 		try {
-			const result = await apiService.post(`/api/sites/${siteId}/production-instances`, data);
+			const result = await apiService.post(`/api/sites/${siteId}/production-instances`, data) as any;
 			if (result.success) {
 				// Reload production summary to get updated data
 				await this.loadSiteProductionSummary(siteId, true);
@@ -668,7 +668,7 @@ class GameStateClass implements GameState {
 			const result = await apiService.patch(
 				`/api/sites/${instance.siteId}/production-instances/${instanceId}`,
 				data
-			);
+			) as any;
 			if (result.success) {
 				// Reload production summary to get updated data
 				await this.loadSiteProductionSummary(instance.siteId, true);
@@ -719,7 +719,7 @@ class GameStateClass implements GameState {
 			const result = await apiService.patch(
 				`/api/sites/${instance.siteId}/production-instances/${instanceId}`,
 				{ isBuilt }
-			);
+			) as any;
 			if (result.success) {
 				// No need to reload - optimistic update is sufficient for built status
 				return true;
@@ -781,7 +781,7 @@ class GameStateClass implements GameState {
 		try {
 			const result = await apiService.delete(
 				`/api/sites/${instance.siteId}/production-instances/${instanceId}`
-			);
+			) as any;
 			if (result.success) {
 				notificationService.success('Production instance deleted successfully');
 				return true;
@@ -823,7 +823,7 @@ class GameStateClass implements GameState {
 		try {
 			const result = await apiService.delete(
 				`/api/sites/${instance.siteId}/production-instances/${instanceId}`
-			);
+			) as any;
 			if (result.success) {
 				// Reload production summary to get updated data
 				await this.loadSiteProductionSummary(instance.siteId, true);

@@ -21,7 +21,7 @@ import {
 	ErrorCategory
 } from '$lib/types/apiErrors';
 
-type AuthFetchFn = <T = any>(
+type AuthFetchFn = <T = unknown>(
 	input: string | URL | Request,
 	init?: RequestInit & { autoJson?: boolean }
 ) => Promise<T | Response>;
@@ -45,14 +45,29 @@ export interface ApiRequestOptions extends RequestInit {
 export interface ApiService {
 	setApiFetch(apiFetch: AuthFetchFn): void;
 	configure(config: ApiConfigOverrides): void;
-	get<T = any>(url: string, options?: Omit<ApiRequestOptions, 'method' | 'body'>): Promise<T>;
-	post<T = any>(url: string, data?: any, options?: Omit<ApiRequestOptions, 'method'>): Promise<T>;
-	put<T = any>(url: string, data?: any, options?: Omit<ApiRequestOptions, 'method'>): Promise<T>;
-	patch<T = any>(url: string, data?: any, options?: Omit<ApiRequestOptions, 'method'>): Promise<T>;
-	delete<T = any>(url: string, options?: Omit<ApiRequestOptions, 'method'>): Promise<T>;
-	fetch<T = any>(url: string, options?: ApiRequestOptions): Promise<T>;
-	getMetrics(): any;
-	getHealth(): any;
+	get<T = unknown>(url: string, options?: Omit<ApiRequestOptions, 'method' | 'body'>): Promise<T>;
+	post<T = unknown>(
+		url: string,
+		data?: unknown,
+		options?: Omit<ApiRequestOptions, 'method'>
+	): Promise<T>;
+	put<T = unknown>(
+		url: string,
+		data?: unknown,
+		options?: Omit<ApiRequestOptions, 'method'>
+	): Promise<T>;
+	patch<T = unknown>(
+		url: string,
+		data?: unknown,
+		options?: Omit<ApiRequestOptions, 'method'>
+	): Promise<T>;
+	delete<T = unknown>(url: string, options?: Omit<ApiRequestOptions, 'method'>): Promise<T>;
+	fetch<T = unknown>(url: string, options?: ApiRequestOptions): Promise<T>;
+	getMetrics(): import('./apiMetrics').OverallMetrics;
+	getHealth(): {
+		status: 'healthy' | 'degraded' | 'unhealthy';
+		checks: Record<string, { status: string; message: string }>;
+	};
 }
 
 /**
@@ -61,12 +76,11 @@ export interface ApiService {
 class CircuitBreaker {
 	private state: 'CLOSED' | 'OPEN' | 'HALF_OPEN' = 'CLOSED';
 	private failureCount: number = 0;
-	private lastFailureTime?: Date;
 	private nextAttemptTime?: Date;
 	private successCount: number = 0;
 
 	constructor(
-		private config: { failureThreshold: number; recoveryTimeout: number },
+		private config: { failureThreshold: number; recoveryTimeout: number; successThreshold: number },
 		private url: string
 	) {}
 
@@ -101,9 +115,13 @@ class CircuitBreaker {
 		this.failureCount = 0;
 		this.successCount++;
 
+		// In HALF_OPEN state, require multiple consecutive successes to close
 		if (this.state === 'HALF_OPEN') {
-			this.state = 'CLOSED';
-			apiMetrics.recordCircuitBreakerStateChange(this.url, 'HALF_OPEN', 'CLOSED');
+			if (this.successCount >= this.config.successThreshold) {
+				this.state = 'CLOSED';
+				this.successCount = 0; // Reset for next cycle
+				apiMetrics.recordCircuitBreakerStateChange(this.url, 'HALF_OPEN', 'CLOSED');
+			}
 		}
 
 		apiMetrics.recordCircuitBreakerRequest(this.url, true);
@@ -111,7 +129,6 @@ class CircuitBreaker {
 
 	private onFailure(): void {
 		this.failureCount++;
-		this.lastFailureTime = new Date();
 
 		if (this.failureCount >= this.config.failureThreshold) {
 			const oldState = this.state;
@@ -155,16 +172,16 @@ class ApiServiceClass implements ApiService {
 		return this.apiFetch;
 	}
 
-	async get<T = any>(
+	async get<T = unknown>(
 		url: string,
 		options: Omit<ApiRequestOptions, 'method' | 'body'> = {}
 	): Promise<T> {
 		return this.fetch<T>(url, { ...options, method: 'GET' });
 	}
 
-	async post<T = any>(
+	async post<T = unknown>(
 		url: string,
-		data?: any,
+		data?: unknown,
 		options: Omit<ApiRequestOptions, 'method'> = {}
 	): Promise<T> {
 		return this.fetch<T>(url, {
@@ -178,9 +195,9 @@ class ApiServiceClass implements ApiService {
 		});
 	}
 
-	async put<T = any>(
+	async put<T = unknown>(
 		url: string,
-		data?: any,
+		data?: unknown,
 		options: Omit<ApiRequestOptions, 'method'> = {}
 	): Promise<T> {
 		return this.fetch<T>(url, {
@@ -194,9 +211,9 @@ class ApiServiceClass implements ApiService {
 		});
 	}
 
-	async patch<T = any>(
+	async patch<T = unknown>(
 		url: string,
-		data?: any,
+		data?: unknown,
 		options: Omit<ApiRequestOptions, 'method'> = {}
 	): Promise<T> {
 		return this.fetch<T>(url, {
@@ -210,11 +227,14 @@ class ApiServiceClass implements ApiService {
 		});
 	}
 
-	async delete<T = any>(url: string, options: Omit<ApiRequestOptions, 'method'> = {}): Promise<T> {
+	async delete<T = unknown>(
+		url: string,
+		options: Omit<ApiRequestOptions, 'method'> = {}
+	): Promise<T> {
 		return this.fetch<T>(url, { ...options, method: 'DELETE' });
 	}
 
-	async fetch<T = any>(url: string, options: ApiRequestOptions = {}): Promise<T> {
+	async fetch<T = unknown>(url: string, options: ApiRequestOptions = {}): Promise<T> {
 		const requestId = options.requestId || this.generateRequestId();
 		const startTime = Date.now();
 		const method = (options.method || 'GET').toUpperCase();
@@ -350,7 +370,6 @@ class ApiServiceClass implements ApiService {
 						method,
 						duration,
 						success: true,
-						timestamp: new Date(),
 						attempt
 					});
 
@@ -372,7 +391,6 @@ class ApiServiceClass implements ApiService {
 						statusCode: apiError.statusCode,
 						duration: attemptDuration,
 						success: false,
-						timestamp: new Date(),
 						attempt,
 						error: {
 							category: apiError.category,
@@ -516,14 +534,24 @@ class ApiServiceClass implements ApiService {
 		return true;
 	}
 
-	private recordRequestMetric(metric: RequestMetric): void {
+	private recordRequestMetric(metricData: Omit<RequestMetric, 'timestamp'>): void {
 		if (this.config.enableMetrics) {
+			const metric: RequestMetric = {
+				...metricData,
+				timestamp: new Date()
+			};
 			apiMetrics.recordRequest(metric);
 		}
 	}
 
 	private generateRequestId(): string {
-		return `req_${Date.now()}_${++this.requestCounter}_${Math.random().toString(36).substr(2, 9)}`;
+		// Use crypto.randomUUID() if available (Node.js 14.17+ and modern browsers)
+		if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+			return `req_${crypto.randomUUID()}`;
+		}
+
+		// Fallback for older environments
+		return `req_${Date.now()}_${++this.requestCounter}_${Math.random().toString(36).slice(2, 11)}`;
 	}
 
 	private normalizeUrlForCircuitBreaker(url: string): string {

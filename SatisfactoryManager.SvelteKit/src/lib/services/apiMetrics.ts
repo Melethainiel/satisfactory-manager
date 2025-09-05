@@ -61,12 +61,61 @@ export interface OverallMetrics {
 }
 
 /**
+ * Simple object pool for RequestMetric objects to reduce GC pressure
+ */
+class RequestMetricPool {
+	private pool: RequestMetric[] = [];
+	private readonly maxPoolSize: number = 50;
+
+	get(): RequestMetric {
+		return this.pool.pop() || this.createNew();
+	}
+
+	release(metric: RequestMetric): void {
+		if (this.pool.length < this.maxPoolSize) {
+			// Reset the metric object for reuse
+			this.resetMetric(metric);
+			this.pool.push(metric);
+		}
+	}
+
+	private createNew(): RequestMetric {
+		return {
+			url: '',
+			method: '',
+			statusCode: 0,
+			duration: 0,
+			success: false,
+			timestamp: new Date(),
+			attempt: 0,
+			error: undefined
+		};
+	}
+
+	private resetMetric(metric: RequestMetric): void {
+		metric.url = '';
+		metric.method = '';
+		metric.statusCode = 0;
+		metric.duration = 0;
+		metric.success = false;
+		metric.timestamp = new Date();
+		metric.attempt = 0;
+		metric.error = undefined;
+	}
+}
+
+/**
  * API Metrics Collector
  */
 export class ApiMetricsCollector {
 	private metrics: OverallMetrics;
 	private readonly maxRecentRequests: number = 100; // Keep last 100 requests per endpoint
 	private readonly metricsRetentionMs: number = 60 * 60 * 1000; // 1 hour
+	private cleanupInterval: NodeJS.Timeout | null = null;
+	private lastCleanupTime: number = Date.now();
+	private readonly cleanupIntervalMs: number = 5 * 60 * 1000; // Clean up every 5 minutes
+	private objectPool: RequestMetricPool = new RequestMetricPool();
+	private enableObjectPooling: boolean = true;
 
 	constructor() {
 		this.metrics = {
@@ -79,6 +128,39 @@ export class ApiMetricsCollector {
 			endpoints: {},
 			circuitBreakers: {}
 		};
+
+		// Start periodic cleanup
+		this.startPeriodicCleanup();
+	}
+
+	/**
+	 * Configure object pooling
+	 */
+	configureObjectPooling(enabled: boolean): void {
+		this.enableObjectPooling = enabled;
+	}
+
+	/**
+	 * Create a request metric (using object pooling if enabled)
+	 */
+	createRequestMetric(data: Omit<RequestMetric, 'timestamp'>): RequestMetric {
+		if (!this.enableObjectPooling) {
+			return {
+				...data,
+				timestamp: new Date()
+			};
+		}
+
+		const metric = this.objectPool.get();
+		metric.url = data.url;
+		metric.method = data.method;
+		metric.statusCode = data.statusCode;
+		metric.duration = data.duration;
+		metric.success = data.success;
+		metric.timestamp = new Date();
+		metric.attempt = data.attempt;
+		metric.error = data.error;
+		return metric;
 	}
 
 	/**
@@ -103,9 +185,13 @@ export class ApiMetricsCollector {
 		// Update endpoint-specific metrics
 		this.updateEndpointMetrics(endpointKey, metric);
 
-		// Clean old metrics periodically
-		if (this.metrics.totalRequests % 100 === 0) {
+		// Clean old metrics periodically (both count-based and time-based)
+		if (
+			this.metrics.totalRequests % 100 === 0 ||
+			Date.now() - this.lastCleanupTime > this.cleanupIntervalMs
+		) {
 			this.cleanOldMetrics();
+			this.lastCleanupTime = Date.now();
 		}
 	}
 
@@ -227,22 +313,54 @@ export class ApiMetricsCollector {
 			};
 		}
 
-		// Check circuit breaker states
-		const openCircuits = Object.values(this.metrics.circuitBreakers).filter(
-			(cb) => cb.state === 'OPEN'
-		);
+		// Enhanced circuit breaker health checks
+		const circuitBreakerMetrics = this.getCircuitBreakerHealthMetrics();
 
-		if (openCircuits.length > 0) {
+		if (circuitBreakerMetrics.openCount > 0) {
 			if (overallStatus === 'healthy') overallStatus = 'degraded';
 			checks.circuitBreakers = {
 				status: 'degraded',
-				message: `${openCircuits.length} circuit breaker(s) open`
+				message: `${circuitBreakerMetrics.openCount} circuit breaker(s) open, ${circuitBreakerMetrics.halfOpenCount} recovering`
+			};
+		} else if (circuitBreakerMetrics.halfOpenCount > 0) {
+			checks.circuitBreakers = {
+				status: 'healthy',
+				message: `${circuitBreakerMetrics.halfOpenCount} circuit breaker(s) recovering`
+			};
+		} else if (circuitBreakerMetrics.totalCount > 0) {
+			checks.circuitBreakers = {
+				status: 'healthy',
+				message: `All ${circuitBreakerMetrics.totalCount} circuit breakers closed`
 			};
 		} else {
 			checks.circuitBreakers = {
 				status: 'healthy',
-				message: 'All circuit breakers closed'
+				message: 'No circuit breakers configured'
 			};
+		}
+
+		// Add individual circuit breaker details if any are problematic
+		if (circuitBreakerMetrics.openCount > 0 || circuitBreakerMetrics.halfOpenCount > 0) {
+			for (const [url, cb] of Object.entries(this.metrics.circuitBreakers)) {
+				if (cb.state !== 'CLOSED') {
+					const key = `circuit_${url.replace(/\W/g, '_')}`;
+					const timeSinceLastFailure = cb.lastFailureTime
+						? Date.now() - cb.lastFailureTime.getTime()
+						: 0;
+					const nextAttemptIn =
+						cb.openedTime && cb.state === 'OPEN'
+							? Math.max(0, cb.openedTime.getTime() + 30000 - Date.now()) // Assuming 30s timeout
+							: 0;
+
+					checks[key] = {
+						status: cb.state === 'OPEN' ? 'degraded' : 'healthy',
+						message:
+							cb.state === 'OPEN'
+								? `${url}: ${cb.state} (${cb.failureCount} failures, next attempt in ${Math.ceil(nextAttemptIn / 1000)}s)`
+								: `${url}: ${cb.state} (${cb.successCount} successes since recovery)`
+					};
+				}
+			}
 		}
 
 		// Check average response time
@@ -264,9 +382,45 @@ export class ApiMetricsCollector {
 	}
 
 	/**
+	 * Get detailed circuit breaker health metrics
+	 */
+	private getCircuitBreakerHealthMetrics(): {
+		totalCount: number;
+		openCount: number;
+		halfOpenCount: number;
+		closedCount: number;
+		totalTrips: number;
+		averageFailureRate: number;
+	} {
+		const circuits = Object.values(this.metrics.circuitBreakers);
+		const totalCount = circuits.length;
+		const openCount = circuits.filter((cb) => cb.state === 'OPEN').length;
+		const halfOpenCount = circuits.filter((cb) => cb.state === 'HALF_OPEN').length;
+		const closedCount = circuits.filter((cb) => cb.state === 'CLOSED').length;
+		const totalTrips = circuits.reduce((sum, cb) => sum + cb.totalTrips, 0);
+
+		// Calculate average failure rate across all circuits
+		const totalRequests = circuits.reduce((sum, cb) => sum + cb.failureCount + cb.successCount, 0);
+		const totalFailures = circuits.reduce((sum, cb) => sum + cb.failureCount, 0);
+		const averageFailureRate = totalRequests > 0 ? totalFailures / totalRequests : 0;
+
+		return {
+			totalCount,
+			openCount,
+			halfOpenCount,
+			closedCount,
+			totalTrips,
+			averageFailureRate
+		};
+	}
+
+	/**
 	 * Reset all metrics
 	 */
 	reset(): void {
+		// Stop existing cleanup timer
+		this.stopPeriodicCleanup();
+
 		this.metrics = {
 			totalRequests: 0,
 			successfulRequests: 0,
@@ -277,6 +431,10 @@ export class ApiMetricsCollector {
 			endpoints: {},
 			circuitBreakers: {}
 		};
+
+		// Restart cleanup timer
+		this.startPeriodicCleanup();
+		this.lastCleanupTime = Date.now();
 	}
 
 	/**
@@ -415,13 +573,73 @@ export class ApiMetricsCollector {
 	}
 
 	/**
+	 * Start periodic cleanup timer
+	 */
+	private startPeriodicCleanup(): void {
+		// Only start if we're in a browser/Node.js environment that supports timers
+		if (typeof setInterval !== 'undefined') {
+			this.cleanupInterval = setInterval(() => {
+				this.cleanOldMetrics();
+			}, this.cleanupIntervalMs);
+		}
+	}
+
+	/**
+	 * Stop periodic cleanup timer
+	 */
+	stopPeriodicCleanup(): void {
+		if (this.cleanupInterval) {
+			clearInterval(this.cleanupInterval);
+			this.cleanupInterval = null;
+		}
+	}
+
+	/**
 	 * Clean old metrics to prevent memory leaks
 	 */
 	private cleanOldMetrics(): void {
 		const cutoffTime = new Date(Date.now() - this.metricsRetentionMs);
 
+		// Clean endpoint recent requests
 		for (const endpoint of Object.values(this.metrics.endpoints)) {
 			endpoint.recentRequests = endpoint.recentRequests.filter((req) => req.timestamp > cutoffTime);
+		}
+
+		// Clean stale circuit breaker entries (remove those that haven't been used recently)
+		const staleCircuitBreakers: string[] = [];
+		for (const [url, cb] of Object.entries(this.metrics.circuitBreakers)) {
+			const lastActivity = Math.max(
+				cb.lastFailureTime?.getTime() || 0,
+				cb.lastSuccessTime?.getTime() || 0,
+				cb.openedTime?.getTime() || 0
+			);
+
+			// Remove circuit breakers that haven't had activity for longer than retention period
+			// But keep OPEN circuit breakers regardless of age
+			if (cb.state !== 'OPEN' && Date.now() - lastActivity > this.metricsRetentionMs) {
+				staleCircuitBreakers.push(url);
+			}
+		}
+
+		// Remove stale circuit breakers
+		for (const url of staleCircuitBreakers) {
+			delete this.metrics.circuitBreakers[url];
+		}
+
+		// Clean stale endpoints (remove those with no recent requests)
+		const staleEndpoints: string[] = [];
+		for (const [key, endpoint] of Object.entries(this.metrics.endpoints)) {
+			if (
+				endpoint.recentRequests.length === 0 &&
+				Date.now() - endpoint.lastRequestTime.getTime() > this.metricsRetentionMs
+			) {
+				staleEndpoints.push(key);
+			}
+		}
+
+		// Remove stale endpoints
+		for (const key of staleEndpoints) {
+			delete this.metrics.endpoints[key];
 		}
 	}
 }

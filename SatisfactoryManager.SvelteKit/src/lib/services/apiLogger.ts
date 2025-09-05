@@ -26,8 +26,8 @@ export interface LogContext {
 	totalAttempts?: number;
 	circuitState?: string;
 	headers?: Record<string, string>;
-	body?: any;
-	error?: any;
+	body?: unknown;
+	error?: Error | Record<string, unknown>;
 	timestamp: string;
 }
 
@@ -291,7 +291,7 @@ export class ApiLogger {
 	/**
 	 * Check if body should be included in logs based on config and size
 	 */
-	private shouldIncludeBody(body: any): boolean {
+	private shouldIncludeBody(body: unknown): boolean {
 		if (!this.config.includeBody || !body) {
 			return false;
 		}

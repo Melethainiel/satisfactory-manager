@@ -49,6 +49,13 @@ function calculatePowerProduction(basePowerProduction: number, clockSpeed: numbe
 	return basePowerProduction * clockSpeedRatio; // Linear scaling for power production
 }
 
+// Production boost calculation for Somersloop
+function calculateProductionBoost(filledSlots: number, totalSlots: number): number {
+	if (totalSlots === 0) return 1.0;
+	const slotRatio = filledSlots / totalSlots;
+	return 1 + slotRatio;
+}
+
 export interface ProductionInstanceDetail {
 	id: string;
 	siteId: string;
@@ -59,6 +66,7 @@ export interface ProductionInstanceDetail {
 	extractorPurity: string | null;
 	buildingCount: string;
 	efficiencyRatio: string;
+	somersloopCount: number;
 	isBuilt: boolean;
 	notes: string | null;
 	createdAt: Date;
@@ -197,19 +205,20 @@ export class ProductionCalculationService {
 		const basePowerConsumption = parseFloat(instance.buildingVersion?.energyConsumption || '0');
 		const basePowerProduction = parseFloat(instance.buildingVersion?.energyProduction || '0');
 
-		// Calculate power multiplier based on slots usage
-		// Temporarily using 0 filledSlots and 1 totalSlots
-		const filledSlots = 0;
-		const totalSlots = 1;
+		// Calculate power multiplier and production boost based on Somersloop usage
+		const filledSlots = instance.somersloopCount || 0;
+		const totalSlots = instance.buildingVersion?.productionShardSlotSize || 0;
 
 		const powerMultiplier = calculatePowerMultiplier(filledSlots, totalSlots);
+		const productionBoost = calculateProductionBoost(filledSlots, totalSlots);
 		const clockSpeed = efficiency * 100; // efficiency is typically clock speed as percentage
 
 		// Handle extraction (no recipe)
 		if (!instance.recipeVersionId) {
 			const buildingOutput = parseFloat(instance.buildingVersion?.output || '0');
 			const purityMultiplier = getPurityMultiplier(instance.extractorPurity);
-			const totalRate = buildingOutput * buildingCount * efficiency * purityMultiplier;
+			const baseRate = buildingOutput * buildingCount * efficiency * purityMultiplier;
+			const boostedRate = baseRate * productionBoost;
 
 			const actualPowerConsumption = calculatePowerConsumption(
 				basePowerConsumption,
@@ -219,8 +228,8 @@ export class ProductionCalculationService {
 			const actualPowerProduction = calculatePowerProduction(basePowerProduction, clockSpeed);
 
 			return {
-				itemsPerMinute: totalRate,
-				totalProduction: totalRate,
+				itemsPerMinute: boostedRate,
+				totalProduction: boostedRate,
 				buildingUtilization: efficiency,
 				powerConsumption: actualPowerConsumption * buildingCount,
 				powerProduction: actualPowerProduction * buildingCount
@@ -230,12 +239,13 @@ export class ProductionCalculationService {
 		// Handle crafting (has recipe)
 		const manufacturingDuration = parseFloat(instance.recipeVersion?.manufacturingDuration || '1');
 
-		// Calculate primary product rate (first product)
-		const primaryProductRate = recipeData?.products?.[0]
+		// Calculate primary product rate (first product) with production boost
+		const basePrimaryProductRate = recipeData?.products?.[0]
 			? (parseFloat(recipeData.products[0].count) / manufacturingDuration) *
 				buildingCount *
 				efficiency
 			: 0;
+		const boostedPrimaryProductRate = basePrimaryProductRate * productionBoost;
 
 		const actualPowerConsumption = calculatePowerConsumption(
 			basePowerConsumption,
@@ -245,8 +255,8 @@ export class ProductionCalculationService {
 		const actualPowerProduction = calculatePowerProduction(basePowerProduction, clockSpeed);
 
 		return {
-			itemsPerMinute: primaryProductRate,
-			totalProduction: primaryProductRate,
+			itemsPerMinute: boostedPrimaryProductRate,
+			totalProduction: boostedPrimaryProductRate,
 			buildingUtilization: efficiency,
 			powerConsumption: actualPowerConsumption * buildingCount,
 			powerProduction: actualPowerProduction * buildingCount
@@ -458,6 +468,11 @@ export class ProductionCalculationService {
 			let products: ProductionInstanceDetail['products'] = [];
 			let ingredients: ProductionInstanceDetail['ingredients'] = [];
 
+			// Calculate production boost for this instance
+			const filledSlots = instance.somersloopCount || 0;
+			const totalSlots = instance.buildingVersion?.productionShardSlotSize || 0;
+			const productionBoost = calculateProductionBoost(filledSlots, totalSlots);
+
 			if (instance.recipeVersionId) {
 				// Get products and ingredients for this recipe
 				const recipeProducts = productsByRecipeVersion.get(instance.recipeVersionId) || [];
@@ -466,9 +481,10 @@ export class ProductionCalculationService {
 				const buildingCount = parseFloat(instance.buildingCount);
 				const efficiency = parseFloat(instance.efficiencyRatio);
 
+				// Products get the production boost
 				products = recipeProducts.map((p: any) => {
 					const baseRate = parseFloat(p.count);
-					const actualRate = baseRate * buildingCount * efficiency;
+					const actualRate = baseRate * buildingCount * efficiency * productionBoost;
 					return {
 						itemId: p.itemId,
 						count: p.count,
@@ -477,6 +493,7 @@ export class ProductionCalculationService {
 					};
 				});
 
+				// Ingredients do NOT get the production boost
 				ingredients = recipeIngredients.map((i: any) => {
 					const baseRate = parseFloat(i.count);
 					const actualRate = baseRate * buildingCount * efficiency;
@@ -488,14 +505,14 @@ export class ProductionCalculationService {
 					};
 				});
 			} else if (instance.extractedItemVersionId) {
-				// Handle extraction
+				// Handle extraction with production boost
 				const extractedItemVersion = extractedItemVersionsMap.get(instance.extractedItemVersionId);
 				if (extractedItemVersion) {
 					const buildingCount = parseFloat(instance.buildingCount);
 					const efficiency = parseFloat(instance.efficiencyRatio);
 					const buildingOutput = parseFloat(instance.buildingVersion?.output || '0');
 					const purityMultiplier = getPurityMultiplier(instance.extractorPurity);
-					const actualRate = buildingOutput * buildingCount * efficiency * purityMultiplier;
+					const actualRate = buildingOutput * buildingCount * efficiency * purityMultiplier * productionBoost;
 
 					products = [
 						{
@@ -577,6 +594,7 @@ export class ProductionCalculationService {
 				extractorPurity: instance.extractorPurity,
 				buildingCount: instance.buildingCount,
 				efficiencyRatio: instance.efficiencyRatio,
+				somersloopCount: instance.somersloopCount,
 				isBuilt: instance.isBuilt,
 				notes: instance.notes,
 				createdAt: instance.createdAt,

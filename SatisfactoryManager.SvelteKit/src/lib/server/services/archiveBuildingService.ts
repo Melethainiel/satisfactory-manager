@@ -15,6 +15,7 @@ interface ArchiveBuildingData {
 	energyProduction?: number;
 	supplementalLoadAmount?: number;
 	output?: number;
+	productionShardSlotSize?: number;
 	// Additional fields that might exist but we don't use yet
 	[key: string]: any;
 }
@@ -28,6 +29,7 @@ interface ImportBuildingData {
 	energyProduction?: number;
 	supplementalLoadAmount?: number;
 	output?: number;
+	productionShardSlotSize?: number;
 }
 
 export interface ArchiveBuildingImportResult {
@@ -214,6 +216,10 @@ class ArchiveBuildingService implements IArchiveBuildingService {
 					? building.supplementalLoadAmount
 					: building.SupplementalLoadAmount;
 			const output = building.output !== undefined ? building.output : building.Output;
+			const productionShardSlotSize =
+				building.productionShardSlotSize !== undefined
+					? building.productionShardSlotSize
+					: building.ProductionShardSlotSize;
 
 			if (!className || typeof className !== 'string' || !className.trim()) {
 				console.warn(`Building at index ${index} missing or invalid className/ClassName`);
@@ -279,6 +285,18 @@ class ArchiveBuildingService implements IArchiveBuildingService {
 				validatedOutput = numericValue;
 			}
 
+			let validatedProductionShardSlotSize: number | undefined;
+			if (productionShardSlotSize !== undefined && productionShardSlotSize !== null) {
+				const numericValue = Number(productionShardSlotSize);
+				if (isNaN(numericValue) || numericValue < 0 || !Number.isInteger(numericValue)) {
+					console.warn(
+						`Building at index ${index} (${className}) has invalid productionShardSlotSize: ${productionShardSlotSize}`
+					);
+					return null;
+				}
+				validatedProductionShardSlotSize = numericValue;
+			}
+
 			// Return validated building with normalized field names
 			return {
 				className: className.trim(),
@@ -287,7 +305,8 @@ class ArchiveBuildingService implements IArchiveBuildingService {
 				energyConsumption: validatedEnergyConsumption,
 				energyProduction: validatedEnergyProduction,
 				supplementalLoadAmount: validatedSupplementalLoadAmount,
-				output: validatedOutput
+				output: validatedOutput,
+				productionShardSlotSize: validatedProductionShardSlotSize
 			};
 		} catch (error) {
 			console.warn(`Error validating building at index ${index}:`, error);
@@ -308,7 +327,8 @@ class ArchiveBuildingService implements IArchiveBuildingService {
 			energyConsumption: archiveBuilding.energyConsumption,
 			energyProduction: archiveBuilding.energyProduction,
 			supplementalLoadAmount: archiveBuilding.supplementalLoadAmount,
-			output: archiveBuilding.output
+			output: archiveBuilding.output,
+			productionShardSlotSize: archiveBuilding.productionShardSlotSize
 		};
 	}
 
@@ -386,7 +406,8 @@ class ArchiveBuildingService implements IArchiveBuildingService {
 								energyConsumption: buildingData.energyConsumption?.toString() || null,
 								energyProduction: buildingData.energyProduction?.toString() || null,
 								supplementalLoadAmount: buildingData.supplementalLoadAmount?.toString() || null,
-								output: buildingData.output?.toString() || null
+								output: buildingData.output?.toString() || null,
+								productionShardSlotSize: buildingData.productionShardSlotSize ?? 0
 							});
 							results.versionsCreated++;
 						}

@@ -267,6 +267,7 @@ export class ProductionCalculationService {
 				extractorPurity: productionInstances.extractorPurity,
 				buildingCount: productionInstances.buildingCount,
 				efficiencyRatio: productionInstances.efficiencyRatio,
+				somersloopCount: productionInstances.somersloopCount,
 				isBuilt: productionInstances.isBuilt,
 				notes: productionInstances.notes,
 				createdAt: productionInstances.createdAt,
@@ -297,7 +298,8 @@ export class ProductionCalculationService {
 					output: buildingVersions.output,
 					energyConsumption: buildingVersions.energyConsumption,
 					energyProduction: buildingVersions.energyProduction,
-					supplementalLoadAmount: buildingVersions.supplementalLoadAmount
+					supplementalLoadAmount: buildingVersions.supplementalLoadAmount,
+					productionShardSlotSize: buildingVersions.productionShardSlotSize
 				}
 			})
 			.from(productionInstances)

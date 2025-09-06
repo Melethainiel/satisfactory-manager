@@ -45,6 +45,7 @@ export interface ProductionInstanceData {
 	extractorPurity: string | null;
 	buildingCount: string;
 	efficiencyRatio: string;
+	somersloopCount: number;
 	isBuilt: boolean;
 	notes: string | null;
 	createdAt: Date;
@@ -83,6 +84,7 @@ export interface ProductionInstanceData {
 		output: string | null;
 		energyConsumption: string | null;
 		energyProduction: string | null;
+		productionShardSlotSize: number;
 	} | null;
 	products: Array<{
 		itemId: string;

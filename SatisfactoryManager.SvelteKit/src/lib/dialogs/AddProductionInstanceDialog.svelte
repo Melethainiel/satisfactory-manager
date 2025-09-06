@@ -15,6 +15,7 @@
 	let buildingCount = $state(1);
 	let efficiencyRatio = $state(1.0);
 	let extractorPurity = $state('Normal');
+	let somersloopCount = $state(0);
 	let isBuilt = $state(false);
 	let notes = $state('');
 
@@ -228,6 +229,7 @@
 		buildingCount = 1;
 		efficiencyRatio = 1.0;
 		extractorPurity = 'Normal';
+		somersloopCount = 0;
 		isBuilt = false;
 		notes = '';
 		autoCalculateMode = false;
@@ -312,6 +314,7 @@
 				buildingVersionId: selectedBuildingId,
 				buildingCount: buildingCount,
 				efficiencyRatio: efficiencyRatio,
+				somersloopCount: somersloopCount,
 				isBuilt: isBuilt,
 				notes: notes.trim() || undefined
 			};
@@ -619,6 +622,30 @@
 						<span class="label-text-alt">{$t('production.purity_affects_extraction')}</span>
 					</div>
 				</div>
+			{/if}
+
+			<!-- Configuration Somersloop (seulement si le bâtiment supporte les shards) -->
+			{#if selectedBuildingId}
+				{@const selectedBuilding = itemState.availableBuildings.find(b => b.id === selectedBuildingId)}
+				{#if selectedBuilding && selectedBuilding.productionShardSlotSize && selectedBuilding.productionShardSlotSize > 0}
+					<div class="form-control">
+						<label class="label" for="somersloop-count">
+							<span class="label-text">Nombre de Somersloop</span>
+						</label>
+						<input
+							id="somersloop-count"
+							type="number"
+							class="input-bordered input w-full"
+							bind:value={somersloopCount}
+							min="0"
+							max={selectedBuilding.productionShardSlotSize}
+							step="1"
+						/>
+						<div class="label">
+							<span class="label-text-alt">Max: {selectedBuilding.productionShardSlotSize} shard slots</span>
+						</div>
+					</div>
+				{/if}
 			{/if}
 
 			<!-- Auto-calculation toggle -->

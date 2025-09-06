@@ -2,6 +2,7 @@
 	import { getGameState } from '$lib/states/gameState.svelte';
 	import { getItemState } from '$lib/states/itemState.svelte';
 	import { t } from '$lib/i18n';
+	import { getPurityMultiplier } from '$lib/utils/productionCalculations';
 
 	const gameState = getGameState();
 	const itemState = getItemState();
@@ -157,17 +158,6 @@
 	}
 
 	// Auto-calculation functions
-	function getPurityMultiplier(purity: string): number {
-		switch (purity) {
-			case 'Impure':
-				return 0.5;
-			case 'Pure':
-				return 2.0;
-			case 'Normal':
-			default:
-				return 1.0;
-		}
-	}
 
 	function calculateBuildingCount(): number {
 		if (!desiredItemsPerMin || desiredItemsPerMin <= 0) return 1;

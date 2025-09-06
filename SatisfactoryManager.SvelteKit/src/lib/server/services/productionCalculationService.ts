@@ -14,47 +14,14 @@ import {
 	sites
 } from '../db/schema';
 import { and, eq, inArray } from 'drizzle-orm';
+import {
+	getPurityMultiplier,
+	calculatePowerMultiplier,
+	calculatePowerConsumption,
+	calculatePowerProduction,
+	calculateProductionBoost
+} from '$lib/utils/productionCalculations';
 
-// Purity multipliers for extractors
-function getPurityMultiplier(purity: string | null): number {
-	switch (purity) {
-		case 'Impure':
-			return 0.5;
-		case 'Pure':
-			return 2.0;
-		case 'Normal':
-		default:
-			return 1.0;
-	}
-}
-
-// Power calculation functions based on Satisfactory wiki formula
-function calculatePowerMultiplier(filledSlots: number, totalSlots: number): number {
-	if (totalSlots === 0) return 1.0;
-	const slotRatio = filledSlots / totalSlots;
-	return Math.pow(1 + slotRatio, 2);
-}
-
-function calculatePowerConsumption(
-	basePowerUsage: number,
-	powerMultiplier: number,
-	clockSpeed: number
-): number {
-	const clockSpeedRatio = clockSpeed / 100;
-	return basePowerUsage * powerMultiplier * Math.pow(clockSpeedRatio, 1.321928);
-}
-
-function calculatePowerProduction(basePowerProduction: number, clockSpeed: number): number {
-	const clockSpeedRatio = clockSpeed / 100;
-	return basePowerProduction * clockSpeedRatio; // Linear scaling for power production
-}
-
-// Production boost calculation for Somersloop
-function calculateProductionBoost(filledSlots: number, totalSlots: number): number {
-	if (totalSlots === 0) return 1.0;
-	const slotRatio = filledSlots / totalSlots;
-	return 1 + slotRatio;
-}
 
 export interface ProductionInstanceDetail {
 	id: string;

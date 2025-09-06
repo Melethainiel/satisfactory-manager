@@ -560,6 +560,8 @@
 	"production_dialog": {
 		"auto_building_count": "Automatic building count calculation",
 		"building_calculation": "→ {count} buildings = {production} items/min",
-		"mark_as_built": "Mark as built"
+		"mark_as_built": "Mark as built",
+		"somersloop_count": "Number of Somersloop",
+		"somersloop_slots": "shard slots"
 	}
 }

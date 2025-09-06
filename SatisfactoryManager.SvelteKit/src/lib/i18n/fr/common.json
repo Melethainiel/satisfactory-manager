@@ -570,6 +570,8 @@
 	"production_dialog": {
 		"auto_building_count": "Calcul automatique du nombre de bâtiments",
 		"building_calculation": "→ {count} bâtiments = {production} items/min",
-		"mark_as_built": "Marquer comme construite"
+		"mark_as_built": "Marquer comme construite",
+		"somersloop_count": "Nombre de Somersloop",
+		"somersloop_slots": "emplacements de fragments"
 	}
 }

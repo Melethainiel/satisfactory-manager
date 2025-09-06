@@ -401,7 +401,7 @@
 				{#if currentInstance && currentInstance.buildingVersion && (currentInstance.buildingVersion.productionShardSlotSize ?? 0) > 0}
 					<div class="form-control">
 						<label class="label" for="somersloop-count-edit">
-							<span class="label-text">Nombre de Somersloop</span>
+							<span class="label-text">{$t('production_dialog.somersloop_count')}</span>
 						</label>
 						<input
 							id="somersloop-count-edit"
@@ -413,7 +413,7 @@
 							step="1"
 						/>
 						<div class="label">
-							<span class="label-text-alt">Max: {currentInstance.buildingVersion.productionShardSlotSize ?? 0} shard slots</span>
+							<span class="label-text-alt">Max: {currentInstance.buildingVersion.productionShardSlotSize ?? 0} {$t('production_dialog.somersloop_slots')}</span>
 						</div>
 					</div>
 				{/if}

@@ -642,7 +642,7 @@
 			{#if selectedBuildingId && (itemState.selectedProductionType === 'extract' || itemState.selectedProductionType === 'craft')}
 				<div class="form-control">
 					<label class="label cursor-pointer">
-						<span class="label-text">Calcul automatique du nombre de bâtiments</span>
+						<span class="label-text">{$t('production_dialog.auto_building_count')}</span>
 						<input
 							type="checkbox"
 							bind:checked={autoCalculateMode}
@@ -657,7 +657,7 @@
 				<div class="form-control">
 					<label class="label" for="desired-rate">
 						<span class="label-text"
-							>Production souhaitée (items/min)<span class="text-error">*</span></span
+							>{$t('production_dialog.desired_production')}<span class="text-error">*</span></span
 						>
 					</label>
 					<input
@@ -673,7 +673,7 @@
 					{#if selectedBuildingId && desiredItemsPerMin > 0}
 						<div class="label">
 							<span class="label-text-alt text-info">
-								→ {buildingCount} bâtiments = {calculateActualProduction().toFixed(1)} items/min
+								{$t('production_dialog.building_calculation', { values: { count: buildingCount, production: calculateActualProduction().toFixed(1) } })}
 							</span>
 						</div>
 					{/if}
@@ -702,7 +702,7 @@
 					/>
 					{#if autoCalculateMode}
 						<div class="label">
-							<span class="label-text-alt text-warning">Calculé automatiquement</span>
+							<span class="label-text-alt text-warning">{$t('production_dialog.auto_calculated')}</span>
 						</div>
 					{/if}
 				</div>
@@ -731,7 +731,7 @@
 			<!-- Built Status -->
 			<div class="form-control">
 				<label class="label cursor-pointer">
-					<span class="label-text">Marquer comme construite</span>
+					<span class="label-text">{$t('production_dialog.mark_as_built')}</span>
 					<input type="checkbox" bind:checked={isBuilt} class="checkbox checkbox-success" />
 				</label>
 			</div>

@@ -572,6 +572,8 @@
 		"building_calculation": "→ {count} bâtiments = {production} items/min",
 		"mark_as_built": "Marquer comme construite",
 		"somersloop_count": "Nombre de Somersloop",
-		"somersloop_slots": "emplacements de fragments"
+		"somersloop_slots": "emplacements de fragments",
+		"desired_production": "Production souhaitée (items/min)",
+		"auto_calculated": "Calculé automatiquement"
 	}
 }

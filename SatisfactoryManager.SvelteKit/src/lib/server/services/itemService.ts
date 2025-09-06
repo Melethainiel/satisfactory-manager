@@ -312,7 +312,8 @@ class ItemService implements IItemService {
 					name: buildings.name,
 					className: buildings.className,
 					type: buildings.type,
-					output: buildingVersions.output // Include output for production calculation
+					output: buildingVersions.output, // Include output for production calculation
+					productionShardSlotSize: buildingVersions.productionShardSlotSize
 				})
 				.from(buildingVersions)
 				.innerJoin(buildings, eq(buildingVersions.buildingId, buildings.id))
@@ -360,7 +361,8 @@ class ItemService implements IItemService {
 					className: buildings.className,
 					type: buildings.type,
 					energyProduction: buildingVersions.energyProduction,
-					energyValue: itemVersions.energyValue
+					energyValue: itemVersions.energyValue,
+					productionShardSlotSize: buildingVersions.productionShardSlotSize
 				})
 				.from(buildingVersions)
 				.innerJoin(buildings, eq(buildingVersions.buildingId, buildings.id))

@@ -26,7 +26,8 @@ export const GET: RequestHandler = async ({ params }) => {
 				id: buildingVersions.id, // This is now buildingVersionId
 				name: buildings.name,
 				type: buildings.type,
-				className: buildings.className
+				className: buildings.className,
+				productionShardSlotSize: buildingVersions.productionShardSlotSize
 			})
 			.from(buildingVersions)
 			.innerJoin(buildings, eq(buildingVersions.buildingId, buildings.id))

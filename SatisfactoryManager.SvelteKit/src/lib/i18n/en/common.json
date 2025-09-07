@@ -307,7 +307,14 @@
 		"no_production_methods": "No production methods available for this item in the current game configuration.",
 		"loading_production_options": "Loading production options...",
 		"no_compatible_buildings": "No compatible buildings available",
-		"loading_buildings": "Loading buildings..."
+		"loading_buildings": "Loading buildings...",
+		"searching_items": "Searching items...",
+		"start_typing_search": "Start typing to search for items",
+		"no_items_found": "No items found",
+		"select_recipe_placeholder": "Select a recipe...",
+		"select_building_placeholder": "Select a building...",
+		"efficiency_range": "0.1 - 2.5 (1.0 = 100%)",
+		"characters_count": "{count}/1000 characters"
 	},
 	"productionInstances": {
 		"add_recipe": "Add Recipe",

@@ -385,15 +385,15 @@
 								<div class="p-3 text-center text-base-content/70">
 									<div class="flex items-center justify-center gap-2">
 										<span class="loading loading-sm loading-spinner"></span>
-										Searching items...
+										{$t('production.searching_items')}
 									</div>
 								</div>
 							{:else if searchQuery.trim().length === 0}
 								<div class="p-3 text-center text-base-content/70">
-									Start typing to search for items
+									{$t('production.start_typing_search')}
 								</div>
 							{:else if itemState.searchResults.length === 0}
-								<div class="p-3 text-center text-base-content/70">No items found</div>
+								<div class="p-3 text-center text-base-content/70">{$t('production.no_items_found')}</div>
 							{:else}
 								{#each itemState.searchResults as item}
 									<button
@@ -535,7 +535,7 @@
 						}}
 						required
 					>
-						<option value="">Select a recipe...</option>
+						<option value="">{$t('production.select_recipe_placeholder')}</option>
 						{#each itemState.productionOptions.recipes as recipe}
 							<option value={recipe.id}
 								>{recipe.displayName} ({recipe.manufacturingDuration}s)</option
@@ -566,7 +566,7 @@
 						disabled={itemState.availableBuildings.length === 0}
 						required
 					>
-						<option value="">Select a building...</option>
+						<option value="">{$t('production.select_building_placeholder')}</option>
 						{#each itemState.availableBuildings as building}
 							<option value={building.id}>
 								{building.name} ({building.type})
@@ -723,7 +723,7 @@
 						placeholder="1.00"
 					/>
 					<div class="label">
-						<span class="label-text-alt">0.1 - 2.5 (1.0 = 100%)</span>
+						<span class="label-text-alt">{$t('production.efficiency_range')}</span>
 					</div>
 				</div>
 			</div>
@@ -750,7 +750,7 @@
 					maxlength="1000"
 				></textarea>
 				<div class="label">
-					<span class="label-text-alt">{notes.length}/1000 characters</span>
+					<span class="label-text-alt">{$t('production.characters_count', { values: { count: notes.length } })}</span>
 				</div>
 			</div>
 

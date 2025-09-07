@@ -118,6 +118,8 @@ export interface Building {
 	consumptionPerMinute?: number;
 	// Display values (converted units)
 	energyProductionMW?: number;
+	// Production shards
+	productionShardSlotSize?: number;
 }
 
 export interface ProductionOptions {

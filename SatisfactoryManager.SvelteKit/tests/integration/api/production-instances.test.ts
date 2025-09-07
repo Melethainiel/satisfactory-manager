@@ -105,6 +105,61 @@ describe('/api/sites/[siteId]/production-instances', () => {
 	});
 
 	describe('POST /api/sites/[siteId]/production-instances', () => {
+		it('should reject requests without authentication', async () => {
+			const request = new Request('http://localhost:3000/api/sites/test-site/production-instances', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					buildingVersionId: testBuildingVersionId,
+					recipeVersionId: testRecipeVersionId,
+					buildingCount: 1,
+					efficiencyRatio: 1.0,
+					somersloopCount: 1
+				})
+			});
+
+			const response = await POST({
+				request,
+				params: { siteId: testSiteId },
+				locals: {} // No user authentication
+			} as any);
+
+			expect(response.status).toBe(401);
+		});
+
+		it('should reject requests with insufficient permissions', async () => {
+			// Mock user without site permissions
+			const limitedUser = {
+				id: 'limited-user-id',
+				microsoftId: 'limited-ms-id',
+				displayName: 'Limited User',
+				email: 'limited@example.com',
+				createdAt: new Date(),
+				updatedAt: new Date()
+			};
+
+			const request = new Request('http://localhost:3000/api/sites/test-site/production-instances', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					buildingVersionId: testBuildingVersionId,
+					recipeVersionId: testRecipeVersionId,
+					buildingCount: 1,
+					efficiencyRatio: 1.0,
+					somersloopCount: 1
+				})
+			});
+
+			const response = await POST({
+				request,
+				params: { siteId: 'unauthorized-site-id' }, // Different site ID
+				locals: { user: limitedUser }
+			} as any);
+
+			// Should be 403 Forbidden or 404 Not Found depending on implementation
+			expect([403, 404]).toContain(response.status);
+		});
+
 		it('should create production instance with valid Somersloop count', async () => {
 			const request = new Request('http://localhost:3000/api/sites/test-site/production-instances', {
 				method: 'POST',
@@ -177,7 +232,7 @@ describe('/api/sites/[siteId]/production-instances', () => {
 
 			expect(response.status).toBe(400);
 			const result = await response.json();
-			expect(result.error).toContain('somersloopCount');
+			expect(result.error).toBe('somersloopCount must be a non-negative integer');
 		});
 
 		it('should reject Somersloop count exceeding building slot size', async () => {
@@ -202,7 +257,7 @@ describe('/api/sites/[siteId]/production-instances', () => {
 
 			expect(response.status).toBe(400);
 			const result = await response.json();
-			expect(result.error).toContain('exceeds maximum slots');
+			expect(result.error).toBe('somersloopCount (2) exceeds building maximum slots (1)');
 		});
 
 		it('should handle buildings without Somersloop support', async () => {
@@ -431,7 +486,7 @@ describe('/api/sites/[siteId]/production-instances', () => {
 
 			expect(response.status).toBe(400);
 			const result = await response.json();
-			expect(result.error).toContain('must be an integer');
+			expect(result.error).toBe('somersloopCount must be an integer');
 		});
 
 		it('should reject string values for Somersloop count', async () => {

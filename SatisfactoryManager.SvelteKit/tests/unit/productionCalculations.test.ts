@@ -4,57 +4,22 @@
  */
 
 import { describe, expect, it } from 'vitest';
-
-// Note: These functions will be implemented in src/lib/utils/productionCalculations.ts
-// For now, we include inline implementations for testing
-
-// TODO: Import from actual implementation once available:
-// import { 
-// 	getPurityMultiplier, 
-// 	calculatePowerMultiplier, 
-// 	calculateProductionBoost 
-// } from '../../src/lib/utils/productionCalculations';
-
-// Inline implementations for testing (remove when real implementations are available)
-function getPurityMultiplier(purity: string | null): number {
-	switch (purity) {
-		case 'Impure':
-			return 0.5;
-		case 'Pure':
-			return 2.0;
-		case 'Normal':
-		default:
-			return 1.0;
-	}
-}
-
-function calculatePowerMultiplier(filledSlots: number, totalSlots: number): number {
-	if (totalSlots === 0) return 1.0;
-	const slotRatio = filledSlots / totalSlots;
-	return Math.pow(1 + slotRatio, 2);
-}
-
-function calculateProductionBoost(filledSlots: number, totalSlots: number): number {
-	if (totalSlots === 0) return 1.0;
-	const slotRatio = filledSlots / totalSlots;
-	return 1 + slotRatio;
-}
+import { 
+	getPurityMultiplier, 
+	calculatePowerMultiplier, 
+	calculateProductionBoost,
+	validateSomersloopSlots,
+	calculateTotalProductionRate,
+	calculateTotalPowerConsumption
+} from '../../src/lib/utils/productionCalculations';
+import { testScenarios, purityTestData, testAssertions } from '../utils/testCalculations';
 
 describe('Production Calculations', () => {
 	describe('getPurityMultiplier', () => {
 		it('should return correct multipliers for each purity level', () => {
-			expect(getPurityMultiplier('Impure')).toBe(0.5);
-			expect(getPurityMultiplier('Normal')).toBe(1.0);
-			expect(getPurityMultiplier('Pure')).toBe(2.0);
-		});
-
-		it('should default to Normal purity for null values', () => {
-			expect(getPurityMultiplier(null)).toBe(1.0);
-		});
-
-		it('should default to Normal purity for unrecognized values', () => {
-			expect(getPurityMultiplier('Unknown')).toBe(1.0);
-			expect(getPurityMultiplier('')).toBe(1.0);
+			Object.values(purityTestData).forEach(({ purity, expected }) => {
+				expect(getPurityMultiplier(purity as any)).toBe(expected);
+			});
 		});
 	});
 
@@ -69,20 +34,20 @@ describe('Production Calculations', () => {
 			expect(calculatePowerMultiplier(0, 4)).toBe(1.0);
 		});
 
-		it('should calculate correct power multiplier using (1 + filled/total)² formula', () => {
-			// 1 slot filled out of 1: (1 + 1/1)² = 2² = 4
+		it('should calculate correct power multiplier using (1 + filled/total)ï¿½ formula', () => {
+			// 1 slot filled out of 1: (1 + 1/1)ï¿½ = 2ï¿½ = 4
 			expect(calculatePowerMultiplier(1, 1)).toBe(4.0);
 			
-			// 1 slot filled out of 2: (1 + 1/2)² = 1.5² = 2.25
+			// 1 slot filled out of 2: (1 + 1/2)ï¿½ = 1.5ï¿½ = 2.25
 			expect(calculatePowerMultiplier(1, 2)).toBe(2.25);
 			
-			// 2 slots filled out of 4: (1 + 2/4)² = 1.5² = 2.25
+			// 2 slots filled out of 4: (1 + 2/4)ï¿½ = 1.5ï¿½ = 2.25
 			expect(calculatePowerMultiplier(2, 4)).toBe(2.25);
 			
-			// All slots filled: (1 + 4/4)² = 2² = 4
+			// All slots filled: (1 + 4/4)ï¿½ = 2ï¿½ = 4
 			expect(calculatePowerMultiplier(4, 4)).toBe(4.0);
 			
-			// Partial filling: (1 + 3/4)² = 1.75² = 3.0625
+			// Partial filling: (1 + 3/4)ï¿½ = 1.75ï¿½ = 3.0625
 			expect(calculatePowerMultiplier(3, 4)).toBe(3.0625);
 		});
 
@@ -92,7 +57,7 @@ describe('Production Calculations', () => {
 		});
 
 		it('should handle fractional results correctly', () => {
-			// 1 out of 3: (1 + 1/3)² = (4/3)² H 1.7778
+			// 1 out of 3: (1 + 1/3)ï¿½ = (4/3)ï¿½ H 1.7778
 			const result = calculatePowerMultiplier(1, 3);
 			expect(result).toBeCloseTo(1.7778, 4);
 		});
@@ -143,14 +108,14 @@ describe('Production Calculations', () => {
 			it('should match Satisfactory Constructor behavior (1 Somersloop slot)', () => {
 				// Constructor with 1 Somersloop slot filled should double production
 				expect(calculateProductionBoost(1, 1)).toBe(2.0);
-				// Power consumption should be 4x base (2²)
+				// Power consumption should be 4x base (2ï¿½)
 				expect(calculatePowerMultiplier(1, 1)).toBe(4.0);
 			});
 
 			it('should match Satisfactory Manufacturer behavior (4 Somersloop slots)', () => {
 				// Manufacturer with 2/4 slots filled
 				expect(calculateProductionBoost(2, 4)).toBe(1.5); // 50% production boost
-				expect(calculatePowerMultiplier(2, 4)).toBe(2.25); // (1.5)² power multiplier
+				expect(calculatePowerMultiplier(2, 4)).toBe(2.25); // (1.5)ï¿½ power multiplier
 				
 				// Manufacturer with all 4 slots filled
 				expect(calculateProductionBoost(4, 4)).toBe(2.0); // 100% production boost
@@ -193,6 +158,71 @@ describe('Production Calculations', () => {
 					previousPower = power;
 				}
 			});
+		});
+	});
+
+	describe('validateSomersloopSlots', () => {
+		it('should validate correct slot configurations', () => {
+			expect(validateSomersloopSlots(0, 0)).toEqual({ valid: true });
+			expect(validateSomersloopSlots(1, 1)).toEqual({ valid: true });
+			expect(validateSomersloopSlots(2, 4)).toEqual({ valid: true });
+		});
+
+		it('should reject non-integer values', () => {
+			expect(validateSomersloopSlots(1.5, 4)).toEqual({ 
+				valid: false, 
+				error: 'filledSlots must be an integer' 
+			});
+			expect(validateSomersloopSlots(2, 4.5)).toEqual({ 
+				valid: false, 
+				error: 'totalSlots must be an integer' 
+			});
+		});
+
+		it('should reject negative values', () => {
+			expect(validateSomersloopSlots(-1, 4)).toEqual({ 
+				valid: false, 
+				error: 'filledSlots must be non-negative' 
+			});
+			expect(validateSomersloopSlots(2, -1)).toEqual({ 
+				valid: false, 
+				error: 'totalSlots must be non-negative' 
+			});
+		});
+
+		it('should reject filled slots exceeding total', () => {
+			expect(validateSomersloopSlots(5, 4)).toEqual({ 
+				valid: false, 
+				error: 'filledSlots (5) exceeds totalSlots (4)' 
+			});
+		});
+	});
+
+	describe('calculateTotalProductionRate', () => {
+		it('should combine purity and Somersloop effects correctly', () => {
+			// Pure node with full Somersloop: 2.0 (purity) * 2.0 (Somersloop) = 4.0
+			const result = calculateTotalProductionRate(60, 'Pure', 1, 1);
+			expect(result).toBe(240); // 60 * 2.0 * 2.0
+		});
+
+		it('should handle no Somersloop with different purities', () => {
+			expect(calculateTotalProductionRate(60, 'Impure', 0, 1)).toBe(30); // 60 * 0.5 * 1.0
+			expect(calculateTotalProductionRate(60, 'Normal', 0, 1)).toBe(60); // 60 * 1.0 * 1.0
+			expect(calculateTotalProductionRate(60, 'Pure', 0, 1)).toBe(120); // 60 * 2.0 * 1.0
+		});
+	});
+
+	describe('calculateTotalPowerConsumption', () => {
+		it('should calculate total power with Somersloop multiplier', () => {
+			// Base 4MW with full Constructor Somersloop: 4 * 4 = 16MW
+			expect(calculateTotalPowerConsumption(4, 1, 1)).toBe(16);
+			
+			// Base 55MW with half Manufacturer Somersloop: 55 * 2.25 = 123.75MW
+			expect(calculateTotalPowerConsumption(55, 2, 4)).toBe(123.75);
+		});
+
+		it('should handle no Somersloop support', () => {
+			expect(calculateTotalPowerConsumption(4, 0, 0)).toBe(4);
 		});
 	});
 });

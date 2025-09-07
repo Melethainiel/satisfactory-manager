@@ -1,14 +1,24 @@
 /**
- * Shared production calculation utilities for Satisfactory Manager
+ * Production Calculations for Somersloop (Production Shard) System
  * 
- * This module contains all the calculation formulas used across the application
- * to ensure consistency and eliminate code duplication.
+ * This module provides utility functions for calculating production boosts,
+ * power consumption multipliers, and purity effects in the Satisfactory game.
+ * 
+ * Key Formulas:
+ * - Power Multiplier: (1 + filled/total)²
+ * - Production Boost: (1 + filled/total)
+ * - Purity: Impure=0.5, Normal=1.0, Pure=2.0
  */
 
+export type PurityLevel = 'Impure' | 'Normal' | 'Pure';
+
 /**
- * Get the purity multiplier for extractors based on node quality
+ * Calculates the production multiplier based on resource node purity
+ * 
+ * @param purity - The purity level of the resource node
+ * @returns The production multiplier (0.5 for Impure, 1.0 for Normal, 2.0 for Pure)
  */
-export function getPurityMultiplier(purity: string | null): number {
+export function getPurityMultiplier(purity: string | null | undefined): number {
 	switch (purity) {
 		case 'Impure':
 			return 0.5;
@@ -21,43 +31,120 @@ export function getPurityMultiplier(purity: string | null): number {
 }
 
 /**
- * Calculate power multiplier based on Somersloop usage
- * Formula: (1 + Filled slots / Total slots)²
+ * Calculates the power consumption multiplier when using Somersloop shards
+ * 
+ * Uses the formula: (1 + filled/total)²
+ * This reflects the exponential power cost increase in Satisfactory
+ * 
+ * @param filledSlots - Number of Somersloop shards installed
+ * @param totalSlots - Total number of available Somersloop slots in the building
+ * @returns Power consumption multiplier (1.0 = base consumption)
  */
 export function calculatePowerMultiplier(filledSlots: number, totalSlots: number): number {
-	if (totalSlots === 0) return 1.0;
-	const slotRatio = filledSlots / totalSlots;
+	// Handle buildings without Somersloop support
+	if (totalSlots <= 0) return 1.0;
+	
+	// Ensure non-negative values
+	const safeFilledSlots = Math.max(0, filledSlots);
+	const safeTotalSlots = Math.max(1, totalSlots);
+	
+	const slotRatio = safeFilledSlots / safeTotalSlots;
 	return Math.pow(1 + slotRatio, 2);
 }
 
 /**
- * Calculate actual power consumption based on Satisfactory wiki formula
- * Formula: Base power usage × Power multiplier × (Clock speed/100)^1.321928
- */
-export function calculatePowerConsumption(
-	basePowerUsage: number,
-	powerMultiplier: number,
-	clockSpeed: number
-): number {
-	const clockSpeedRatio = clockSpeed / 100;
-	return basePowerUsage * powerMultiplier * Math.pow(clockSpeedRatio, 1.321928);
-}
-
-/**
- * Calculate power production with linear scaling for clock speed
- */
-export function calculatePowerProduction(basePowerProduction: number, clockSpeed: number): number {
-	const clockSpeedRatio = clockSpeed / 100;
-	return basePowerProduction * clockSpeedRatio; // Linear scaling for power production
-}
-
-/**
- * Calculate production boost based on Somersloop usage
- * Formula: (1 + Filled slots / Total slots)
- * Note: This only affects production output, not ingredient consumption
+ * Calculates the production output boost when using Somersloop shards
+ * 
+ * Uses the formula: (1 + filled/total)
+ * This provides linear production increase in Satisfactory
+ * 
+ * @param filledSlots - Number of Somersloop shards installed
+ * @param totalSlots - Total number of available Somersloop slots in the building
+ * @returns Production output multiplier (1.0 = base production)
  */
 export function calculateProductionBoost(filledSlots: number, totalSlots: number): number {
-	if (totalSlots === 0) return 1.0;
-	const slotRatio = filledSlots / totalSlots;
+	// Handle buildings without Somersloop support
+	if (totalSlots <= 0) return 1.0;
+	
+	// Ensure non-negative values
+	const safeFilledSlots = Math.max(0, filledSlots);
+	const safeTotalSlots = Math.max(1, totalSlots);
+	
+	const slotRatio = safeFilledSlots / safeTotalSlots;
 	return 1 + slotRatio;
+}
+
+/**
+ * Calculates the total production rate including purity and Somersloop effects
+ * 
+ * @param baseRate - Base production rate of the recipe
+ * @param purity - Resource node purity level
+ * @param filledSlots - Number of Somersloop shards installed
+ * @param totalSlots - Total Somersloop slots available
+ * @returns Final production rate per minute
+ */
+export function calculateTotalProductionRate(
+	baseRate: number,
+	purity: string | null | undefined,
+	filledSlots: number,
+	totalSlots: number
+): number {
+	const purityMultiplier = getPurityMultiplier(purity);
+	const productionBoost = calculateProductionBoost(filledSlots, totalSlots);
+	
+	return baseRate * purityMultiplier * productionBoost;
+}
+
+/**
+ * Calculates the total power consumption including Somersloop effects
+ * 
+ * @param basePower - Base power consumption of the building
+ * @param filledSlots - Number of Somersloop shards installed  
+ * @param totalSlots - Total Somersloop slots available
+ * @returns Final power consumption in MW
+ */
+export function calculateTotalPowerConsumption(
+	basePower: number,
+	filledSlots: number,
+	totalSlots: number
+): number {
+	const powerMultiplier = calculatePowerMultiplier(filledSlots, totalSlots);
+	return basePower * powerMultiplier;
+}
+
+/**
+ * Validates Somersloop slot configuration
+ * 
+ * @param filledSlots - Number of filled slots
+ * @param totalSlots - Total available slots
+ * @returns Validation result with error message if invalid
+ */
+export function validateSomersloopSlots(
+	filledSlots: number, 
+	totalSlots: number
+): { valid: boolean; error?: string } {
+	// Check for integer values
+	if (!Number.isInteger(filledSlots)) {
+		return { valid: false, error: 'filledSlots must be an integer' };
+	}
+	
+	if (!Number.isInteger(totalSlots)) {
+		return { valid: false, error: 'totalSlots must be an integer' };
+	}
+	
+	// Check for negative values
+	if (filledSlots < 0) {
+		return { valid: false, error: 'filledSlots must be non-negative' };
+	}
+	
+	if (totalSlots < 0) {
+		return { valid: false, error: 'totalSlots must be non-negative' };
+	}
+	
+	// Check if filled exceeds total
+	if (totalSlots > 0 && filledSlots > totalSlots) {
+		return { valid: false, error: `filledSlots (${filledSlots}) exceeds totalSlots (${totalSlots})` };
+	}
+	
+	return { valid: true };
 }

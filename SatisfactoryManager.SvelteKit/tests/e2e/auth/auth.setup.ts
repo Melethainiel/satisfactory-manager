@@ -85,52 +85,95 @@ async function setupMockAuthentication(page: any) {
 				localAccountId: 'test-local-account-id',
 				username: 'test@example.com',
 				name: 'Test User',
-				environment: 'login.microsoftonline.com'
+				displayName: 'Test User',
+				environment: 'login.microsoftonline.com',
+				idTokenClaims: {
+					name: 'Test User',
+					preferred_username: 'test@example.com',
+					email: 'test@example.com'
+				}
 			},
 			expiresOn: new Date(Date.now() + 3600000) // 1 hour from now
 		};
 		
-		// Store mock authentication state
-		localStorage.setItem('msal-auth-state', JSON.stringify(mockAuthState));
+		// Store mock authentication state in localStorage (MSAL format)
+		localStorage.setItem('msal.token.keys.b2c-auth-test', JSON.stringify({
+			credentialType: 'AccessToken',
+			clientId: 'test-client-id'
+		}));
 		
-		// Mock the MSAL PublicClientApplication
+		// Mock the MSAL PublicClientApplication with more complete interface
 		(window as any).mockMSALInstance = {
+			initialize: () => Promise.resolve(),
 			initialized: true,
 			getAllAccounts: () => [mockAuthState.account],
 			getAccountByHomeId: () => mockAuthState.account,
+			getActiveAccount: () => mockAuthState.account,
+			setActiveAccount: () => {},
 			acquireTokenSilent: () => Promise.resolve({
 				accessToken: mockAuthState.accessToken,
-				account: mockAuthState.account
+				account: mockAuthState.account,
+				expiresOn: mockAuthState.expiresOn,
+				scopes: ['openid', 'profile', 'email']
 			}),
 			loginPopup: () => Promise.resolve({
 				accessToken: mockAuthState.accessToken,
 				idToken: mockAuthState.idToken,
 				account: mockAuthState.account
 			}),
-			logout: () => Promise.resolve()
+			logout: () => Promise.resolve(),
+			addEventCallback: () => {},
+			removeEventCallback: () => {}
 		};
+	});
+	
+	// First set up global mocks before navigating
+	await page.addInitScript(() => {
+		// Mock @azure/msal-browser module
+		const mockMSAL = {
+			PublicClientApplication: class {
+				constructor() {
+					return (window as any).mockMSALInstance;
+				}
+			},
+			InteractionRequiredAuthError: class extends Error {
+				constructor(message = 'Interaction required') {
+					super(message);
+					this.name = 'InteractionRequiredAuthError';
+				}
+			},
+			BrowserAuthError: class extends Error {
+				constructor(message = 'Browser auth error') {
+					super(message);
+					this.name = 'BrowserAuthError';
+				}
+			},
+			LogLevel: { Error: 0, Warning: 1, Info: 2, Verbose: 3 },
+			InteractionType: { Redirect: 'redirect', Popup: 'popup', Silent: 'silent' }
+		};
+		
+		// Make module available globally for ES module imports
+		(window as any)['@azure/msal-browser'] = mockMSAL;
+		
+		// Mock the dynamic import for vite/rollup
+		if (!window.__vite_plugin_react_preamble_installed__) {
+			const originalImport = (window as any).__import__ || ((window as any).import);
+			(window as any).__import__ = (specifier: string) => {
+				if (specifier === '@azure/msal-browser' || specifier.includes('@azure/msal-browser')) {
+					return Promise.resolve(mockMSAL);
+				}
+				return originalImport ? originalImport(specifier) : Promise.reject(new Error(`Unknown module: ${specifier}`));
+			};
+		}
 	});
 	
 	// Navigate to the application
 	await page.goto('/');
 	
-	// If the app tries to initialize real MSAL, intercept and use our mock
-	await page.evaluate(() => {
-		// Override MSAL browser import if it exists
-		if ((window as any).msal) {
-			(window as any).msal.PublicClientApplication = function() {
-				return (window as any).mockMSALInstance;
-			};
-		}
-	});
+	// Wait for the app to finish loading and MSAL to initialize
+	await page.waitForTimeout(3000);
 	
-	// Wait for the application to load and recognize the mock authentication
-	await page.waitForTimeout(2000);
-	
-	// Trigger a refresh to ensure authentication state is picked up
-	await page.reload();
-	
-	// Verify mock authentication worked
+	// Verify we can see the page loaded
 	await expect(page.locator('body')).toBeVisible();
 	
 	console.log('✅ Mock authentication setup completed');

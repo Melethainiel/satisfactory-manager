@@ -2,7 +2,7 @@
   "cookies": [
     {
       "name": "msal.cache.encryption",
-      "value": "%7B%22id%22%3A%2201992571-2b4d-7c73-9c1a-18f1ebed4a30%22%2C%22key%22%3A%22piO54YroKgj7XHOk1ZspNDEbv1Uha6chUsG0qDSAk5E%22%7D",
+      "value": "%7B%22id%22%3A%2201992580-202f-7628-bbb4-5fa8f644b395%22%2C%22key%22%3A%22Ed1epgDHHEta3u1RtrQwsaABungJQ1uTC8B6ss-_jUs%22%7D",
       "domain": "localhost",
       "path": "/",
       "expires": -1,
@@ -16,12 +16,12 @@
       "origin": "http://localhost:5173",
       "localStorage": [
         {
-          "name": "msal-auth-state",
-          "value": "{\"accessToken\":\"mock-access-token-for-testing\",\"idToken\":\"mock-id-token-for-testing\",\"account\":{\"homeAccountId\":\"test-home-account-id\",\"localAccountId\":\"test-local-account-id\",\"username\":\"test@example.com\",\"name\":\"Test User\",\"environment\":\"login.microsoftonline.com\"},\"expiresOn\":\"2025-09-07T19:29:58.185Z\"}"
-        },
-        {
           "name": "msal.version",
           "value": "4.19.0"
+        },
+        {
+          "name": "msal.token.keys.b2c-auth-test",
+          "value": "{\"credentialType\":\"AccessToken\",\"clientId\":\"test-client-id\"}"
         }
       ]
     }

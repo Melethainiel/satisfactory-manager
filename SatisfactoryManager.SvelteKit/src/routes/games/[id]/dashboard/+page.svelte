@@ -137,7 +137,7 @@
 		</button>
 	</div>
 {:else}
-	<div class="container mx-auto space-y-6 px-4 py-6">
+	<div class="container mx-auto space-y-6 px-4 py-6" data-testid="game-dashboard">
 		<!-- Dashboard Header -->
 		<div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 			<div class="flex items-center gap-3">

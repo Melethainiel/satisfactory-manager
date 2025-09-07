@@ -154,6 +154,7 @@
 					class="btn h-auto min-h-0 gap-1 px-1 py-1 normal-case btn-ghost"
 					tabindex="0"
 					aria-label={$t('ui.user_menu')}
+					data-testid="user-menu"
 				>
 					<div class="flex items-center gap-x-1">
 						<div class="relative">

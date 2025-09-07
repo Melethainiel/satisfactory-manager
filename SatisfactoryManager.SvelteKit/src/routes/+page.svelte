@@ -64,19 +64,21 @@
 				class="btn transition-transform btn-lg btn-primary hover:scale-105"
 				onclick={() => createGameDialogRef?.open()}
 				in:fly={{ y: 20, duration: 400, delay: 500 }}
+				data-testid="create-game-button"
 			>
 				{$t('game.create_new')}
 			</button>
 		</div>
 	{:else}
 		<!-- Game Selection -->
-		<div class="mb-8" in:fade={{ duration: 300, delay: 200 }}>
+		<div class="mb-8" in:fade={{ duration: 300, delay: 200 }} data-testid="games-list">
 			<h2 class="mb-6 text-2xl font-semibold">{$t('game.select_game')}</h2>
 			<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
 				{#each gameState.games as game, i}
 					<div
 						class="card bg-base-100 shadow transition-all duration-300 hover:scale-105 hover:shadow-xl"
 						in:fly={{ y: 30, duration: 400, delay: 300 + i * 100 }}
+						data-testid="game-{game.name}"
 					>
 						<div class="card-body">
 							<h3 class="card-title">{game.name}</h3>
@@ -112,6 +114,7 @@
 			<button
 				class="btn transition-transform btn-outline hover:scale-105"
 				onclick={() => createGameDialogRef?.open()}
+				data-testid="create-game-button"
 			>
 				{$t('game.create_new')}
 			</button>

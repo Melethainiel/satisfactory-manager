@@ -47,6 +47,7 @@ export interface ProductionInstanceWithDetails extends ProductionInstance {
 		output: string;
 		energyConsumption: string;
 		energyProduction: string;
+		productionShardSlotSize: number;
 	} | null;
 	products: Array<{
 		itemId: string;
@@ -115,6 +116,7 @@ class ProductionInstanceService implements IProductionInstanceService {
 				extractorPurity: productionInstances.extractorPurity,
 				buildingCount: productionInstances.buildingCount,
 				efficiencyRatio: productionInstances.efficiencyRatio,
+				somersloopCount: productionInstances.somersloopCount,
 				isBuilt: productionInstances.isBuilt,
 				notes: productionInstances.notes,
 				createdAt: productionInstances.createdAt,
@@ -144,7 +146,8 @@ class ProductionInstanceService implements IProductionInstanceService {
 					id: buildingVersions.id,
 					output: buildingVersions.output,
 					energyConsumption: buildingVersions.energyConsumption,
-					energyProduction: buildingVersions.energyProduction
+					energyProduction: buildingVersions.energyProduction,
+					productionShardSlotSize: buildingVersions.productionShardSlotSize
 				}
 			})
 			.from(productionInstances)

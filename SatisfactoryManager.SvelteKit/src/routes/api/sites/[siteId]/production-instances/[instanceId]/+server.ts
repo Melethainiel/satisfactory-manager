@@ -112,6 +112,19 @@ export const PATCH: RequestHandler = requireSiteAccess('Contributor')(async ({
 			}
 		}
 
+		if (data.somersloopCount !== undefined) {
+			const count = parseInt(data.somersloopCount);
+			if (isNaN(count) || count < 0) {
+				return json(
+					{
+						success: false,
+						error: 'Somersloop count must be 0 or greater'
+					},
+					{ status: 400 }
+				);
+			}
+		}
+
 		const updateData: any = {};
 
 		if (data.recipeVersionId) updateData.recipeVersionId = data.recipeVersionId;
@@ -120,6 +133,7 @@ export const PATCH: RequestHandler = requireSiteAccess('Contributor')(async ({
 		if (data.efficiencyRatio !== undefined)
 			updateData.efficiencyRatio = data.efficiencyRatio.toString();
 		if (data.extractorPurity !== undefined) updateData.extractorPurity = data.extractorPurity;
+		if (data.somersloopCount !== undefined) updateData.somersloopCount = parseInt(data.somersloopCount);
 		if (data.isBuilt !== undefined) updateData.isBuilt = data.isBuilt;
 		if (data.notes !== undefined) updateData.notes = data.notes || null;
 

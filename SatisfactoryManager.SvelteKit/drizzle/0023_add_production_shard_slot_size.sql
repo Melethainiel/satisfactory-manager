@@ -1,0 +1,1 @@
+ALTER TABLE "building_versions" ADD COLUMN "production_shard_slot_size" integer DEFAULT 0 NOT NULL;

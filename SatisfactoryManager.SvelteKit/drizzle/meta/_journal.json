@@ -162,6 +162,20 @@
       "when": 1756420623457,
       "tag": "0022_make_websocket_game_id_nullable",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1757153568776,
+      "tag": "0023_add_production_shard_slot_size",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1757161507239,
+      "tag": "0024_add_somersloop_count_to_production_instances",
+      "breakpoints": true
     }
   ]
 }

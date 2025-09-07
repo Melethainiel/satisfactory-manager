@@ -581,6 +581,7 @@
 		"somersloop_count": "Nombre de Somersloop",
 		"somersloop_slots": "emplacements de fragments",
 		"desired_production": "Production souhaitée (items/min)",
-		"auto_calculated": "Calculé automatiquement"
+		"auto_calculated": "Calculé automatiquement",
+		"max": "Max"
 	}
 }

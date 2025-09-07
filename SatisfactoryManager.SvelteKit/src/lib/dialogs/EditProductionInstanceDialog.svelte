@@ -403,7 +403,7 @@
 							step="1"
 						/>
 						<div class="label">
-							<span class="label-text-alt">Max: {currentInstance.buildingVersion.productionShardSlotSize ?? 0} {$t('production_dialog.somersloop_slots')}</span>
+							<span class="label-text-alt">{$t('production_dialog.max')}: {currentInstance.buildingVersion.productionShardSlotSize ?? 0} {$t('production_dialog.somersloop_slots')}</span>
 						</div>
 					</div>
 				{/if}

@@ -571,6 +571,7 @@
 		"somersloop_count": "Number of Somersloop",
 		"somersloop_slots": "shard slots",
 		"desired_production": "Desired production (items/min)",
-		"auto_calculated": "Automatically calculated"
+		"auto_calculated": "Automatically calculated",
+		"max": "Max"
 	}
 }

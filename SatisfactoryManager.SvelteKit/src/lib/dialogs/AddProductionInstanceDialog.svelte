@@ -632,7 +632,7 @@
 							step="1"
 						/>
 						<div class="label">
-							<span class="label-text-alt">Max: {selectedBuilding.productionShardSlotSize} {$t('production_dialog.somersloop_slots')}</span>
+							<span class="label-text-alt">{$t('production_dialog.max')}: {selectedBuilding.productionShardSlotSize} {$t('production_dialog.somersloop_slots')}</span>
 						</div>
 					</div>
 				{/if}

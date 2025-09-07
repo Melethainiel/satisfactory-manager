@@ -86,3 +86,4 @@ dist
 .playwright-mcp/*
 #DevDB
 .devdbrc
+**/test-results/*

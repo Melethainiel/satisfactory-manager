@@ -17,17 +17,23 @@ export default defineConfig(({ mode }) => {
 
 	return {
 		plugins: [sveltekit()],
+		
+		// Vite configuration for testing
+		resolve: {
+			conditions: ['browser']
+		},
+		
 		test: {
-			// Test file patterns
-			include: ['src/**/*.{test,spec}.{js,ts}', 'tests/**/*.{test,spec}.{js,ts}'],
+			// Test file patterns - include Svelte components
+			include: ['src/**/*.{test,spec}.{js,ts,svelte}', 'tests/**/*.{test,spec}.{js,ts}'],
 			exclude: ['node_modules/**', 'build/**', 'dist/**'],
 
 			// Test environment configuration
-			environment: 'node', // Node environment for API and server-side tests
+			environment: 'happy-dom', // DOM environment for component testing
 			globals: true, // Enable global test functions (describe, it, expect)
 
-			// Setup files
-			setupFiles: ['./tests/setup/test-setup.ts'],
+			// Setup files - conditional based on test type
+			setupFiles: ['./tests/setup/component-setup.ts'],
 
 			// Pool configuration for parallel test execution
 			pool: 'forks',

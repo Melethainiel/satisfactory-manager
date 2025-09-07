@@ -9,6 +9,8 @@ import { createAuthHeaders, createExpiredAuthHeaders } from '../../setup/auth-he
 
 describe('/api/modules', () => {
 	let testModuleId: string;
+	let testModuleName: string;
+	let testModuleUrl: string;
 
 	beforeEach(async () => {
 		// Create test user with unique email using service
@@ -19,9 +21,12 @@ describe('/api/modules', () => {
 
 		// Create test module with unique properties using service
 		const timestamp = Date.now();
+		testModuleName = `Test Module 1 ${timestamp}`;
+		testModuleUrl = `https://example.com/module1-${timestamp}`;
+		
 		const module = await moduleService.create({
-			name: `Test Module 1 ${timestamp}`,
-			url: `https://example.com/module1-${timestamp}`,
+			name: testModuleName,
+			url: testModuleUrl,
 			githubRepo: `test/module1-${timestamp}`,
 			currentVersion: '1.0.0'
 		});
@@ -71,10 +76,11 @@ describe('/api/modules', () => {
 
 	describe('POST /api/modules', () => {
 		it('should create a new module with valid data', async () => {
+			const timestamp = Date.now();
 			const moduleData = {
-				name: 'New Test Module',
-				url: 'https://example.com/newmodule',
-				githubRepo: 'test/newmodule'
+				name: `New Test Module ${timestamp}`,
+				url: `https://example.com/newmodule-${timestamp}`,
+				githubRepo: `test/newmodule-${timestamp}`
 			};
 
 			const request = new Request('http://localhost/api/modules', {
@@ -162,7 +168,7 @@ describe('/api/modules', () => {
 
 		it('should return 409 when name already exists', async () => {
 			const moduleData = {
-				name: testModules[0].name, // Already exists from beforeEach
+				name: testModuleName, // Already exists from beforeEach
 				url: 'https://example.com/duplicate',
 				currentVersion: '2.0.0'
 			};
@@ -183,9 +189,10 @@ describe('/api/modules', () => {
 		});
 
 		it('should return 409 when url already exists', async () => {
+			const timestamp = Date.now();
 			const moduleData = {
-				name: 'Different Module Name',
-				url: testModules[0].url // Already exists from beforeEach
+				name: `Different Module Name ${timestamp}`, // Unique name
+				url: testModuleUrl // Already exists from beforeEach
 			};
 
 			const request = new Request('http://localhost/api/modules', {

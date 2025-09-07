@@ -1,27 +1,28 @@
 {
-  "cookies": [
-    {
-      "name": "msal.cache.encryption",
-      "value": "%7B%22id%22%3A%2201992580-202f-7628-bbb4-5fa8f644b395%22%2C%22key%22%3A%22Ed1epgDHHEta3u1RtrQwsaABungJQ1uTC8B6ss-_jUs%22%7D",
-      "domain": "localhost",
-      "path": "/",
-      "expires": -1,
-      "httpOnly": false,
-      "secure": true,
-      "sameSite": "None"
-    }
-  ],
+  "cookies": [],
   "origins": [
     {
       "origin": "http://localhost:5173",
       "localStorage": [
         {
+          "name": "msal.test-client-id.AccessToken.test-tenant-id.uid.utid.https://SatisfactoryManager.onmicrosoft.com/71d43619-ad3d-49d4-bae9-97e38ec57dc4/access_users",
+          "value": "{\"credentialType\":\"AccessToken\",\"homeAccountId\":\"uid.utid\",\"environment\":\"login.microsoftonline.com\",\"clientId\":\"test-client-id\",\"secret\":\"mock-access-token-eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ0ZXN0LXN1YmplY3QtaWQiLCJuYW1lIjoiVGVzdCBVc2VyIiwiZW1haWwiOiJ0ZXN0QGV4YW1wbGUuY29tIn0\",\"target\":\"openid profile email https://SatisfactoryManager.onmicrosoft.com/71d43619-ad3d-49d4-bae9-97e38ec57dc4/access_users\",\"cachedAt\":\"1757276349\",\"expiresOn\":\"1757279949\",\"extendedExpiresOn\":\"1757283549\",\"tokenType\":\"Bearer\"}"
+        },
+        {
+          "name": "msal.test-client-id.active-account",
+          "value": "uid.utid"
+        },
+        {
+          "name": "msal.test-client-id.client.info",
+          "value": "{\"uid\":\"test-uid\",\"utid\":\"utid\"}"
+        },
+        {
           "name": "msal.version",
           "value": "4.19.0"
         },
         {
-          "name": "msal.token.keys.b2c-auth-test",
-          "value": "{\"credentialType\":\"AccessToken\",\"clientId\":\"test-client-id\"}"
+          "name": "msal.test-client-id.Account.test-tenant-id.uid.utid",
+          "value": "{\"homeAccountId\":\"uid.utid\",\"environment\":\"login.microsoftonline.com\",\"realm\":\"test-tenant-id\",\"localAccountId\":\"test-local-account-id\",\"username\":\"test@example.com\",\"authorityType\":\"MSSTS\",\"name\":\"Test User\",\"clientInfo\":\"eyJ1aWQiOiJ0ZXN0LXVpZCIsInV0aWQiOiJ0ZXN0LXV0aWQifQ==\",\"idTokenClaims\":{\"aud\":\"test-client-id\",\"iss\":\"https://login.microsoftonline.com/test-tenant-id/v2.0\",\"iat\":1757276349,\"exp\":1757279949,\"sub\":\"test-subject-id\",\"name\":\"Test User\",\"preferred_username\":\"test@example.com\",\"email\":\"test@example.com\",\"emails\":[\"test@example.com\"]}}"
         }
       ]
     }

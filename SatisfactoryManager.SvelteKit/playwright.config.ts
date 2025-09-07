@@ -79,36 +79,6 @@ export default defineConfig({
 
 	// Test projects for different browsers and scenarios
 	projects: [
-		// Chromium tests
-		{
-			name: 'chromium',
-			use: { ...devices['Desktop Chrome'] },
-		},
-
-		// Firefox tests
-		{
-			name: 'firefox',
-			use: { ...devices['Desktop Firefox'] },
-		},
-
-		// WebKit tests
-		{
-			name: 'webkit',
-			use: { ...devices['Desktop Safari'] },
-		},
-
-		// Mobile Chrome tests
-		{
-			name: 'Mobile Chrome',
-			use: { ...devices['Pixel 5'] },
-		},
-
-		// Mobile Safari tests
-		{
-			name: 'Mobile Safari',
-			use: { ...devices['iPhone 12'] },
-		},
-
 		// Authentication setup project (run first)
 		{
 			name: 'setup',
@@ -116,12 +86,51 @@ export default defineConfig({
 			use: { ...devices['Desktop Chrome'] },
 		},
 
-		// Authenticated tests (depend on auth setup)
+		// Chromium tests with authentication
 		{
-			name: 'authenticated',
+			name: 'chromium',
 			use: { 
 				...devices['Desktop Chrome'],
-				// Use stored authentication state
+				storageState: './tests/e2e/auth/user.json'
+			},
+			dependencies: ['setup'],
+		},
+
+		// Firefox tests with authentication
+		{
+			name: 'firefox',
+			use: { 
+				...devices['Desktop Firefox'],
+				storageState: './tests/e2e/auth/user.json'
+			},
+			dependencies: ['setup'],
+		},
+
+		// WebKit tests with authentication
+		{
+			name: 'webkit',
+			use: { 
+				...devices['Desktop Safari'],
+				storageState: './tests/e2e/auth/user.json'
+			},
+			dependencies: ['setup'],
+		},
+
+		// Mobile Chrome tests with authentication
+		{
+			name: 'Mobile Chrome',
+			use: { 
+				...devices['Pixel 5'],
+				storageState: './tests/e2e/auth/user.json'
+			},
+			dependencies: ['setup'],
+		},
+
+		// Mobile Safari tests with authentication
+		{
+			name: 'Mobile Safari',
+			use: { 
+				...devices['iPhone 12'],
 				storageState: './tests/e2e/auth/user.json'
 			},
 			dependencies: ['setup'],

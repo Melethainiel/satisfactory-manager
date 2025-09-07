@@ -8,28 +8,22 @@
 
 import { test, expect } from '@playwright/test';
 import { injectAxe, checkA11y, getViolations } from 'axe-playwright';
+import { setupMockAuthForTest } from '../helpers/mockAuth';
 
 test.describe('Accessibility Compliance', () => {
 	test.beforeEach(async ({ page }) => {
+		// Set up mock authentication for this test
+		await setupMockAuthForTest(page);
+		
 		// Navigate to the application
 		await page.goto('/');
 		
-		// Wait for the app to load fully
-		await page.waitForLoadState('networkidle');
+		// Wait for the page to load (don't wait for networkidle as our mock might cause issues)
+		await page.waitForLoadState('domcontentloaded');
+		await page.waitForTimeout(3000); // Give time for MSAL to initialize
 		
-		// Check if we're authenticated by looking for either the login button or user menu
-		const isAuthenticated = await page.locator('[data-testid="user-menu"]').isVisible();
-		const hasLoginButton = await page.locator('button:has-text("Sign In")').isVisible();
-		
-		if (!isAuthenticated && hasLoginButton) {
-			// If we see a login button, we're not authenticated - skip test
-			test.skip();
-		}
-		
-		// If authenticated, wait for user menu to be visible
-		if (isAuthenticated) {
-			await expect(page.locator('[data-testid="user-menu"]')).toBeVisible({ timeout: 10000 });
-		}
+		// Ensure we're authenticated - the mock should handle this
+		await expect(page.locator('[data-testid="user-menu"]')).toBeVisible({ timeout: 15000 });
 		
 		// Inject axe-core for accessibility testing
 		await injectAxe(page);
@@ -56,7 +50,7 @@ test.describe('Accessibility Compliance', () => {
 
 		test('should pass accessibility audit on game detail page', async ({ page }) => {
 			// Find first available game and navigate to it
-			const gameCards = page.locator('[data-testid*="game-"], .game-card');
+			const gameCards = page.locator('[data-testid*="game-"]');
 			const gamesCount = await gameCards.count();
 			
 			if (gamesCount > 0) {
@@ -76,11 +70,11 @@ test.describe('Accessibility Compliance', () => {
 	test.describe('Component Accessibility', () => {
 		test('should have accessible form controls in create game dialog', async ({ page }) => {
 			// Open create game dialog
-			await page.click('[data-testid="create-game-button"], text="Create Game"');
-			await expect(page.locator('[data-testid="create-game-dialog"], #create_game_modal')).toBeVisible();
+			await page.click('[data-testid="create-game-button"]');
+			await expect(page.locator('[data-testid="create-game-dialog"]')).toBeVisible();
 			
 			// Check accessibility of the dialog
-			await checkA11y(page, '[data-testid="create-game-dialog"], #create_game_modal', {
+			await checkA11y(page, '[data-testid="create-game-dialog"]', {
 				detailedReport: true,
 				detailedReportOptions: { html: true }
 			});
@@ -100,7 +94,7 @@ test.describe('Accessibility Compliance', () => {
 
 		test('should have accessible navigation menu', async ({ page }) => {
 			// Check main navigation
-			await checkA11y(page, '[data-testid="main-nav"], nav, .navigation', {
+			await checkA11y(page, '[data-testid="main-nav"]', {
 				detailedReport: true,
 				detailedReportOptions: { html: true }
 			});
@@ -126,7 +120,7 @@ test.describe('Accessibility Compliance', () => {
 			await page.keyboard.press('Enter');
 			
 			// Should open the create game dialog
-			await expect(page.locator('[data-testid="create-game-dialog"], #create_game_modal')).toBeVisible();
+			await expect(page.locator('[data-testid="create-game-dialog"]')).toBeVisible();
 			
 			// Close dialog and test Space key
 			await page.keyboard.press('Escape');
@@ -134,19 +128,19 @@ test.describe('Accessibility Compliance', () => {
 			await page.keyboard.press('Space');
 			
 			// Should also open the dialog
-			await expect(page.locator('[data-testid="create-game-dialog"], #create_game_modal')).toBeVisible();
+			await expect(page.locator('[data-testid="create-game-dialog"]')).toBeVisible();
 		});
 
 		test('should close dialogs with Escape key', async ({ page }) => {
 			// Open create game dialog
-			await page.click('[data-testid="create-game-button"], text="Create Game"');
-			await expect(page.locator('[data-testid="create-game-dialog"], #create_game_modal')).toBeVisible();
+			await page.click('[data-testid="create-game-button"]');
+			await expect(page.locator('[data-testid="create-game-dialog"]')).toBeVisible();
 			
 			// Press Escape
 			await page.keyboard.press('Escape');
 			
 			// Dialog should close
-			await expect(page.locator('[data-testid="create-game-dialog"], #create_game_modal')).not.toBeVisible();
+			await expect(page.locator('[data-testid="create-game-dialog"]')).not.toBeVisible();
 		});
 
 		test('should have visible focus indicators', async ({ page }) => {
@@ -306,14 +300,14 @@ test.describe('Accessibility Compliance', () => {
 	test.describe('Error Handling Accessibility', () => {
 		test('should announce errors to screen readers', async ({ page }) => {
 			// Trigger a validation error
-			await page.click('[data-testid="create-game-button"], text="Create Game"');
-			await expect(page.locator('[data-testid="create-game-dialog"], #create_game_modal')).toBeVisible();
+			await page.click('[data-testid="create-game-button"]');
+			await expect(page.locator('[data-testid="create-game-dialog"]')).toBeVisible();
 			
 			// Try to submit without filling required fields
-			await page.click('[data-testid="create-game-submit"], button[type="submit"]:has-text("Create")');
+			await page.click('[data-testid="create-game-submit"]');
 			
 			// Check if error messages are properly associated with form fields
-			const violations = await getViolations(page, '[data-testid="create-game-dialog"], #create_game_modal', {
+			const violations = await getViolations(page, '[data-testid="create-game-dialog"]', {
 				rules: {
 					'aria-describedby': { enabled: true },
 					'aria-errormessage': { enabled: true }

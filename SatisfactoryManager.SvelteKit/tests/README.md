@@ -5,7 +5,7 @@ This document outlines the comprehensive testing strategy for the Satisfactory M
 ## Test Types
 
 1. **Unit Tests** - Vitest (`tests/unit/`)
-2. **Component Tests** - Vitest + Svelte Testing Library (`tests/components/`)  
+2. **Component Tests** - Vitest + Svelte Testing Library (`tests/components/`)
 3. **Integration Tests** - Vitest (`tests/integration/`)
 4. **E2E Tests** - Playwright (`tests/e2e/`)
 5. **Accessibility Tests** - Playwright + axe-core (`tests/e2e/accessibility/`)

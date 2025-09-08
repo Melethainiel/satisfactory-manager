@@ -26,7 +26,6 @@ import {
 	calculateProductionBoost
 } from '$lib/utils/productionCalculations';
 
-
 // Data structures for the game dashboard
 export interface GameDashboardData {
 	gameId: string;
@@ -99,7 +98,6 @@ interface SiteProductionData {
 	products: Array<{ itemId: string; itemName: string; count: number }>;
 	ingredients: Array<{ itemId: string; itemName: string; count: number }>;
 }
-
 
 export class GameDashboardService {
 	private cache = new Map<string, CacheEntry>();

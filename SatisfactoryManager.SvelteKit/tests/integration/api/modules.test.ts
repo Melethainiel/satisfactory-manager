@@ -23,7 +23,7 @@ describe('/api/modules', () => {
 		const timestamp = Date.now();
 		testModuleName = `Test Module 1 ${timestamp}`;
 		testModuleUrl = `https://example.com/module1-${timestamp}`;
-		
+
 		const module = await moduleService.create({
 			name: testModuleName,
 			url: testModuleUrl,

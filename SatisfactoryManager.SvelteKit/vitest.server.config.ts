@@ -15,12 +15,12 @@ export default defineConfig(({ mode }) => {
 
 	return {
 		plugins: [sveltekit()],
-		
+
 		// Vite configuration for server-side testing
 		resolve: {
 			conditions: ['node'] // Use Node.js versions of modules
 		},
-		
+
 		test: {
 			// Test file patterns - focus on server-side tests
 			include: [

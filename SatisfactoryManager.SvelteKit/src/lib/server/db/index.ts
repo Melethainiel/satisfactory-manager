@@ -47,7 +47,7 @@ let initializationPromise: Promise<void> | null = null;
 export function getDatabaseInitialization(): Promise<void> {
 	// Allow reinitialization in test environment
 	const isTestEnvironment = process.env.NODE_ENV === 'test' || process.env.VITEST === 'true';
-	
+
 	if (!initializationPromise || (isTestEnvironment && !dbInstance)) {
 		initializationPromise = Promise.all([initializeDatabase(), getDatabase()]).then(
 			([, database]) => {

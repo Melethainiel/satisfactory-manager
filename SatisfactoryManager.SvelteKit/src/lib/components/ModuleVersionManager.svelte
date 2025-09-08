@@ -64,9 +64,9 @@
 
 		try {
 			// Use batch endpoint for better performance
-			const batchData = await apiService.get(`/api/modules/${module.id}/versions/content-status`, {
+			const batchData = (await apiService.get(`/api/modules/${module.id}/versions/content-status`, {
 				showErrorNotification: false
-			}) as any;
+			})) as any;
 
 			if (batchData.contentStatus) {
 				// Update the status record with batch results
@@ -87,10 +87,10 @@
 			// Load content status for all versions in parallel
 			const statusPromises = versions.map(async (version) => {
 				try {
-					const statusData = await apiService.get(
+					const statusData = (await apiService.get(
 						`/api/modules/${module.id}/versions/${version.id}/content-status`,
 						{ showErrorNotification: false }
-					) as any;
+					)) as any;
 					return {
 						versionId: version.id,
 						hasContent: statusData.hasContent,
@@ -172,9 +172,9 @@
 		error = null;
 
 		try {
-			const importResult = await apiService.post(
+			const importResult = (await apiService.post(
 				`/api/modules/${module.id}/versions/${versionId}/import`
-			) as any;
+			)) as any;
 
 			// Update content status for this version
 			versionContentStatus = {

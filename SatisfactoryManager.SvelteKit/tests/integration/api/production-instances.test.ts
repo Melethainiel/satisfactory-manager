@@ -5,7 +5,10 @@
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import { POST } from '../../../src/routes/api/sites/[siteId]/production-instances/+server';
-import { PATCH, DELETE } from '../../../src/routes/api/sites/[siteId]/production-instances/[instanceId]/+server';
+import {
+	PATCH,
+	DELETE
+} from '../../../src/routes/api/sites/[siteId]/production-instances/[instanceId]/+server';
 import { gameService } from '../../../src/lib/server/services/gameService';
 import { siteService } from '../../../src/lib/server/services/siteService';
 import { moduleService } from '../../../src/lib/server/services/moduleService';
@@ -25,7 +28,7 @@ describe('/api/sites/[siteId]/production-instances', () => {
 	let testBuildingVersionId: string;
 	let testRecipeVersionId: string;
 	let testItemVersionId: string;
-	
+
 	// Mock user for authentication
 	const mockUser: User = {
 		id: '123e4567-e89b-12d3-a456-426614174000', // Valid UUID for tests
@@ -48,7 +51,7 @@ describe('/api/sites/[siteId]/production-instances', () => {
 		}
 		// Update mockUser with the actual database ID
 		mockUser.id = dbUser.id;
-		
+
 		// Create test module
 		const module = await moduleService.create({
 			name: 'Test Module',
@@ -124,25 +127,28 @@ describe('/api/sites/[siteId]/production-instances', () => {
 				isAlternate: false
 			},
 			[], // ingredients - empty for test
-			[], // products - empty for test  
-			[]  // buildings - empty for test
+			[], // products - empty for test
+			[] // buildings - empty for test
 		);
 		testRecipeVersionId = recipeVersion.id;
 	});
 
 	describe('POST /api/sites/[siteId]/production-instances', () => {
 		it('should reject requests without authentication', async () => {
-			const request = new Request('http://localhost:3000/api/sites/test-site/production-instances', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					buildingVersionId: testBuildingVersionId,
-					recipeVersionId: testRecipeVersionId,
-					buildingCount: 1,
-					efficiencyRatio: 1.0,
-					somersloopCount: 1
-				})
-			});
+			const request = new Request(
+				'http://localhost:3000/api/sites/test-site/production-instances',
+				{
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						buildingVersionId: testBuildingVersionId,
+						recipeVersionId: testRecipeVersionId,
+						buildingCount: 1,
+						efficiencyRatio: 1.0,
+						somersloopCount: 1
+					})
+				}
+			);
 
 			const response = await POST({
 				request,
@@ -160,17 +166,20 @@ describe('/api/sites/[siteId]/production-instances', () => {
 				email: `limited-${Date.now()}@example.com` // Unique email
 			});
 
-			const request = new Request('http://localhost:3000/api/sites/test-site/production-instances', {
-				method: 'POST',
-				headers: createAuthHeaders(mockUser.email, mockUser.displayName),
-				body: JSON.stringify({
-					buildingVersionId: testBuildingVersionId,
-					recipeVersionId: testRecipeVersionId,
-					buildingCount: 1,
-					efficiencyRatio: 1.0,
-					somersloopCount: 1
-				})
-			});
+			const request = new Request(
+				'http://localhost:3000/api/sites/test-site/production-instances',
+				{
+					method: 'POST',
+					headers: createAuthHeaders(mockUser.email, mockUser.displayName),
+					body: JSON.stringify({
+						buildingVersionId: testBuildingVersionId,
+						recipeVersionId: testRecipeVersionId,
+						buildingCount: 1,
+						efficiencyRatio: 1.0,
+						somersloopCount: 1
+					})
+				}
+			);
 
 			const response = await POST({
 				request,
@@ -183,18 +192,21 @@ describe('/api/sites/[siteId]/production-instances', () => {
 		});
 
 		it('should create production instance with valid Somersloop count', async () => {
-			const request = new Request('http://localhost:3000/api/sites/test-site/production-instances', {
-				method: 'POST',
-				headers: createAuthHeaders(mockUser.email, mockUser.displayName),
-				body: JSON.stringify({
-					buildingVersionId: testBuildingVersionId,
-					recipeVersionId: testRecipeVersionId,
-					buildingCount: 1,
-					efficiencyRatio: 1.0,
-					somersloopCount: 1, // Valid: within building's slot limit
-					isBuilt: false
-				})
-			});
+			const request = new Request(
+				'http://localhost:3000/api/sites/test-site/production-instances',
+				{
+					method: 'POST',
+					headers: createAuthHeaders(mockUser.email, mockUser.displayName),
+					body: JSON.stringify({
+						buildingVersionId: testBuildingVersionId,
+						recipeVersionId: testRecipeVersionId,
+						buildingCount: 1,
+						efficiencyRatio: 1.0,
+						somersloopCount: 1, // Valid: within building's slot limit
+						isBuilt: false
+					})
+				}
+			);
 
 			const response = await POST({
 				request,
@@ -207,22 +219,25 @@ describe('/api/sites/[siteId]/production-instances', () => {
 		});
 
 		it('should create production instance with zero Somersloop count', async () => {
-			const request = new Request('http://localhost:3000/api/sites/test-site/production-instances', {
-				method: 'POST',
-				headers: createAuthHeaders(mockUser.email, mockUser.displayName),
-				body: JSON.stringify({
-					buildingVersionId: testBuildingVersionId,
-					recipeVersionId: testRecipeVersionId,
-					buildingCount: 1,
-					efficiencyRatio: 1.0,
-					somersloopCount: 0, // Valid: no Somersloop used
-					isBuilt: false
-				})
-			});
+			const request = new Request(
+				'http://localhost:3000/api/sites/test-site/production-instances',
+				{
+					method: 'POST',
+					headers: createAuthHeaders(mockUser.email, mockUser.displayName),
+					body: JSON.stringify({
+						buildingVersionId: testBuildingVersionId,
+						recipeVersionId: testRecipeVersionId,
+						buildingCount: 1,
+						efficiencyRatio: 1.0,
+						somersloopCount: 0, // Valid: no Somersloop used
+						isBuilt: false
+					})
+				}
+			);
 
 			const response = await POST({
 				request,
-				params: { siteId: testSiteId },
+				params: { siteId: testSiteId }
 			} as any);
 
 			expect(response.status).toBe(201);
@@ -230,26 +245,26 @@ describe('/api/sites/[siteId]/production-instances', () => {
 			expect(result.data.somersloopCount).toBe(0);
 		});
 
-
-
-
 		it('should default somersloopCount to 0 if not provided', async () => {
-			const request = new Request('http://localhost:3000/api/sites/test-site/production-instances', {
-				method: 'POST',
-				headers: createAuthHeaders(mockUser.email, mockUser.displayName),
-				body: JSON.stringify({
-					buildingVersionId: testBuildingVersionId,
-					recipeVersionId: testRecipeVersionId,
-					buildingCount: 1,
-					efficiencyRatio: 1.0,
-					isBuilt: false
-					// somersloopCount not provided - should default to 0
-				})
-			});
+			const request = new Request(
+				'http://localhost:3000/api/sites/test-site/production-instances',
+				{
+					method: 'POST',
+					headers: createAuthHeaders(mockUser.email, mockUser.displayName),
+					body: JSON.stringify({
+						buildingVersionId: testBuildingVersionId,
+						recipeVersionId: testRecipeVersionId,
+						buildingCount: 1,
+						efficiencyRatio: 1.0,
+						isBuilt: false
+						// somersloopCount not provided - should default to 0
+					})
+				}
+			);
 
 			const response = await POST({
 				request,
-				params: { siteId: testSiteId },
+				params: { siteId: testSiteId }
 			} as any);
 
 			expect(response.status).toBe(201);
@@ -263,22 +278,25 @@ describe('/api/sites/[siteId]/production-instances', () => {
 
 		beforeEach(async () => {
 			// Create a test production instance
-			const request = new Request('http://localhost:3000/api/sites/test-site/production-instances', {
-				method: 'POST',
-				headers: createAuthHeaders(mockUser.email, mockUser.displayName),
-				body: JSON.stringify({
-					buildingVersionId: testBuildingVersionId,
-					recipeVersionId: testRecipeVersionId,
-					buildingCount: 1,
-					efficiencyRatio: 1.0,
-					somersloopCount: 0,
-					isBuilt: false
-				})
-			});
+			const request = new Request(
+				'http://localhost:3000/api/sites/test-site/production-instances',
+				{
+					method: 'POST',
+					headers: createAuthHeaders(mockUser.email, mockUser.displayName),
+					body: JSON.stringify({
+						buildingVersionId: testBuildingVersionId,
+						recipeVersionId: testRecipeVersionId,
+						buildingCount: 1,
+						efficiencyRatio: 1.0,
+						somersloopCount: 0,
+						isBuilt: false
+					})
+				}
+			);
 
 			const response = await POST({
 				request,
-				params: { siteId: testSiteId },
+				params: { siteId: testSiteId }
 			} as any);
 
 			const result = await response.json();
@@ -286,17 +304,20 @@ describe('/api/sites/[siteId]/production-instances', () => {
 		});
 
 		it('should update Somersloop count within valid range', async () => {
-			const request = new Request('http://localhost:3000/api/sites/test-site/production-instances/test-instance', {
-				method: 'PATCH',
-				headers: createAuthHeaders(mockUser.email, mockUser.displayName),
-				body: JSON.stringify({
-					somersloopCount: 1 // Valid: within building's 1 slot limit
-				})
-			});
+			const request = new Request(
+				'http://localhost:3000/api/sites/test-site/production-instances/test-instance',
+				{
+					method: 'PATCH',
+					headers: createAuthHeaders(mockUser.email, mockUser.displayName),
+					body: JSON.stringify({
+						somersloopCount: 1 // Valid: within building's 1 slot limit
+					})
+				}
+			);
 
 			const response = await PATCH({
 				request,
-				params: { siteId: testSiteId, instanceId: testInstanceId },
+				params: { siteId: testSiteId, instanceId: testInstanceId }
 			} as any);
 
 			expect(response.status).toBe(200);
@@ -304,30 +325,35 @@ describe('/api/sites/[siteId]/production-instances', () => {
 			expect(result.data.somersloopCount).toBe(1);
 		});
 
-
 		it('should allow reducing Somersloop count to zero', async () => {
 			// First, set it to 1
 			await PATCH({
-				request: new Request('http://localhost:3000/api/sites/test-site/production-instances/test-instance', {
-					method: 'PATCH',
-					headers: createAuthHeaders(mockUser.email, mockUser.displayName),
-					body: JSON.stringify({ somersloopCount: 1 })
-				}),
-				params: { siteId: testSiteId, instanceId: testInstanceId },
+				request: new Request(
+					'http://localhost:3000/api/sites/test-site/production-instances/test-instance',
+					{
+						method: 'PATCH',
+						headers: createAuthHeaders(mockUser.email, mockUser.displayName),
+						body: JSON.stringify({ somersloopCount: 1 })
+					}
+				),
+				params: { siteId: testSiteId, instanceId: testInstanceId }
 			} as any);
 
 			// Then reduce to 0
-			const request = new Request('http://localhost:3000/api/sites/test-site/production-instances/test-instance', {
-				method: 'PATCH',
-				headers: createAuthHeaders(mockUser.email, mockUser.displayName),
-				body: JSON.stringify({
-					somersloopCount: 0
-				})
-			});
+			const request = new Request(
+				'http://localhost:3000/api/sites/test-site/production-instances/test-instance',
+				{
+					method: 'PATCH',
+					headers: createAuthHeaders(mockUser.email, mockUser.displayName),
+					body: JSON.stringify({
+						somersloopCount: 0
+					})
+				}
+			);
 
 			const response = await PATCH({
 				request,
-				params: { siteId: testSiteId, instanceId: testInstanceId },
+				params: { siteId: testSiteId, instanceId: testInstanceId }
 			} as any);
 
 			expect(response.status).toBe(200);
@@ -352,28 +378,30 @@ describe('/api/sites/[siteId]/production-instances', () => {
 				productionShardSlotSize: 4 // Maximum known slots
 			});
 
-			const request = new Request('http://localhost:3000/api/sites/test-site/production-instances', {
-				method: 'POST',
-				headers: createAuthHeaders(mockUser.email, mockUser.displayName),
-				body: JSON.stringify({
-					buildingVersionId: maxSlotBuildingVersion.id,
-					recipeVersionId: testRecipeVersionId,
-					buildingCount: 1,
-					efficiencyRatio: 1.0,
-					somersloopCount: 4, // Maximum slots filled
-					isBuilt: false
-				})
-			});
+			const request = new Request(
+				'http://localhost:3000/api/sites/test-site/production-instances',
+				{
+					method: 'POST',
+					headers: createAuthHeaders(mockUser.email, mockUser.displayName),
+					body: JSON.stringify({
+						buildingVersionId: maxSlotBuildingVersion.id,
+						recipeVersionId: testRecipeVersionId,
+						buildingCount: 1,
+						efficiencyRatio: 1.0,
+						somersloopCount: 4, // Maximum slots filled
+						isBuilt: false
+					})
+				}
+			);
 
 			const response = await POST({
 				request,
-				params: { siteId: testSiteId },
+				params: { siteId: testSiteId }
 			} as any);
 
 			expect(response.status).toBe(201);
 			const result = await response.json();
 			expect(result.data.somersloopCount).toBe(4);
 		});
-
 	});
 });

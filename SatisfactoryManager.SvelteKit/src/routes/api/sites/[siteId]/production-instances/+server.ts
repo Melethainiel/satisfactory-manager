@@ -112,8 +112,7 @@ export const POST: RequestHandler = requireSiteAccess('Contributor')(async ({
 
 		if (
 			data.somersloopCount &&
-			(isNaN(parseInt(data.somersloopCount)) ||
-				parseInt(data.somersloopCount) < 0)
+			(isNaN(parseInt(data.somersloopCount)) || parseInt(data.somersloopCount) < 0)
 		) {
 			return json(
 				{

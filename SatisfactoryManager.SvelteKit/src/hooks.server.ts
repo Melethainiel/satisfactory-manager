@@ -170,8 +170,11 @@ export const handle: Handle = async ({ event, resolve }) => {
 	}
 
 	// Handle authentication
-	const isTestEnvironment = process.env.NODE_ENV === 'test' || process.env.VITEST === 'true' || process.env.PLAYWRIGHT_TEST === 'true';
-	
+	const isTestEnvironment =
+		process.env.NODE_ENV === 'test' ||
+		process.env.VITEST === 'true' ||
+		process.env.PLAYWRIGHT_TEST === 'true';
+
 	let authHeader =
 		event.request.headers.get('authorization') || event.request.headers.get('Authorization');
 

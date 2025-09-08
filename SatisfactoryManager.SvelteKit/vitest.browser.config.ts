@@ -17,12 +17,12 @@ export default defineConfig(({ mode }) => {
 
 	return {
 		plugins: [sveltekit()],
-		
+
 		// Vite configuration for testing
 		resolve: {
 			conditions: ['browser']
 		},
-		
+
 		test: {
 			// Test file patterns - focus on component and client-side tests
 			include: [
@@ -33,8 +33,8 @@ export default defineConfig(({ mode }) => {
 				'tests/browser/**/*.{test,spec}.{js,ts}'
 			],
 			exclude: [
-				'node_modules/**', 
-				'build/**', 
+				'node_modules/**',
+				'build/**',
 				'dist/**',
 				'src/lib/server/**', // Exclude server-side tests
 				'tests/server/**',

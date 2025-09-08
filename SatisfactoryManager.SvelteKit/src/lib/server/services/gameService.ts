@@ -338,13 +338,17 @@ class GameService implements IGameService {
 	}
 
 	// Convenience method for tests that creates a game and adds the user as owner
-	async createGame(name: string, description: string, user: { id: string; email: string }): Promise<Game> {
+	async createGame(
+		name: string,
+		description: string,
+		user: { id: string; email: string }
+	): Promise<Game> {
 		// Create the game (note: schema doesn't have description field, so we ignore it)
 		const game = await this.create({ name });
-		
+
 		// Add the user as owner
 		await this.addUser(game.id, user.id, 'Owner');
-		
+
 		return game;
 	}
 }

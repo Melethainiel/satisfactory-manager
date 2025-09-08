@@ -393,7 +393,9 @@
 									{$t('production.start_typing_search')}
 								</div>
 							{:else if itemState.searchResults.length === 0}
-								<div class="p-3 text-center text-base-content/70">{$t('production.no_items_found')}</div>
+								<div class="p-3 text-center text-base-content/70">
+									{$t('production.no_items_found')}
+								</div>
 							{:else}
 								{#each itemState.searchResults as item}
 									<button
@@ -616,7 +618,9 @@
 
 			<!-- Configuration Somersloop (seulement si le bâtiment supporte les shards) -->
 			{#if selectedBuildingId}
-				{@const selectedBuilding = itemState.availableBuildings.find(b => b.id === selectedBuildingId)}
+				{@const selectedBuilding = itemState.availableBuildings.find(
+					(b) => b.id === selectedBuildingId
+				)}
 				{#if selectedBuilding && selectedBuilding.productionShardSlotSize && selectedBuilding.productionShardSlotSize > 0}
 					<div class="form-control">
 						<label class="label" for="somersloop-count">
@@ -632,7 +636,10 @@
 							step="1"
 						/>
 						<div class="label">
-							<span class="label-text-alt">{$t('production_dialog.max')}: {selectedBuilding.productionShardSlotSize} {$t('production_dialog.somersloop_slots')}</span>
+							<span class="label-text-alt"
+								>{$t('production_dialog.max')}: {selectedBuilding.productionShardSlotSize}
+								{$t('production_dialog.somersloop_slots')}</span
+							>
 						</div>
 					</div>
 				{/if}
@@ -673,7 +680,12 @@
 					{#if selectedBuildingId && desiredItemsPerMin > 0}
 						<div class="label">
 							<span class="label-text-alt text-info">
-								{$t('production_dialog.building_calculation', { values: { count: buildingCount, production: calculateActualProduction().toFixed(1) } })}
+								{$t('production_dialog.building_calculation', {
+									values: {
+										count: buildingCount,
+										production: calculateActualProduction().toFixed(1)
+									}
+								})}
 							</span>
 						</div>
 					{/if}
@@ -702,7 +714,9 @@
 					/>
 					{#if autoCalculateMode}
 						<div class="label">
-							<span class="label-text-alt text-warning">{$t('production_dialog.auto_calculated')}</span>
+							<span class="label-text-alt text-warning"
+								>{$t('production_dialog.auto_calculated')}</span
+							>
 						</div>
 					{/if}
 				</div>
@@ -750,7 +764,9 @@
 					maxlength="1000"
 				></textarea>
 				<div class="label">
-					<span class="label-text-alt">{$t('production.characters_count', { values: { count: notes.length } })}</span>
+					<span class="label-text-alt"
+						>{$t('production.characters_count', { values: { count: notes.length } })}</span
+					>
 				</div>
 			</div>
 

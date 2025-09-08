@@ -22,7 +22,6 @@ import {
 	calculateProductionBoost
 } from '$lib/utils/productionCalculations';
 
-
 export interface ProductionInstanceDetail {
 	id: string;
 	siteId: string;
@@ -479,7 +478,8 @@ export class ProductionCalculationService {
 					const efficiency = parseFloat(instance.efficiencyRatio);
 					const buildingOutput = parseFloat(instance.buildingVersion?.output || '0');
 					const purityMultiplier = getPurityMultiplier(instance.extractorPurity);
-					const actualRate = buildingOutput * buildingCount * efficiency * purityMultiplier * productionBoost;
+					const actualRate =
+						buildingOutput * buildingCount * efficiency * purityMultiplier * productionBoost;
 
 					products = [
 						{

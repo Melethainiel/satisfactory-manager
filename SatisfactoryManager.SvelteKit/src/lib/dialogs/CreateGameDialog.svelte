@@ -24,7 +24,12 @@
 	};
 </script>
 
-<dialog bind:this={createDialog} id="create_game_modal" class="modal" data-testid="create-game-dialog">
+<dialog
+	bind:this={createDialog}
+	id="create_game_modal"
+	class="modal"
+	data-testid="create-game-dialog"
+>
 	<div class="modal-box">
 		<h3 class="mb-2 text-lg font-bold">{$t('game.create_game')}</h3>
 		<form onsubmit={handleCreate} class="flex flex-col gap-3">
@@ -42,11 +47,17 @@
 				{$t('game.game_name_validation')}
 			</p>
 			<div class="modal-action">
-				<button type="button" class="btn" onclick={() => createDialog?.close()} data-testid="cancel-button"
-					>{$t('common.cancel')}</button
+				<button
+					type="button"
+					class="btn"
+					onclick={() => createDialog?.close()}
+					data-testid="cancel-button">{$t('common.cancel')}</button
 				>
-				<button type="submit" class="btn btn-primary" disabled={gameState.isLoading} data-testid="create-game-submit"
-					>{$t('common.create')}</button
+				<button
+					type="submit"
+					class="btn btn-primary"
+					disabled={gameState.isLoading}
+					data-testid="create-game-submit">{$t('common.create')}</button
 				>
 			</div>
 		</form>

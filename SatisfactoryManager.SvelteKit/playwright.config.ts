@@ -157,7 +157,8 @@ export default defineConfig({
 		timeout: 120000,
 		env: {
 			...env,
-			NODE_ENV: 'test'
+			NODE_ENV: 'test',
+			PLAYWRIGHT_TEST: 'true'
 		}
 	},
 });

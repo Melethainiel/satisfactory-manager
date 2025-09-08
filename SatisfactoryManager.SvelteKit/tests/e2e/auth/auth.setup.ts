@@ -99,13 +99,39 @@ async function setupMockAuthentication(page: any) {
 		
 		// Mock authentication result
 		const mockAuthResult = {
-			accessToken: 'mock-access-token-eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ0ZXN0LXN1YmplY3QtaWQiLCJuYW1lIjoiVGVzdCBVc2VyIiwiZW1haWwiOiJ0ZXN0QGV4YW1wbGUuY29tIn0',
+			accessToken: 'mock-access-token-for-setup',
 			idToken: 'mock-id-token-eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9',
 			account: mockAccount,
 			scopes: ['openid', 'profile', 'email', 'https://SatisfactoryManager.onmicrosoft.com/71d43619-ad3d-49d4-bae9-97e38ec57dc4/access_users'],
 			expiresOn: new Date(Date.now() + 3600000),
 			tokenType: 'Bearer',
 			correlationId: 'test-correlation-id'
+		};
+		
+		// Override fetch to add authorization headers to API calls
+		const originalSetupFetch = window.fetch;
+		window.fetch = function(input, init) {
+			// Convert input to URL to check the path
+			const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+			
+			// Add authorization header to API calls
+			if (url && (url.includes('/api/') || url.startsWith('/api/'))) {
+				init = init || {};
+				init.headers = init.headers || {};
+				
+				// Add the mock Bearer token
+				if (init.headers instanceof Headers) {
+					init.headers.set('Authorization', 'Bearer mock-access-token-for-setup');
+				} else if (Array.isArray(init.headers)) {
+					init.headers.push(['Authorization', 'Bearer mock-access-token-for-setup']);
+				} else {
+					init.headers['Authorization'] = 'Bearer mock-access-token-for-setup';
+				}
+				
+				console.log('🔧 Setup: Added auth header to API call:', url);
+			}
+			
+			return originalSetupFetch.call(this, input, init);
 		};
 		
 		// Use a more realistic client ID that matches what the app expects
@@ -180,7 +206,11 @@ async function setupMockAuthentication(page: any) {
 			},
 			acquireTokenSilent: (request: any) => {
 				console.log('🔧 Mock acquireTokenSilent called with:', request);
-				return Promise.resolve(mockAuthResult);
+				// Always return the mock token for tests
+				return Promise.resolve({
+					...mockAuthResult,
+					accessToken: 'mock-access-token-for-setup'
+				});
 			},
 			acquireTokenPopup: (request: any) => Promise.resolve(mockAuthResult),
 			acquireTokenRedirect: (request: any) => Promise.resolve(),
@@ -297,7 +327,7 @@ async function setupMockAuthentication(page: any) {
 					}
 				}));
 			}
-			return originalFetch.call(this, input, init);
+			return originalSetupFetch.call(this, input, init);
 		};
 	});
 	

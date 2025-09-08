@@ -45,7 +45,10 @@ let initializationPromise: Promise<void> | null = null;
  * Ensures migrations are run only once during application startup
  */
 export function getDatabaseInitialization(): Promise<void> {
-	if (!initializationPromise) {
+	// Allow reinitialization in test environment
+	const isTestEnvironment = process.env.NODE_ENV === 'test' || process.env.VITEST === 'true';
+	
+	if (!initializationPromise || (isTestEnvironment && !dbInstance)) {
 		initializationPromise = Promise.all([initializeDatabase(), getDatabase()]).then(
 			([, database]) => {
 				dbInstance = database;
@@ -56,25 +59,28 @@ export function getDatabaseInitialization(): Promise<void> {
 	return initializationPromise;
 }
 
-// Start database initialization immediately when this module is imported
-getDatabaseInitialization().catch((error) => {
-	// Check if this is a migration-related error that might be recoverable
-	const errorMessage = error instanceof Error ? error.message : String(error);
-	const isMigrationError =
-		errorMessage.includes('Database initialization failed') &&
-		(errorMessage.includes('already exists') || errorMessage.includes('relation'));
+// Start database initialization immediately when this module is imported (except in tests)
+const isTestEnvironment = process.env.NODE_ENV === 'test' || process.env.VITEST === 'true';
+if (!isTestEnvironment) {
+	getDatabaseInitialization().catch((error) => {
+		// Check if this is a migration-related error that might be recoverable
+		const errorMessage = error instanceof Error ? error.message : String(error);
+		const isMigrationError =
+			errorMessage.includes('Database initialization failed') &&
+			(errorMessage.includes('already exists') || errorMessage.includes('relation'));
 
-	if (isMigrationError) {
-		console.warn(
-			'⚠️ Database initialization encountered migration conflicts, but may still be functional'
-		);
-		console.warn(
-			'💡 This often happens when migrations were run manually. The application may still work.'
-		);
-	} else {
-		console.error('💥 Critical: Database initialization failed during startup:', error);
-	}
+		if (isMigrationError) {
+			console.warn(
+				'⚠️ Database initialization encountered migration conflicts, but may still be functional'
+			);
+			console.warn(
+				'💡 This often happens when migrations were run manually. The application may still work.'
+			);
+		} else {
+			console.error('💥 Critical: Database initialization failed during startup:', error);
+		}
 
-	// Allow the application to continue, but log the error
-	// The error will be propagated to any code that awaits getDatabaseInitialization()
-});
+		// Allow the application to continue, but log the error
+		// The error will be propagated to any code that awaits getDatabaseInitialization()
+	});
+}

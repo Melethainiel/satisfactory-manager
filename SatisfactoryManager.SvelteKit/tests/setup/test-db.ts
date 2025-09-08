@@ -21,9 +21,10 @@ export async function setupTestDb() {
 	console.log(`   DATABASE_URL: ${process.env.DATABASE_URL ? 'defined' : 'undefined'}`);
 
 	// Use test database URL with Docker-friendly defaults
+	// DATABASE_URL in .env.test already points to satisfactory_test, so don't modify it
 	const testDbUrl =
 		process.env.TEST_DATABASE_URL ||
-		process.env.DATABASE_URL?.replace('/satisfactory', '/satisfactory_test') ||
+		process.env.DATABASE_URL ||
 		'postgres://app:app@localhost:5433/satisfactory_test';
 
 	console.log(`🔌 Connecting to test database: ${testDbUrl.replace(/\/\/[^@]+@/, '//***:***@')}`);

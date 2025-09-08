@@ -5,6 +5,9 @@
 import { Page } from '@playwright/test';
 
 export async function setupMockAuthForTest(page: Page) {
+	// Set PLAYWRIGHT_TEST environment variable for the test
+	process.env.PLAYWRIGHT_TEST = 'true';
+	
 	// First, set up the mock MSAL instance in the page context
 	await page.addInitScript(() => {
 		// Re-create the mockMSALInstance for each test (similar to auth.setup.ts)
@@ -37,6 +40,35 @@ export async function setupMockAuthForTest(page: Page) {
 			tokenType: 'Bearer',
 			correlationId: 'test-correlation-id'
 		};
+		
+		// Override fetch to add authorization headers to API calls
+		const originalFetch = window.fetch;
+		window.fetch = function(input, init) {
+			// Convert input to URL to check the path
+			const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+			
+			// Add authorization header to API calls
+			if (url && (url.includes('/api/') || url.startsWith('/api/'))) {
+				init = init || {};
+				init.headers = init.headers || {};
+				
+				// Add the mock Bearer token
+				if (init.headers instanceof Headers) {
+					init.headers.set('Authorization', 'Bearer mock-access-token-for-test');
+				} else if (Array.isArray(init.headers)) {
+					init.headers.push(['Authorization', 'Bearer mock-access-token-for-test']);
+				} else {
+					init.headers['Authorization'] = 'Bearer mock-access-token-for-test';
+				}
+				
+				console.log('🔧 Added auth header to API call:', url);
+			}
+			
+			return originalFetch.call(this, input, init);
+		};
+		
+		// Store the mock token globally so apiFetch can use it
+		window.__mockAccessToken = 'mock-access-token-for-test';
 
 		// Mock the complete MSAL PublicClientApplication with realistic behavior
 		const mockMSALInstance = {
@@ -65,7 +97,11 @@ export async function setupMockAuthForTest(page: Page) {
 			},
 			acquireTokenSilent: (request: any) => {
 				console.log('🔧 Test Mock acquireTokenSilent called with:', request);
-				return Promise.resolve(mockAuthResult);
+				// Always return the mock token for tests
+				return Promise.resolve({
+					...mockAuthResult,
+					accessToken: 'mock-access-token-for-test'
+				});
 			},
 			acquireTokenPopup: (request: any) => Promise.resolve(mockAuthResult),
 			acquireTokenRedirect: (request: any) => Promise.resolve(),
@@ -93,36 +129,8 @@ export async function setupMockAuthForTest(page: Page) {
 		console.log('🔧 Test Mock MSAL instance created');
 	});
 
-	// Mock API endpoints that require authentication
-	await page.route('**/api/auth/**', route => {
-		console.log('🔧 Test API auth route intercepted:', route.request().url());
-		route.fulfill({
-			status: 200,
-			contentType: 'application/json',
-			body: JSON.stringify({ 
-				success: true,
-				user: {
-					id: 'test-user-id',
-					displayName: 'Test User',
-					email: 'test@example.com'
-				}
-			})
-		});
-	});
-
-	// Mock user info endpoint
-	await page.route('**/api/users/me', route => {
-		console.log('🔧 Test user info route intercepted:', route.request().url());
-		route.fulfill({
-			status: 200,
-			contentType: 'application/json',
-			body: JSON.stringify({ 
-				id: 'test-user-id',
-				displayName: 'Test User',
-				email: 'test@example.com'
-			})
-		});
-	});
+	// No need to mock API endpoints anymore since we handle auth at server level
+	// The server will accept our mock tokens in test environment
 
 	// Set up route interception to mock MSAL module loading (same as in auth.setup.ts)
 	await page.route('**/*@azure*msal*', route => {

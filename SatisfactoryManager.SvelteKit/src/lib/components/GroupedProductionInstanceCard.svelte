@@ -12,7 +12,6 @@
 	} from 'svelte-hero-icons';
 	import { t } from '$lib/i18n';
 	import { slide } from 'svelte/transition';
-	import ProductionInstanceCard from './ProductionInstanceCard.svelte';
 
 	// Import the GroupedProductionInstance interface from parent
 	interface GroupedProductionInstance {
@@ -116,27 +115,35 @@
 		}
 	}
 
-	// Get inline display text for production with net balance
-	function getProductionDisplayText(): string {
-		if (!group.primaryProduct) return '';
+	// Get safe display data for production with net balance
+	function getProductionDisplayData() {
+		if (!group.primaryProduct) return null;
 
 		const itemName = group.primaryProduct.item.displayName;
 		const productionRate = `${formatRate(group.primaryProduct.actualRate)}/${$t('common.minute')}`;
 		const netBalance = getNetBalance(itemName);
 
-		return `${itemName} ${productionRate} <span class="${netBalance.cssClass}">${netBalance.symbol}${netBalance.balanceText}</span>`;
+		return {
+			itemName,
+			productionRate,
+			netBalance
+		};
 	}
 
-	// Get inline display text for ingredients with net balance
-	function getIngredientDisplayText(ingredient: {
+	// Get safe display data for ingredients with net balance
+	function getIngredientDisplayData(ingredient: {
 		item: { displayName: string };
 		actualRate: number;
-	}): string {
+	}) {
 		const itemName = ingredient.item.displayName;
 		const consumptionRate = `${formatRate(ingredient.actualRate)}/${$t('common.minute')}`;
 		const netBalance = getNetBalance(itemName);
 
-		return `${itemName} ${consumptionRate} <span class="${netBalance.cssClass}">${netBalance.symbol}${netBalance.balanceText}</span>`;
+		return {
+			itemName,
+			consumptionRate,
+			netBalance
+		};
 	}
 
 	function toggleExpansion() {
@@ -206,7 +213,14 @@
 								<span class="opacity-70">/{$t('common.minute')}</span>
 							</div>
 							<div class="mt-1 text-xs opacity-60">
-								{@html getProductionDisplayText()}
+								{#if getProductionDisplayData()}
+									{@const prodData = getProductionDisplayData()}
+									{prodData.itemName}
+									{prodData.productionRate}
+									<span class={prodData.netBalance.cssClass}
+										>{prodData.netBalance.symbol}{prodData.netBalance.balanceText}</span
+									>
+								{/if}
 							</div>
 						</div>
 
@@ -219,7 +233,12 @@
 								<div class="flex flex-col gap-1">
 									{#each group.totalIngredients as ingredient (ingredient.item.displayName)}
 										<div class="text-xs">
-											{@html getIngredientDisplayText(ingredient)}
+											{@const ingData = getIngredientDisplayData(ingredient)}
+											{ingData.itemName}
+											{ingData.consumptionRate}
+											<span class={ingData.netBalance.cssClass}
+												>{ingData.netBalance.symbol}{ingData.netBalance.balanceText}</span
+											>
 										</div>
 									{/each}
 								</div>
@@ -253,7 +272,14 @@
 								<span class="opacity-70">/{$t('common.minute')}</span>
 							</div>
 							<div class="mt-1 text-xs opacity-60">
-								{@html getProductionDisplayText()}
+								{#if getProductionDisplayData()}
+									{@const prodData = getProductionDisplayData()}
+									{prodData.itemName}
+									{prodData.productionRate}
+									<span class={prodData.netBalance.cssClass}
+										>{prodData.netBalance.symbol}{prodData.netBalance.balanceText}</span
+									>
+								{/if}
 							</div>
 						</div>
 

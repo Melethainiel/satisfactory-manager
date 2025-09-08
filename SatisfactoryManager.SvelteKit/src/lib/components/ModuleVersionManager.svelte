@@ -15,7 +15,6 @@
 
 	interface Module {
 		id: string;
-		name: string;
 		url: string;
 		currentVersion: string | null;
 		selectedVersion: string | null;

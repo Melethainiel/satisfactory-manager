@@ -1,5 +1,7 @@
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
+import type { JWTPayload } from 'jose';
+
 declare global {
 	namespace App {
 		// interface Error {}
@@ -9,7 +11,7 @@ declare global {
 				name?: string;
 				email?: string;
 				scopes?: string[];
-				raw: import('jose').JWTPayload;
+				raw: JWTPayload;
 			};
 		}
 		// interface PageData {}

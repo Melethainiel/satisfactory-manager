@@ -44,7 +44,7 @@ async function waitForDatabase() {
 					`💡 Make sure the test database is running: docker compose up -d postgres-test`
 				);
 				console.error(`🔍 Check logs with: docker compose logs postgres-test`);
-				// @ts-ignore
+				// @ts-expect-error - error object from catch block
 				console.error(`📋 Error details: ${error.message}`);
 				process.exit(1);
 			}
@@ -54,10 +54,10 @@ async function waitForDatabase() {
 					`⏳ Waiting for database... (attempt ${retries}/${MAX_RETRIES}, ${timeLeft} retries left)`
 				);
 
-				// @ts-ignore
+				// @ts-expect-error - error object from catch block
 				if (error.message.includes('ECONNREFUSED')) {
 					console.log('   Database container might still be starting...');
-					// @ts-ignore
+					// @ts-expect-error - error object from catch block
 				} else if (error.message.includes('database') && error.message.includes('does not exist')) {
 					console.log('   Database exists but might still be initializing...');
 				}

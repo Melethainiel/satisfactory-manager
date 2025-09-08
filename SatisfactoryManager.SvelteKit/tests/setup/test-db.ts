@@ -25,7 +25,7 @@ export async function setupTestDb() {
 	const testDbUrl =
 		process.env.TEST_DATABASE_URL ||
 		process.env.DATABASE_URL ||
-		'postgres://app:app@localhost:5433/satisfactory_test';
+		'postgres://app:app@localhost:5432/satisfactory_test';
 
 	console.log(`🔌 Connecting to test database: ${testDbUrl.replace(/\/\/[^@]+@/, '//***:***@')}`);
 

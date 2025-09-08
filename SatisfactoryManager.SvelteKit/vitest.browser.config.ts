@@ -1,8 +1,8 @@
 /**
- * Vitest configuration with optimized environment variable loading
+ * Vitest configuration for browser-side tests (DOM environment)
  *
- * This configuration uses Vite's native loadEnv function which is compatible
- * with SvelteKit's environment variable handling.
+ * This configuration is specifically for component tests, UI logic, and client-side code
+ * that needs DOM simulation and browser-like behavior.
  */
 
 import { defineConfig } from 'vitest/config';
@@ -24,15 +24,28 @@ export default defineConfig(({ mode }) => {
 		},
 		
 		test: {
-			// Test file patterns - include Svelte components
-			include: ['src/**/*.{test,spec}.{js,ts,svelte}', 'tests/**/*.{test,spec}.{js,ts}'],
-			exclude: ['node_modules/**', 'build/**', 'dist/**'],
+			// Test file patterns - focus on component and client-side tests
+			include: [
+				'src/lib/components/**/*.{test,spec}.{js,ts,svelte}',
+				'src/lib/states/**/*.{test,spec}.{js,ts}',
+				'src/lib/services/**/*.{test,spec}.{js,ts}', // Client-side services only
+				'tests/components/**/*.{test,spec}.{js,ts}',
+				'tests/browser/**/*.{test,spec}.{js,ts}'
+			],
+			exclude: [
+				'node_modules/**', 
+				'build/**', 
+				'dist/**',
+				'src/lib/server/**', // Exclude server-side tests
+				'tests/server/**',
+				'tests/integration/**'
+			],
 
 			// Test environment configuration
 			environment: 'happy-dom', // DOM environment for component testing
 			globals: true, // Enable global test functions (describe, it, expect)
 
-			// Setup files - conditional based on test type
+			// Setup files - component setup only for browser tests
 			setupFiles: ['./tests/setup/component-setup.ts'],
 
 			// Pool configuration for parallel test execution
@@ -57,7 +70,7 @@ export default defineConfig(({ mode }) => {
 			testTimeout: 30000, // 30 seconds for individual tests
 			hookTimeout: 30000, // 30 seconds for setup/teardown hooks
 
-			// Coverage configuration
+			// Coverage configuration for browser-side code
 			coverage: {
 				provider: 'v8',
 				reporter: ['text', 'json', 'html'],
@@ -67,7 +80,9 @@ export default defineConfig(({ mode }) => {
 					'dist/**',
 					'tests/**',
 					'**/*.config.*',
-					'**/*.d.ts'
+					'**/*.d.ts',
+					'src/lib/server/**', // Exclude server-side code
+					'src/routes/**/+*.server.*'
 				]
 			}
 		},

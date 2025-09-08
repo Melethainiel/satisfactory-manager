@@ -60,8 +60,8 @@ jobs:
       - name: Setup test environment
         run: |
           cat > .env << 'EOF'
-          DATABASE_URL="postgres://app:app@localhost:5432/satisfactory_test"
-          TEST_DATABASE_URL="postgres://app:app@localhost:5432/satisfactory_test"
+          DATABASE_URL="postgres://app:app@localhost:5432/satisfactory_test?sslmode=disable"
+          TEST_DATABASE_URL="postgres://app:app@localhost:5432/satisfactory_test?sslmode=disable"
           NODE_ENV="test"
 
           AZURE_B2C_CLIENT_ID="00000000-0000-0000-0000-000000000000"

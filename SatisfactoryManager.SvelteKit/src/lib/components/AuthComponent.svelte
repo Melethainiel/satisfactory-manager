@@ -1,3 +1,4 @@
+<!-- eslint-disable svelte/no-unused-class-name -->
 <script lang="ts">
 	import { getAuthState } from '$lib/states/authState.svelte';
 
@@ -30,7 +31,7 @@
 			<p>Initializing authentication...</p>
 		</div>
 	{:else if authState.isAuthenticated && authState.user}
-		<div class="user-info-container">
+		<div>
 			<div class="card w-96 bg-base-100 shadow-xl">
 				<div class="card-body">
 					<h2 class="card-title">Welcome, {authState.user.displayName || authState.user.email}!</h2>

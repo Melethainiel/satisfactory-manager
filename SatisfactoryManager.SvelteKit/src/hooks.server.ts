@@ -1,20 +1,27 @@
 import type { Handle } from '@sveltejs/kit';
 import { type JWTPayload, createRemoteJWKSet, jwtVerify } from 'jose';
 import { locale } from 'svelte-i18n';
-import { getAzureB2CConfig } from '$lib/config/auth.config.js';
+import { type AzureB2CConfig, getAzureB2CConfig } from '$lib/config/auth.config.js';
 import { getServerEnvVar } from '$lib/config/env.server.js';
 import { getDatabaseInitialization } from '$lib/server/db/index.js';
 
+// Type for JWT payload with B2C-specific fields
+interface B2CJWTPayload extends JWTPayload {
+	emails?: string[];
+	email?: string;
+	scp?: string;
+}
+
 // Initialize authentication configuration asynchronously
 let authConfigPromise: Promise<{
-	authConfig: any;
+	authConfig: AzureB2CConfig;
 	authorityUrl: URL;
 	TENANT_DOMAIN: string;
 	CLIENT_ID: string;
 	TENANT_DOMAIN_ID: string;
 	REQUIRED_SCOPE: string;
 	POLICY: string;
-	jwks: any;
+	jwks: ReturnType<typeof createRemoteJWKSet>;
 }> | null = null;
 
 async function initAuthConfig() {
@@ -82,13 +89,13 @@ async function verifyBearer(token: string): Promise<AuthUserLocals | null> {
 		return {
 			sub: String(payload.sub),
 			name: typeof payload.name === 'string' ? payload.name : undefined,
-			email: Array.isArray((payload as any).emails)
-				? (payload as any).emails[0]
-				: (payload as any).email,
+			email: Array.isArray((payload as B2CJWTPayload).emails)
+				? (payload as B2CJWTPayload).emails![0]
+				: (payload as B2CJWTPayload).email,
 			scopes,
 			raw: payload
 		};
-	} catch (e) {
+	} catch {
 		return null;
 	}
 }
@@ -137,7 +144,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 	// Initialize database at first HTTP hit (atomic with Promise)
 	try {
 		await initializeDatabaseOnce();
-	} catch (error) {
+	} catch {
 		// For critical database errors, return 503 Service Unavailable
 		if (urlPath.startsWith('/api')) {
 			return new Response(

@@ -151,18 +151,36 @@ describe('/api/buildings', () => {
 		it('should return 409 when className already exists', async () => {
 			const buildingData = {
 				moduleId: testModuleId,
-				className: 'Build_TestBuilding_C', // Already exists from beforeEach
-				name: 'Duplicate Building',
+				className: 'Build_TestBuilding_C',
+				name: 'Original Building',
 				type: 'Generator'
 			};
 
-			const request = new Request('http://localhost/api/buildings', {
+			// First, create a building successfully
+			const firstRequest = new Request('http://localhost/api/buildings', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(buildingData)
 			});
 
-			const response = await POST({ request } as any);
+			const firstResponse = await POST({ request: firstRequest } as any);
+			expect(firstResponse.status).toBe(201);
+
+			// Then try to create another building with the same className
+			const duplicateData = {
+				moduleId: testModuleId,
+				className: 'Build_TestBuilding_C', // Same className as above
+				name: 'Duplicate Building',
+				type: 'Generator'
+			};
+
+			const duplicateRequest = new Request('http://localhost/api/buildings', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(duplicateData)
+			});
+
+			const response = await POST({ request: duplicateRequest } as any);
 
 			expect(response.status).toBe(409);
 

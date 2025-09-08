@@ -14,11 +14,23 @@ import { execSync } from 'child_process';
 async function globalSetup(config: FullConfig) {
 	console.log('🚀 Starting E2E test setup...');
 	
-	// Load test environment variables
-	const dotenvResult = dotenv.config({ path: resolve(process.cwd(), '.env.test') });
+	// Load test environment variables from .env file (created by CI/CD or local development)
+	// Fallback to .env.test for local development if it exists
+	const envPath = resolve(process.cwd(), '.env');
+	const testEnvPath = resolve(process.cwd(), '.env.test');
+	
+	let dotenvResult = dotenv.config({ path: envPath });
 	if (dotenvResult.error) {
-		console.error('❌ Failed to load .env.test:', dotenvResult.error);
-		throw dotenvResult.error;
+		// Try fallback to .env.test for local development
+		dotenvResult = dotenv.config({ path: testEnvPath });
+		if (dotenvResult.error) {
+			console.error('❌ Failed to load environment variables from .env or .env.test:', dotenvResult.error);
+			throw dotenvResult.error;
+		} else {
+			console.log('📝 Loaded environment variables from .env.test (local development)');
+		}
+	} else {
+		console.log('📝 Loaded environment variables from .env');
 	}
 	
 	// Set up test database if needed
@@ -29,7 +41,7 @@ async function globalSetup(config: FullConfig) {
 		
 		// Ensure the test database URL is set
 		if (!process.env.DATABASE_URL) {
-			throw new Error('DATABASE_URL is not set in .env.test');
+			throw new Error('DATABASE_URL is not set in environment variables');
 		}
 		
 		// Run database migrations using the test database URL

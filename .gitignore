@@ -87,3 +87,4 @@ dist
 #DevDB
 .devdbrc
 **/test-results/*
+**/playwright-report/*

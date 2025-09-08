@@ -4,8 +4,17 @@ import { config } from 'dotenv';
 import { resolve } from 'path';
 import { getDatabaseInitialization } from '../../src/lib/server/db/index';
 
-// Load test environment variables
-config({ path: resolve(process.cwd(), '.env.test') });
+// Load test environment variables from .env file (created by CI/CD or local development)
+// Fallback to .env.test for local development if it exists
+const envPath = resolve(process.cwd(), '.env');
+const testEnvPath = resolve(process.cwd(), '.env.test');
+
+try {
+	config({ path: envPath });
+} catch (error) {
+	// Fallback to .env.test if .env doesn't exist (for local development)
+	config({ path: testEnvPath });
+}
 
 beforeAll(async () => {
 	console.log('🚀 Setting up test environment...');

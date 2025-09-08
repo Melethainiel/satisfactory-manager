@@ -59,8 +59,11 @@ jobs:
 
       - name: Setup test environment
         run: |
-          cp .env.test .env
-          echo "TEST_DATABASE_URL=postgres://app:app@localhost:5432/satisfactory_test" >> .env
+          cat > .env << 'EOF'
+          DATABASE_URL="postgres://app:app@localhost:5432/satisfactory_test"
+          TEST_DATABASE_URL="postgres://app:app@localhost:5432/satisfactory_test"
+          NODE_ENV="test"
+          EOF
 
       - name: Run database migrations
         run: npm run db:push
@@ -142,10 +145,13 @@ jobs:
 
       - name: Setup test environment
         run: |
-          cp .env.test .env
-          echo "TEST_DATABASE_URL=postgres://app:app@localhost:5432/satisfactory_test" >> .env
-          echo "TEST_BASE_URL=http://localhost:5173" >> .env
-          echo "TEST_USE_REAL_AZURE_B2C=false" >> .env
+          cat > .env << 'EOF'
+          DATABASE_URL="postgres://app:app@localhost:5432/satisfactory_test"
+          TEST_DATABASE_URL="postgres://app:app@localhost:5432/satisfactory_test"
+          TEST_BASE_URL="http://localhost:5173"
+          TEST_USE_REAL_AZURE_B2C="false"
+          NODE_ENV="test"
+          EOF
 
       - name: Run database migrations
         run: npm run db:push
@@ -206,10 +212,13 @@ jobs:
 
       - name: Setup test environment
         run: |
-          cp .env.test .env
-          echo "TEST_DATABASE_URL=postgres://app:app@localhost:5432/satisfactory_test" >> .env
-          echo "TEST_BASE_URL=http://localhost:5173" >> .env
-          echo "TEST_USE_REAL_AZURE_B2C=false" >> .env
+          cat > .env << 'EOF'
+          DATABASE_URL="postgres://app:app@localhost:5432/satisfactory_test"
+          TEST_DATABASE_URL="postgres://app:app@localhost:5432/satisfactory_test"
+          TEST_BASE_URL="http://localhost:5173"
+          TEST_USE_REAL_AZURE_B2C="false"
+          NODE_ENV="test"
+          EOF
 
       - name: Run database migrations
         run: npm run db:push

@@ -2,6 +2,7 @@
 	import { type ProductionInstanceData, getGameState } from '$lib/states/gameState.svelte';
 	import { t } from '$lib/i18n';
 	import type { EditProductionInstanceDialogHandle } from './EditProductionInstanceDialogHandle';
+	import { getPurityMultiplier } from '$lib/utils/productionCalculations';
 
 	const gameState = getGameState();
 
@@ -13,6 +14,7 @@
 	let buildingCount = $state(1);
 	let efficiencyRatio = $state(1.0);
 	let extractorPurity = $state('Normal');
+	let somersloopCount = $state(0);
 	let isBuilt = $state(false);
 	let notes = $state('');
 
@@ -25,6 +27,7 @@
 		buildingCount = parseFloat(instance.buildingCount);
 		efficiencyRatio = parseFloat(instance.efficiencyRatio);
 		extractorPurity = instance.extractorPurity || 'Normal';
+		somersloopCount = instance.somersloopCount || 0;
 		isBuilt = instance.isBuilt;
 		notes = instance.notes || '';
 	}
@@ -47,6 +50,7 @@
 			const updateData: any = {
 				buildingCount: buildingCount,
 				efficiencyRatio: efficiencyRatio,
+				somersloopCount: somersloopCount,
 				isBuilt: isBuilt,
 				notes: notes.trim() || undefined
 			};
@@ -67,17 +71,6 @@
 	}
 
 	// Auto-calculation functions
-	function getPurityMultiplier(purity: string): number {
-		switch (purity) {
-			case 'Impure':
-				return 0.5;
-			case 'Pure':
-				return 2.0;
-			case 'Normal':
-			default:
-				return 1.0;
-		}
-	}
 
 	function calculateBuildingCount(): number {
 		if (!desiredItemsPerMin || desiredItemsPerMin <= 0 || !currentInstance) return 1;
@@ -390,6 +383,27 @@
 						</select>
 						<div class="label">
 							<span class="label-text-alt">{$t('production.purity_affects_extraction')}</span>
+						</div>
+					</div>
+				{/if}
+
+				<!-- Configuration Somersloop (seulement si le bâtiment supporte les shards) -->
+				{#if currentInstance && currentInstance.buildingVersion && (currentInstance.buildingVersion.productionShardSlotSize ?? 0) > 0}
+					<div class="form-control">
+						<label class="label" for="somersloop-count-edit">
+							<span class="label-text">{$t('production_dialog.somersloop_count')}</span>
+						</label>
+						<input
+							id="somersloop-count-edit"
+							type="number"
+							class="input-bordered input w-full"
+							bind:value={somersloopCount}
+							min="0"
+							max={currentInstance.buildingVersion.productionShardSlotSize ?? 0}
+							step="1"
+						/>
+						<div class="label">
+							<span class="label-text-alt">{$t('production_dialog.max')}: {currentInstance.buildingVersion.productionShardSlotSize ?? 0} {$t('production_dialog.somersloop_slots')}</span>
 						</div>
 					</div>
 				{/if}

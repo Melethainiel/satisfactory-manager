@@ -1,6 +1,7 @@
 import {
 	boolean,
 	index,
+	integer,
 	numeric,
 	pgEnum,
 	pgTable,
@@ -109,6 +110,7 @@ export const buildingVersions = pgTable(
 		energyProduction: numeric('energy_production', { precision: 10, scale: 2 }),
 		supplementalLoadAmount: numeric('supplemental_load_amount', { precision: 10, scale: 2 }),
 		output: numeric('output', { precision: 10, scale: 2 }),
+		productionShardSlotSize: integer('production_shard_slot_size').notNull().default(0),
 		createdAt: timestamp('created_at').defaultNow().notNull()
 	},
 	(table) => ({
@@ -552,6 +554,7 @@ export const productionInstances = pgTable(
 		efficiencyRatio: numeric('efficiency_ratio', { precision: 10, scale: 3 })
 			.notNull()
 			.default('1.000'),
+		somersloopCount: integer('somersloop_count').notNull().default(0),
 		isBuilt: boolean('is_built').notNull().default(false),
 		notes: varchar('notes', { length: 1000 }),
 		createdAt: timestamp('created_at').defaultNow().notNull(),

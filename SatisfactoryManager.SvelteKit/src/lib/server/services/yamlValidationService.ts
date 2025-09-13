@@ -37,7 +37,8 @@ export const ArchiveBuildingSchema = z
 		energyConsumption: z.number().nonnegative().optional(),
 		energyProduction: z.number().nonnegative().optional(),
 		supplementalLoadAmount: z.number().nonnegative().optional(),
-		output: z.number().nonnegative().optional()
+		output: z.number().nonnegative().optional(),
+		productionShardSlotSize: z.number().int().nonnegative().optional()
 	})
 	.strict();
 

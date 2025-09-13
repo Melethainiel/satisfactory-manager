@@ -110,6 +110,20 @@ export const POST: RequestHandler = requireSiteAccess('Contributor')(async ({
 			);
 		}
 
+		if (
+			data.somersloopCount &&
+			(isNaN(parseInt(data.somersloopCount)) ||
+				parseInt(data.somersloopCount) < 0)
+		) {
+			return json(
+				{
+					success: false,
+					error: 'Somersloop count must be 0 or greater'
+				},
+				{ status: 400 }
+			);
+		}
+
 		const instanceData = {
 			siteId,
 			recipeVersionId: data.recipeVersionId || null, // Allow null for extraction
@@ -119,6 +133,7 @@ export const POST: RequestHandler = requireSiteAccess('Contributor')(async ({
 			extractorPurity: data.extractorPurity || 'Normal', // For extraction purity
 			buildingCount: data.buildingCount.toString(),
 			efficiencyRatio: data.efficiencyRatio?.toString() || '1.000',
+			somersloopCount: data.somersloopCount ? parseInt(data.somersloopCount) : 0,
 			isBuilt: data.isBuilt || false, // Default to not built
 			notes: data.notes || null
 		};

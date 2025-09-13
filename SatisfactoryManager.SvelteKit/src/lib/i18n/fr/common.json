@@ -307,7 +307,14 @@
 		"no_production_methods": "Aucune méthode de production disponible pour cet objet dans la configuration de jeu actuelle.",
 		"loading_production_options": "Chargement des options de production...",
 		"no_compatible_buildings": "Aucun bâtiment compatible disponible",
-		"loading_buildings": "Chargement des bâtiments..."
+		"loading_buildings": "Chargement des bâtiments...",
+		"searching_items": "Recherche d'objets...",
+		"start_typing_search": "Commencez à taper pour rechercher des objets",
+		"no_items_found": "Aucun objet trouvé",
+		"select_recipe_placeholder": "Sélectionnez une recette...",
+		"select_building_placeholder": "Sélectionnez un bâtiment...",
+		"efficiency_range": "0.1 - 2.5 (1.0 = 100%)",
+		"characters_count": "{count}/1000 caractères"
 	},
 	"productionInstances": {
 		"add_recipe": "Ajouter une recette",
@@ -570,6 +577,11 @@
 	"production_dialog": {
 		"auto_building_count": "Calcul automatique du nombre de bâtiments",
 		"building_calculation": "→ {count} bâtiments = {production} items/min",
-		"mark_as_built": "Marquer comme construite"
+		"mark_as_built": "Marquer comme construite",
+		"somersloop_count": "Nombre de Somersloop",
+		"somersloop_slots": "emplacements de fragments",
+		"desired_production": "Production souhaitée (items/min)",
+		"auto_calculated": "Calculé automatiquement",
+		"max": "Max"
 	}
 }

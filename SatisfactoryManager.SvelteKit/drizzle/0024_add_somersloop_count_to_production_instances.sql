@@ -1,0 +1,1 @@
+ALTER TABLE "production_instances" ADD COLUMN "somersloop_count" integer DEFAULT 0 NOT NULL;

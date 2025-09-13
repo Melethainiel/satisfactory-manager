@@ -18,27 +18,14 @@ import {
 	users
 } from '../db/schema';
 import { and, eq, inArray } from 'drizzle-orm';
+import {
+	getPurityMultiplier,
+	calculatePowerMultiplier,
+	calculatePowerConsumption,
+	calculatePowerProduction,
+	calculateProductionBoost
+} from '$lib/utils/productionCalculations';
 
-// Power calculation functions based on Satisfactory wiki formula
-function calculatePowerMultiplier(filledSlots: number, totalSlots: number): number {
-	if (totalSlots === 0) return 1.0;
-	const slotRatio = filledSlots / totalSlots;
-	return Math.pow(1 + slotRatio, 2);
-}
-
-function calculatePowerConsumption(
-	basePowerUsage: number,
-	powerMultiplier: number,
-	clockSpeed: number
-): number {
-	const clockSpeedRatio = clockSpeed / 100;
-	return basePowerUsage * powerMultiplier * Math.pow(clockSpeedRatio, 1.321928);
-}
-
-function calculatePowerProduction(basePowerProduction: number, clockSpeed: number): number {
-	const clockSpeedRatio = clockSpeed / 100;
-	return basePowerProduction * clockSpeedRatio; // Linear scaling for power production
-}
 
 // Data structures for the game dashboard
 export interface GameDashboardData {
@@ -96,6 +83,7 @@ interface SiteProductionData {
 	instanceId: string;
 	buildingCount: number;
 	efficiencyRatio: number;
+	somersloopCount: number;
 	isBuilt: boolean;
 	powerConsumption: number;
 	powerProduction: number;
@@ -106,23 +94,12 @@ interface SiteProductionData {
 	buildingOutput: number;
 	manufacturingDuration: number;
 	supplementalLoadAmount: number;
+	productionShardSlotSize: number;
 	fuelEnergyValue: number;
 	products: Array<{ itemId: string; itemName: string; count: number }>;
 	ingredients: Array<{ itemId: string; itemName: string; count: number }>;
 }
 
-// Purity multipliers for extractors
-function getPurityMultiplier(purity: string | null): number {
-	switch (purity) {
-		case 'Impure':
-			return 0.5;
-		case 'Pure':
-			return 2.0;
-		case 'Normal':
-		default:
-			return 1.0;
-	}
-}
 
 export class GameDashboardService {
 	private cache = new Map<string, CacheEntry>();
@@ -190,6 +167,7 @@ export class GameDashboardService {
 				instanceId: productionInstances.id,
 				buildingCount: productionInstances.buildingCount,
 				efficiencyRatio: productionInstances.efficiencyRatio,
+				somersloopCount: productionInstances.somersloopCount,
 				isBuilt: productionInstances.isBuilt,
 				recipeVersionId: productionInstances.recipeVersionId,
 				extractedItemVersionId: productionInstances.extractedItemVersionId,
@@ -200,6 +178,7 @@ export class GameDashboardService {
 				powerProduction: buildingVersions.energyProduction,
 				buildingOutput: buildingVersions.output,
 				supplementalLoadAmount: buildingVersions.supplementalLoadAmount,
+				productionShardSlotSize: buildingVersions.productionShardSlotSize,
 				// Recipe data
 				manufacturingDuration: recipeVersions.manufacturingDuration,
 				// Fuel item energy value
@@ -408,6 +387,7 @@ export class GameDashboardService {
 				instanceId: row.instanceId,
 				buildingCount: parseFloat(row.buildingCount.toString()),
 				efficiencyRatio: parseFloat(row.efficiencyRatio.toString()),
+				somersloopCount: row.somersloopCount || 0,
 				isBuilt: row.isBuilt,
 				powerConsumption: parseFloat(row.powerConsumption?.toString() || '0'),
 				powerProduction: parseFloat(row.powerProduction?.toString() || '0'),
@@ -418,6 +398,7 @@ export class GameDashboardService {
 				buildingOutput: parseFloat(row.buildingOutput?.toString() || '0'),
 				manufacturingDuration: parseFloat(row.manufacturingDuration?.toString() || '1'),
 				supplementalLoadAmount: parseFloat(row.supplementalLoadAmount?.toString() || '0'),
+				productionShardSlotSize: row.productionShardSlotSize || 0,
 				fuelEnergyValue: parseFloat(row.fuelEnergyValue?.toString() || '0'),
 				products,
 				ingredients
@@ -431,49 +412,52 @@ export class GameDashboardService {
 		powerConsumption: number;
 		powerProduction: number;
 	} {
-		const { buildingCount, efficiencyRatio } = instance;
+		const { buildingCount, efficiencyRatio, somersloopCount, productionShardSlotSize } = instance;
 
 		let production: Array<{ itemId: string; itemName: string; rate: number }> = [];
 		let consumption: Array<{ itemId: string; itemName: string; rate: number }> = [];
 
+		// Calculate production boost based on Somersloop usage
+		const filledSlots = somersloopCount || 0;
+		const totalSlots = productionShardSlotSize || 0;
+		const productionBoost = calculateProductionBoost(filledSlots, totalSlots);
+
 		if (instance.recipeVersionId) {
 			// Recipe-based production
-			const rate = buildingCount * efficiencyRatio;
+			const baseRate = buildingCount * efficiencyRatio;
 
+			// Products get the production boost
 			production = instance.products.map((p) => ({
 				itemId: p.itemId,
 				itemName: p.itemName,
-				rate: p.count * rate
+				rate: p.count * baseRate * productionBoost
 			}));
 
+			// Ingredients do NOT get the production boost
 			consumption = instance.ingredients.map((i) => ({
 				itemId: i.itemId,
 				itemName: i.itemName,
-				rate: i.count * rate
+				rate: i.count * baseRate
 			}));
 		} else if (instance.extractedItemVersionId) {
-			// Extraction-based production
+			// Extraction-based production with production boost
 			const purityMultiplier = getPurityMultiplier(instance.extractorPurity);
-			const rate = instance.buildingOutput * buildingCount * efficiencyRatio * purityMultiplier;
+			const baseRate = instance.buildingOutput * buildingCount * efficiencyRatio * purityMultiplier;
+			const boostedRate = baseRate * productionBoost;
 
 			production = instance.products.map((p) => ({
 				itemId: p.itemId,
 				itemName: p.itemName,
-				rate
+				rate: boostedRate
 			}));
 		} else if (instance.fuelItemVersionId) {
-			// Generator-based production
+			// Generator-based production - ingredients do not get production boost
 			consumption = instance.ingredients.map((i) => ({
 				itemId: i.itemId,
 				itemName: i.itemName,
 				rate: i.count * buildingCount * efficiencyRatio
 			}));
 		}
-
-		// Calculate power multiplier based on slots usage
-		// Temporarily using 0 filledSlots and 1 totalSlots
-		const filledSlots = 0;
-		const totalSlots = 1;
 
 		// Apply correct power formula
 		const powerMultiplier = calculatePowerMultiplier(filledSlots, totalSlots);

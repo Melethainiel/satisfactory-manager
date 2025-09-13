@@ -2,6 +2,7 @@
 	import { getGameState } from '$lib/states/gameState.svelte';
 	import { getItemState } from '$lib/states/itemState.svelte';
 	import { t } from '$lib/i18n';
+	import { getPurityMultiplier } from '$lib/utils/productionCalculations';
 
 	const gameState = getGameState();
 	const itemState = getItemState();
@@ -15,6 +16,7 @@
 	let buildingCount = $state(1);
 	let efficiencyRatio = $state(1.0);
 	let extractorPurity = $state('Normal');
+	let somersloopCount = $state(0);
 	let isBuilt = $state(false);
 	let notes = $state('');
 
@@ -156,17 +158,6 @@
 	}
 
 	// Auto-calculation functions
-	function getPurityMultiplier(purity: string): number {
-		switch (purity) {
-			case 'Impure':
-				return 0.5;
-			case 'Pure':
-				return 2.0;
-			case 'Normal':
-			default:
-				return 1.0;
-		}
-	}
 
 	function calculateBuildingCount(): number {
 		if (!desiredItemsPerMin || desiredItemsPerMin <= 0) return 1;
@@ -228,6 +219,7 @@
 		buildingCount = 1;
 		efficiencyRatio = 1.0;
 		extractorPurity = 'Normal';
+		somersloopCount = 0;
 		isBuilt = false;
 		notes = '';
 		autoCalculateMode = false;
@@ -312,6 +304,7 @@
 				buildingVersionId: selectedBuildingId,
 				buildingCount: buildingCount,
 				efficiencyRatio: efficiencyRatio,
+				somersloopCount: somersloopCount,
 				isBuilt: isBuilt,
 				notes: notes.trim() || undefined
 			};
@@ -392,15 +385,15 @@
 								<div class="p-3 text-center text-base-content/70">
 									<div class="flex items-center justify-center gap-2">
 										<span class="loading loading-sm loading-spinner"></span>
-										Searching items...
+										{$t('production.searching_items')}
 									</div>
 								</div>
 							{:else if searchQuery.trim().length === 0}
 								<div class="p-3 text-center text-base-content/70">
-									Start typing to search for items
+									{$t('production.start_typing_search')}
 								</div>
 							{:else if itemState.searchResults.length === 0}
-								<div class="p-3 text-center text-base-content/70">No items found</div>
+								<div class="p-3 text-center text-base-content/70">{$t('production.no_items_found')}</div>
 							{:else}
 								{#each itemState.searchResults as item}
 									<button
@@ -542,7 +535,7 @@
 						}}
 						required
 					>
-						<option value="">Select a recipe...</option>
+						<option value="">{$t('production.select_recipe_placeholder')}</option>
 						{#each itemState.productionOptions.recipes as recipe}
 							<option value={recipe.id}
 								>{recipe.displayName} ({recipe.manufacturingDuration}s)</option
@@ -573,7 +566,7 @@
 						disabled={itemState.availableBuildings.length === 0}
 						required
 					>
-						<option value="">Select a building...</option>
+						<option value="">{$t('production.select_building_placeholder')}</option>
 						{#each itemState.availableBuildings as building}
 							<option value={building.id}>
 								{building.name} ({building.type})
@@ -621,11 +614,35 @@
 				</div>
 			{/if}
 
+			<!-- Configuration Somersloop (seulement si le bâtiment supporte les shards) -->
+			{#if selectedBuildingId}
+				{@const selectedBuilding = itemState.availableBuildings.find(b => b.id === selectedBuildingId)}
+				{#if selectedBuilding && selectedBuilding.productionShardSlotSize && selectedBuilding.productionShardSlotSize > 0}
+					<div class="form-control">
+						<label class="label" for="somersloop-count">
+							<span class="label-text">{$t('production_dialog.somersloop_count')}</span>
+						</label>
+						<input
+							id="somersloop-count"
+							type="number"
+							class="input-bordered input w-full"
+							bind:value={somersloopCount}
+							min="0"
+							max={selectedBuilding.productionShardSlotSize}
+							step="1"
+						/>
+						<div class="label">
+							<span class="label-text-alt">{$t('production_dialog.max')}: {selectedBuilding.productionShardSlotSize} {$t('production_dialog.somersloop_slots')}</span>
+						</div>
+					</div>
+				{/if}
+			{/if}
+
 			<!-- Auto-calculation toggle -->
 			{#if selectedBuildingId && (itemState.selectedProductionType === 'extract' || itemState.selectedProductionType === 'craft')}
 				<div class="form-control">
 					<label class="label cursor-pointer">
-						<span class="label-text">Calcul automatique du nombre de bâtiments</span>
+						<span class="label-text">{$t('production_dialog.auto_building_count')}</span>
 						<input
 							type="checkbox"
 							bind:checked={autoCalculateMode}
@@ -640,7 +657,7 @@
 				<div class="form-control">
 					<label class="label" for="desired-rate">
 						<span class="label-text"
-							>Production souhaitée (items/min)<span class="text-error">*</span></span
+							>{$t('production_dialog.desired_production')}<span class="text-error">*</span></span
 						>
 					</label>
 					<input
@@ -656,7 +673,7 @@
 					{#if selectedBuildingId && desiredItemsPerMin > 0}
 						<div class="label">
 							<span class="label-text-alt text-info">
-								→ {buildingCount} bâtiments = {calculateActualProduction().toFixed(1)} items/min
+								{$t('production_dialog.building_calculation', { values: { count: buildingCount, production: calculateActualProduction().toFixed(1) } })}
 							</span>
 						</div>
 					{/if}
@@ -685,7 +702,7 @@
 					/>
 					{#if autoCalculateMode}
 						<div class="label">
-							<span class="label-text-alt text-warning">Calculé automatiquement</span>
+							<span class="label-text-alt text-warning">{$t('production_dialog.auto_calculated')}</span>
 						</div>
 					{/if}
 				</div>
@@ -706,7 +723,7 @@
 						placeholder="1.00"
 					/>
 					<div class="label">
-						<span class="label-text-alt">0.1 - 2.5 (1.0 = 100%)</span>
+						<span class="label-text-alt">{$t('production.efficiency_range')}</span>
 					</div>
 				</div>
 			</div>
@@ -714,7 +731,7 @@
 			<!-- Built Status -->
 			<div class="form-control">
 				<label class="label cursor-pointer">
-					<span class="label-text">Marquer comme construite</span>
+					<span class="label-text">{$t('production_dialog.mark_as_built')}</span>
 					<input type="checkbox" bind:checked={isBuilt} class="checkbox checkbox-success" />
 				</label>
 			</div>
@@ -733,7 +750,7 @@
 					maxlength="1000"
 				></textarea>
 				<div class="label">
-					<span class="label-text-alt">{notes.length}/1000 characters</span>
+					<span class="label-text-alt">{$t('production.characters_count', { values: { count: notes.length } })}</span>
 				</div>
 			</div>
 

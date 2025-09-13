@@ -13,6 +13,7 @@ interface ImportBuildingData {
 	energyProduction?: number;
 	supplementalLoadAmount?: number;
 	output?: number;
+	productionShardSlotSize?: number;
 	type: 'Generator' | 'Constructor' | 'Miner';
 }
 
@@ -98,7 +99,8 @@ export const POST: RequestHandler = async ({ request }) => {
 					'energyConsumption',
 					'energyProduction',
 					'supplementalLoadAmount',
-					'output'
+					'output',
+					'productionShardSlotSize'
 				];
 				let validNumericData = true;
 				for (const field of numericFields) {
@@ -107,6 +109,14 @@ export const POST: RequestHandler = async ({ request }) => {
 						if (isNaN(value) || value < 0) {
 							results.errors.push(
 								`Invalid building data: ${field} must be a non-negative number for ${buildingData.className}`
+							);
+							validNumericData = false;
+							break;
+						}
+						// Additional validation for productionShardSlotSize (must be integer)
+						if (field === 'productionShardSlotSize' && !Number.isInteger(value)) {
+							results.errors.push(
+								`Invalid building data: productionShardSlotSize must be an integer for ${buildingData.className}`
 							);
 							validNumericData = false;
 							break;
@@ -156,7 +166,8 @@ export const POST: RequestHandler = async ({ request }) => {
 							energyConsumption: buildingData.energyConsumption?.toString() || null,
 							energyProduction: buildingData.energyProduction?.toString() || null,
 							supplementalLoadAmount: buildingData.supplementalLoadAmount?.toString() || null,
-							output: buildingData.output?.toString() || null
+							output: buildingData.output?.toString() || null,
+							productionShardSlotSize: buildingData.productionShardSlotSize ?? 0
 						});
 						results.versionsCreated++;
 					}

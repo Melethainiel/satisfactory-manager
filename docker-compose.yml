@@ -1,46 +1,37 @@
 services:
+  # PostgreSQL - Main Database
   postgres:
-    # Using 'latest' for convenience in local dev; pin a version (e.g., 17-alpine) for reproducibility.
-    image: postgres:latest
+    image: postgres:17-alpine
     container_name: satisfactory-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: app
       POSTGRES_PASSWORD: app
       POSTGRES_DB: satisfactory
-      # Optional: tune for local dev (can be removed in prod)
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
       - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      # Hardcode values to avoid docker compose variable substitution warnings
       test: ["CMD-SHELL", "pg_isready -d satisfactory -U app"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
-    # If you want to limit resources locally (optional)
-    # deploy:
-    #   resources:
-    #     limits:
-    #       memory: 512M
 
+  # PostgreSQL - Test Database
   postgres-test:
-    # Test database for running automated tests
-    image: postgres:latest
+    image: postgres:17-alpine
     container_name: satisfactory-postgres-test
-    restart: "no"  # Don't restart automatically - only for testing
+    restart: "no"
     environment:
       POSTGRES_USER: app
       POSTGRES_PASSWORD: app
       POSTGRES_DB: satisfactory_test
-      # Optimized settings for testing
       POSTGRES_INITDB_ARGS: "--auth-host=trust --auth-local=trust"
     ports:
       - "5433:5432"
-    # Use tmpfs for faster test execution (data is not persisted)
     tmpfs:
       - /var/lib/postgresql/data:noexec,nosuid,size=512m
     healthcheck:
@@ -49,7 +40,6 @@ services:
       timeout: 3s
       retries: 10
       start_period: 5s
-    # Optimized for testing - less memory usage
     deploy:
       resources:
         limits:
@@ -57,6 +47,7 @@ services:
         reservations:
           memory: 128M
 
+  # pgAdmin - Database Management UI
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: satisfactory-pgadmin
@@ -64,27 +55,76 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@example.com
       PGADMIN_DEFAULT_PASSWORD: admin
-      PGADMIN_CONFIG_SERVER_MODE: 'False' # allow multiple user sessions if needed
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
     ports:
       - "8081:80"
     depends_on:
       - postgres
     volumes:
       - pgadmin-data:/var/lib/pgadmin
-      - ./config/pgadmin/servers.json:/pgadmin4/servers.json:ro
+
+  # SvelteKit Application (Production build)
+  app:
+    build:
+      context: ./SatisfactoryManager.SvelteKit
+      dockerfile: Dockerfile
+    container_name: satisfactory-app
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://app:app@postgres:5432/satisfactory
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  # SvelteKit Dev Server (Hot Reload)
+  app-dev:
+    build:
+      context: ./SatisfactoryManager.SvelteKit
+      dockerfile: Dockerfile.dev
+    container_name: satisfactory-app-dev
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgres://app:app@postgres:5432/satisfactory
+      PORT: 5173
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./SatisfactoryManager.SvelteKit:/app
+      - /app/node_modules
+      - /app/.svelte-kit
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
 
 volumes:
   postgres-data:
   pgadmin-data:
 
+networks:
+  app-network:
+    driver: bridge
+
 # Usage:
-#   docker compose up -d postgres pgadmin          # Development database + pgAdmin
-#   docker compose up -d postgres-test            # Test database only
-#   docker compose up -d postgres postgres-test   # Both databases
-# 
+#   docker compose up -d postgres pgadmin              # Start databases only
+#   docker compose up -d app                           # Start app with production build
+#   docker compose up -d app-dev                        # Start app with dev server (hot reload)
+#   docker compose up -d postgres-test                # Start test database
+#   docker compose up -d postgres app-dev              # Start database + dev app (recommended for dev)
+#
 # Connection strings:
-#   Development: postgres://app:app@localhost:5432/satisfactory
-#   Testing:     postgres://app:app@localhost:5433/satisfactory_test
-# 
-# pgAdmin URL:
-#   http://localhost:8081  (login with admin@example.com / admin)
+#   Development:  postgres://app:app@localhost:5432/satisfactory
+#   Testing:      postgres://app:app@localhost:5433/satisfactory_test
+#
+# URLs:
+#   Dev App:      http://localhost:5173
+#   Prod App:     http://localhost:3000
+#   pgAdmin:      http://localhost:8081 (login: admin@example.com / admin)

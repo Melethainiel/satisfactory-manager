@@ -49,8 +49,14 @@ Testing:     postgres://app:app@localhost:5433/satisfactory_test
 
 ```
 .
-├── SatisfactoryManager.SvelteKit/   # SvelteKit frontend application
-├── docker-compose.yml               # Docker services configuration
+├── src/                             # SvelteKit source code
+├── drizzle/                         # Database migrations
+├── tests/                           # Test files
+├── scripts/                         # Utility scripts
+├── static/                          # Static assets
+├── docker-compose.yml                # Docker services configuration
+├── package.json                     # Node.js dependencies
+├── svelte.config.js                 # SvelteKit configuration
 └── README.md                       # This file
 ```
 
@@ -59,7 +65,6 @@ Testing:     postgres://app:app@localhost:5433/satisfactory_test
 ### Local Development (without Docker)
 
 ```bash
-cd SatisfactoryManager.SvelteKit
 npm install
 npm run dev                          # Start dev server on http://localhost:5173
 ```
@@ -67,7 +72,6 @@ npm run dev                          # Start dev server on http://localhost:5173
 ### Database Operations
 
 ```bash
-cd SatisfactoryManager.SvelteKit
 npm run db:push                      # Push schema changes to database
 npm run db:migrate                   # Run database migrations
 npm run db:studio                    # Open Drizzle Studio (database GUI)
@@ -144,6 +148,13 @@ Deploy to Coolify:
    - `PUBLIC_AUTH_URL`: Your Coolify domain
    - Azure B2C credentials (if using OIDC provider)
 5. Deploy
+
+### Manual Docker Build
+
+```bash
+docker build -f Dockerfile.dev -t satisfactory-manager .
+docker run -p 5173:5173 -e DATABASE_URL=... satisfactory-manager
+```
 
 ## 📚 Documentation
 

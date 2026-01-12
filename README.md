@@ -5,22 +5,13 @@ Full-stack application for managing Satisfactory game instances with SvelteKit f
 ## 🚀 Quick Start (Docker Compose)
 
 ### Development Mode
-Start the development environment with hot-reload:
+Start development environment with hot-reload:
 
 ```bash
 docker compose up -d postgres app-dev
 ```
 
 Access the application at **http://localhost:5173**
-
-### Production Mode
-Start with production build:
-
-```bash
-docker compose up -d postgres app
-```
-
-Access the application at **http://localhost:3000**
 
 ### Database Only
 Start only PostgreSQL and pgAdmin:
@@ -31,6 +22,13 @@ docker compose up -d postgres pgadmin
 
 Access pgAdmin at **http://localhost:8081** (admin@example.com / admin)
 
+### Test Database
+Start test database for running tests:
+
+```bash
+docker compose up -d postgres-test
+```
+
 ## 📦 Services
 
 | Service | Port | Description |
@@ -39,7 +37,6 @@ Access pgAdmin at **http://localhost:8081** (admin@example.com / admin)
 | PostgreSQL (test) | 5433 | Test database (not persisted) |
 | pgAdmin | 8081 | Database management UI |
 | SvelteKit Dev | 5173 | Development server with hot reload |
-| SvelteKit Prod | 3000 | Production build |
 
 ## 🔧 Connection Strings
 
@@ -134,21 +131,19 @@ Currently using Azure AD B2C (planning migration to Better Auth).
 
 ## 🚢 Deployment
 
-### Coolify (Recommended)
+### Coolify (Production)
 
-This application is designed for deployment on Coolify:
+Deploy to Coolify:
 1. Push code to Git repository
 2. Connect repository in Coolify
-3. Configure environment variables
-4. Deploy
-
-### Manual Docker Build
-
-```bash
-cd SatisfactoryManager.SvelteKit
-docker build -t satisfactory-manager .
-docker run -p 3000:3000 -e DATABASE_URL=... satisfactory-manager
-```
+3. Create new service with **Nixpacks** (auto-detects Node.js/SvelteKit)
+4. Configure environment variables:
+   - `DATABASE_URL`: PostgreSQL connection string
+   - `AUTH_SECRET`: Secret for Better Auth
+   - `AUTH_URL`: Your Coolify domain
+   - `PUBLIC_AUTH_URL`: Your Coolify domain
+   - Azure B2C credentials (if using OIDC provider)
+5. Deploy
 
 ## 📚 Documentation
 

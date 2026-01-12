@@ -63,25 +63,6 @@ services:
     volumes:
       - pgadmin-data:/var/lib/pgadmin
 
-  # SvelteKit Application (Production build)
-  app:
-    build:
-      context: ./SatisfactoryManager.SvelteKit
-      dockerfile: Dockerfile
-    container_name: satisfactory-app
-    restart: unless-stopped
-    environment:
-      NODE_ENV: production
-      DATABASE_URL: postgres://app:app@postgres:5432/satisfactory
-      PORT: 3000
-    ports:
-      - "3000:3000"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - app-network
-
   # SvelteKit Dev Server (Hot Reload)
   app-dev:
     build:
@@ -115,8 +96,7 @@ networks:
 
 # Usage:
 #   docker compose up -d postgres pgadmin              # Start databases only
-#   docker compose up -d app                           # Start app with production build
-#   docker compose up -d app-dev                        # Start app with dev server (hot reload)
+#   docker compose up -d app-dev                       # Start app with dev server (hot reload)
 #   docker compose up -d postgres-test                # Start test database
 #   docker compose up -d postgres app-dev              # Start database + dev app (recommended for dev)
 #
@@ -126,5 +106,6 @@ networks:
 #
 # URLs:
 #   Dev App:      http://localhost:5173
-#   Prod App:     http://localhost:3000
 #   pgAdmin:      http://localhost:8081 (login: admin@example.com / admin)
+#
+# Production deployment: Use Coolify resource configuration
